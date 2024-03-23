@@ -29,3 +29,5 @@ Therefore, journal entries with that tag assigned will be highlighted in the gen
 
 Note here that tags start with "x".
 
+Now, run the compile\_handout script and it will generate a nicely formatted summary that's easy to scroll through.
+
