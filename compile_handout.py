@@ -20,9 +20,9 @@ if __name__ == "__main__":
     else:
         handoutpath.mkdir()
 
-    numberOfWeeksToConsiderStr = input("number of last weeks to consider: [2] ")
+    numberOfWeeksToConsiderStr = input("number of last weeks to consider: [1] ")
     if len(numberOfWeeksToConsiderStr) == 0:
-        numberOfWeeksToConsiderStr = "2"
+        numberOfWeeksToConsiderStr = "1"
     print()
 
     numberOfWeeksToConsider = int(numberOfWeeksToConsiderStr)
@@ -37,15 +37,18 @@ if __name__ == "__main__":
             entriesDict = parseEntries(thepath=x, notebookpath=notebookpath)
             for e in entriesDict["entries"]:
                 e["path"] = x
+                inInbox = "inbox" in e["tags"]
                 for t in e["tags"]:
                     if t not in tags:
                         tags[t] = []
                     tags[t].append(e)
 
                     if t not in tagsMetadata:
-                        tagsMetadata[t] = [0, 0]
-                    if e["date"] < afterDate:
+                        tagsMetadata[t] = [0, 0, 0]
+                    if inInbox:
                         tagsMetadata[t][1] = tagsMetadata[t][1] + 1
+                    if e["date"] < afterDate:
+                        tagsMetadata[t][2] = tagsMetadata[t][2] + 1
                     else:
                         tagsMetadata[t][0] = tagsMetadata[t][0] + 1
 
@@ -54,9 +57,9 @@ if __name__ == "__main__":
     tags = OrderedDict(sorted(tags.items(), key=lambda xy: None if len(xy[1]) == 0 else xy[1][0]["date"], reverse=True))
 
     for k, v in tags.items():
-        filename = handoutpath / (f"{tagsMetadata[k][0]:03d}" + "-" + f"{tagsMetadata[k][1]:03d}" + "_" + k + ".md")
+        filename = handoutpath / (f"{tagsMetadata[k][0]:03d}" + "-" + f"{tagsMetadata[k][1]:03d}" + "-" + f"{tagsMetadata[k][2]:03d}" + "_" + k + ".md")
         with open(filename, "w", encoding="utf-8") as handoutfile:
-            handoutfile.write("# " + k + "\n**" + afterDate.strftime("%d.%m.%Y") + " - " + today.strftime("%d.%m.%Y") + "  //  " + str(tagsMetadata[k][0]) + " recent / " + str(tagsMetadata[k][1]) + " older**\n\n")
+            handoutfile.write("# " + k + "\n**" + afterDate.strftime("%d.%m.%Y") + " - " + today.strftime("%d.%m.%Y") + "  //  " + str(tagsMetadata[k][0]) + " recent / " + str(f"{tagsMetadata[k][1]:03d}") + " in inbox / " + str(tagsMetadata[k][2]) + " older**\n\n")
 
             for stickyi in notebookpath.glob('**/*.md'):
                 if stickyi.stem.lower() == k:
