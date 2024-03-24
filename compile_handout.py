@@ -59,7 +59,7 @@ if __name__ == "__main__":
     for k, v in tags.items():
         filename = handoutpath / (f"{tagsMetadata[k][0]:03d}" + "-" + f"{tagsMetadata[k][1]:03d}" + "-" + f"{tagsMetadata[k][2]:03d}" + "_" + k + ".md")
         with open(filename, "w", encoding="utf-8") as handoutfile:
-            handoutfile.write("# " + k + "\n**" + afterDate.strftime("%d.%m.%Y") + " - " + today.strftime("%d.%m.%Y") + "  //  " + str(tagsMetadata[k][0]) + " recent / " + str(f"{tagsMetadata[k][1]:03d}") + " in inbox / " + str(tagsMetadata[k][2]) + " older**\n\n")
+            handoutfile.write("# " + k + "\n**" + afterDate.strftime("%d.%m.%Y") + " - " + today.strftime("%d.%m.%Y") + "  //  " + str(tagsMetadata[k][0]) + " recent / " + str(tagsMetadata[k][1]) + " in inbox / " + str(tagsMetadata[k][2]) + " older**\n\n")
 
             for stickyi in notebookpath.glob('**/*.md'):
                 if stickyi.stem.lower() == k:

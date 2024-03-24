@@ -1,5 +1,5 @@
 # journalling
-**03.03.2024 - 24.03.2024  //  0 recent / 000 in inbox / 1 older**
+**03.03.2024 - 24.03.2024  //  0 recent / 0 in inbox / 1 older**
 
 <details style="color:gray; border:2px solid; padding: 1em">
   <summary>journalling: older entries</summary>
