@@ -29,5 +29,9 @@ Therefore, journal entries with that tag assigned will be highlighted in the gen
 
 Note here that tags start with "x".
 
-Now, run the compile\_handout script and it will generate a nicely formatted summary that's easy to scroll through.
+Now, run the compile\_handout script and it will generate a nicely formatted summary that's easy to scroll through:
 
+![the generated handout files, opened in VS code](demo/images/image.png)
+
+Prefix of generated file names is as follows:
+"Number of recent entries in that file" - "number of entries in inbox" - "number of older entries"
