@@ -9,6 +9,7 @@ from pathlib import Path
 
 def addDatePrefix(folders):
     for thefolderStr in folders:
+        print("\n===== " + thefolderStr + " #####")
         thefolder = Path(thefolderStr)
         for c in thefolder.iterdir():
             if c.is_file():
@@ -18,6 +19,7 @@ def addDatePrefix(folders):
                     if newFile.exists():
                         print("ignoring existing item: " + str(newFile.absolute().as_posix()))
                     else:
+                        print(c.name + " -> " + newFile.name)
                         c.rename(newFile)
 
 if __name__ == "__main__":
