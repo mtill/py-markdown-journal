@@ -13,12 +13,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="compile_handout")
     parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
     parser.add_argument("--weeks", type=int, default=-1, help="number of weeks considered as \"recent\"; if set to -1, user is asked for input")
+    parser.add_argument("--ignoreOlderThanMonths", type=int, default=-1, help="tags older than this will be ignored; if set to -1, user is asked for input, if set to 0, no entries are ignored")
     args = parser.parse_args()
+
 
     notebookpath = Path(args.notebookpath).resolve()
     numberOfWeeksToConsider = args.weeks
     if numberOfWeeksToConsider == -1:
         numberOfWeeksToConsider = int(input("number of weeks: "))
+        print()
+
+    ignoreOlderThanMonths = args.ignoreOlderThanMonths
+    if ignoreOlderThanMonths == -1:
+        ignoreOlderThanMonths = int(input("ignore tags older than (in months): "))
         print()
 
     journalpath = notebookpath / "journal"
@@ -32,6 +39,9 @@ if __name__ == "__main__":
 
     today = datetime.today()
     afterDate = (today - timedelta(weeks=numberOfWeeksToConsider)).replace(hour=0, minute=0, second=0)
+    ignoreOlderThanDate = None
+    if ignoreOlderThanMonths > 0:
+        ignoreOlderThanDate = today - timedelta(days=(ignoreOlderThanMonths*30))
 
     tags = {}
     tagsMetadata = {}
@@ -61,6 +71,10 @@ if __name__ == "__main__":
     tags = OrderedDict(sorted(tags.items(), key=lambda xy: None if len(xy[1]) == 0 else xy[1][0]["date"], reverse=True))
 
     for k, v in tags.items():
+        if len(v) == 0 or (ignoreOlderThanDate is not None and v[0]["date"] < ignoreOlderThanDate):
+            print("skipping tag " + k + " (older than " + str(ignoreOlderThanMonths) + " months)")
+            continue
+
         filename = handoutpath / (f"{tagsMetadata[k][0]:03d}" + "-" + f"{tagsMetadata[k][1]:03d}" + "-" + f"{tagsMetadata[k][2]:03d}" + "_" + k + ".md")
         with open(filename, "w", encoding="utf-8") as handoutfile:
             handoutfile.write("# " + k + "\n**" + afterDate.strftime("%d.%m.%Y") + " - " + today.strftime("%d.%m.%Y") + "  //  " + str(tagsMetadata[k][0]) + " recent / " + str(tagsMetadata[k][1]) + " in inbox / " + str(tagsMetadata[k][2]) + " older**\n\n")
