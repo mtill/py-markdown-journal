@@ -20,13 +20,15 @@ if __name__ == "__main__":
     notebookpath = Path(args.notebookpath).resolve()
     numberOfWeeksToConsider = args.weeks
     if numberOfWeeksToConsider == -1:
-        numberOfWeeksToConsider = int(input("number of weeks: "))
+        numberOfWeeksToConsiderStr = input("number of weeks [default: 1]: ")
         print()
+        numberOfWeeksToConsider = 1 if len(numberOfWeeksToConsiderStr.strip()) == 0 else int(numberOfWeeksToConsiderStr)
 
     ignoreOlderThanMonths = args.ignoreOlderThanMonths
     if ignoreOlderThanMonths == -1:
-        ignoreOlderThanMonths = int(input("ignore tags older than (in months): "))
+        ignoreOlderThanMonthsStr = input("ignore tags older than (in months) [default: 3]: ")
         print()
+        ignoreOlderThanMonths = 3 if len(ignoreOlderThanMonthsStr.strip()) == 0 else int(ignoreOlderThanMonthsStr)
 
     journalpath = notebookpath / "journal"
     handoutpath = notebookpath / "handout"
