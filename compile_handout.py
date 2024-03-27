@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-import sys
+import argparse
 from pathlib import Path
 from collections import OrderedDict
 from datetime import datetime, timedelta
@@ -10,7 +10,17 @@ from noteslib import parseEntries, makeLinksRelativeTo
 
 
 if __name__ == "__main__":
-    notebookpath = Path(sys.argv[1]).resolve()
+    parser = argparse.ArgumentParser(description="compile_handout")
+    parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
+    parser.add_argument("--weeks", type=int, default=-1, help="number of weeks considered as \"recent\"; if set to -1, user is asked for input")
+    args = parser.parse_args()
+
+    notebookpath = Path(args.notebookpath).resolve()
+    numberOfWeeksToConsider = args.weeks
+    if numberOfWeeksToConsider == -1:
+        numberOfWeeksToConsider = int(input("number of weeks: "))
+        print()
+
     journalpath = notebookpath / "journal"
     handoutpath = notebookpath / "handout"
     if handoutpath.exists():
@@ -20,12 +30,6 @@ if __name__ == "__main__":
     else:
         handoutpath.mkdir()
 
-    numberOfWeeksToConsiderStr = input("number of last weeks to consider: [1] ")
-    if len(numberOfWeeksToConsiderStr) == 0:
-        numberOfWeeksToConsiderStr = "1"
-    print()
-
-    numberOfWeeksToConsider = int(numberOfWeeksToConsiderStr)
     today = datetime.today()
     afterDate = (today - timedelta(weeks=numberOfWeeksToConsider)).replace(hour=0, minute=0, second=0)
 
