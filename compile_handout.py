@@ -72,12 +72,15 @@ if __name__ == "__main__":
         tags[k] = sorted(v, key=lambda ii: ii["date"], reverse=True)
     tags = OrderedDict(sorted(tags.items(), key=lambda xy: None if len(xy[1]) == 0 else xy[1][0]["date"], reverse=True))
 
+    print("recent - in inbox - older")
     for k, v in tags.items():
         if len(v) == 0 or (ignoreOlderThanDate is not None and v[0]["date"] < ignoreOlderThanDate):
             print("skipping tag " + k + " (older than " + str(ignoreOlderThanMonths) + " months)")
             continue
 
+        #print(k + ":\t\t" + str(tagsMetadata[k][0]) + " recent\t" + str(tagsMetadata[k][1]) + " in inbox\t" + str(tagsMetadata[k][2]) + " older")
         filename = handoutpath / (f"{tagsMetadata[k][0]:03d}" + "-" + f"{tagsMetadata[k][1]:03d}" + "-" + f"{tagsMetadata[k][2]:03d}" + "_" + k + ".md")
+        print("/" + filename.relative_to(notebookpath).as_posix())
         with open(filename, "w", encoding="utf-8") as handoutfile:
             handoutfile.write("# " + k + "\n**" + afterDate.strftime("%d.%m.%Y") + " - " + today.strftime("%d.%m.%Y") + "  //  " + str(tagsMetadata[k][0]) + " recent / " + str(tagsMetadata[k][1]) + " in inbox / " + str(tagsMetadata[k][2]) + " older**\n\n")
 
@@ -118,4 +121,6 @@ if __name__ == "__main__":
                 handoutfile.write("</details>\n\n")
 
         filename.chmod(0o444)
+
+    #print("\nHandout folder: /" + handoutpath.relative_to(notebookpath).as_posix())
 

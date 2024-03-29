@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 
-import sys
 import string
+import argparse
+from datetime import datetime, timedelta
 from pathlib import Path
 from noteslib import parseEntries
 
@@ -13,40 +14,68 @@ EXACT_MATCH = False
 
 
 if __name__ == "__main__":
-    notebookpath = Path(sys.argv[1]).resolve()
+    print(("\n"*20) + ((("="*30)+"\n")*3) + ("\n"*20))
+
+    parser = argparse.ArgumentParser(description="compile_handout")
+    parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
+    parser.add_argument("--out", type=str, default=None, help="if specified, result will be directed to the specified file")
+    parser.add_argument("--search", type=str, nargs="*", default=None, help="search string(s); if not specified, user will be prompted")
+    parser.add_argument("--ignoreOlderThanMonths", type=int, default=-1, help="entries older than this will be ignored; if set to -1, user is asked for input, if set to 0, no entries are ignored")
+    args = parser.parse_args()
+
+    ignoreOlderThanMonths = args.ignoreOlderThanMonths
+    if ignoreOlderThanMonths == -1:
+        ignoreOlderThanMonthsStr = input("ignore entries older than (in months) [default: 3]: ")
+        print()
+        ignoreOlderThanMonths = 3 if len(ignoreOlderThanMonthsStr.strip()) == 0 else int(ignoreOlderThanMonthsStr)
+
+    ignoreOlderThanDate = None
+    if ignoreOlderThanMonths > 0:
+        ignoreOlderThanDate = datetime.today() - timedelta(days=(ignoreOlderThanMonths*30))
+
+    notebookpath = Path(args.notebookpath).resolve()
     journalpath = notebookpath / "journal"
+    mdoutputpath = None if args.out is None else (notebookpath / args.out)
 
     replacePunctuationTranslator = str.maketrans(string.punctuation, ' '*len(string.punctuation))
 
-    print(("\n"*20) + ((("="*30)+"\n")*3) + ("\n"*20))
-
     alltags = {}
     parsedFiles = []
+    numEntries = 0
     for x in sorted(journalpath.iterdir()):
         if x.is_file():
             parsedFile = parseEntries(thepath=x, notebookpath=notebookpath)
             parsedFiles.append(parsedFile)
 
+            newEntries = []
             for e in parsedFile["entries"]:
+                if ignoreOlderThanDate is not None and e["date"] < ignoreOlderThanDate:
+                    continue
+
+                numEntries = numEntries + 1
+                e["path"] = x
+                newEntries.append(e)
                 for lctag in e["tags"]:
                     if lctag not in alltags:
                         alltags[lctag] = []
                     alltags[lctag].append(e["date"])
 
-    print("\n\n=== ALL TAGS ===")
+            parsedFile["entries"] = newEntries
+
+
+    print("=== " + str(numEntries) + " ENTRIES; TAGS FOUND: ===")
     print(" ".join(["x" + axx[0] for axx in sorted(alltags.items(), key=lambda ax: max(ax[1]), reverse=True)]))
     print("\n")
 
 
-    searchStrings = []
-    for xs in sys.argv[2:]:
-        searchStrings.extend(xs.split(" "))
-    if len(searchStrings) == 0:
+    searchStrings = args.search
+    if searchStrings is None:
         searchStringsInput = input("search strings [xinbox]: ")
         print()
         searchStrings = ["xinbox"] if len(searchStringsInput.strip()) == 0 else searchStringsInput.split(" ")
 
 
+    foundEntries = []
     for entriesDict in parsedFiles:
         isFirst = True
         for e in entriesDict["entries"]:
@@ -74,8 +103,21 @@ if __name__ == "__main__":
                         break
 
             if not ignoreThis:
-                if isFirst:
-                    print("===== /" + x.relative_to(notebookpath).as_posix() + " =====\n")
-                    isFirst = False
-                print(("\n".join(e["content"])) + "\n\n/" + x.relative_to(notebookpath).as_posix() + ":" + str(e["pos"]) + "\n")
+                foundEntries.append(e)
+
+
+    if mdoutputpath is None:
+        for e in foundEntries:
+            print(("\n".join(e["content"])) + "\n\n/" + e["path"].relative_to(notebookpath).as_posix() + ":" + str(e["pos"]) + "\n")
+
+    else:
+        if mdoutputpath.exists():
+            mdoutputpath.chmod(0o666)
+
+        with open(mdoutputpath, "w") as mdoutputfile:
+            for e in foundEntries:
+                mdoutputfile.write(("\n".join(e["content"])) + "\n\n[source](" + e["location"] + ")\n\n")
+
+        mdoutputpath.chmod(0o444)
+        print(str(len(foundEntries)) + " results: /" + mdoutputpath.relative_to(notebookpath).as_posix())
 
