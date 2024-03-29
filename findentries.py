@@ -114,7 +114,7 @@ if __name__ == "__main__":
         if mdoutputpath.exists():
             mdoutputpath.chmod(0o666)
 
-        with open(mdoutputpath, "w") as mdoutputfile:
+        with open(mdoutputpath, "w", encoding="utf-8") as mdoutputfile:
             for e in foundEntries:
                 mdoutputfile.write(("\n".join(e["content"])) + "\n\n[source](" + e["location"] + ")\n\n")
 
