@@ -72,7 +72,7 @@ if __name__ == "__main__":
         tags[k] = sorted(v, key=lambda ii: ii["date"], reverse=True)
     tags = OrderedDict(sorted(tags.items(), key=lambda xy: None if len(xy[1]) == 0 else xy[1][0]["date"], reverse=True))
 
-    print("recent - in inbox - older")
+    print("filename prefix: recent - in inbox - older")
     for k, v in tags.items():
         if len(v) == 0 or (ignoreOlderThanDate is not None and v[0]["date"] < ignoreOlderThanDate):
             print("skipping tag " + k + " (older than " + str(ignoreOlderThanMonths) + " months)")
@@ -86,6 +86,7 @@ if __name__ == "__main__":
 
             for stickyi in notebookpath.glob('**/*.md'):
                 if stickyi.stem.lower() == k:
+                    handoutfile.write("<div style=\"color:#00FFFF\">\n\n")
                     handoutfile.write("## 📌 " + stickyi.relative_to(notebookpath).as_posix() + "\n\n")
                     with open(stickyi, "r", encoding="utf-8") as stickyf:
                         for stickyl in stickyf:
@@ -94,6 +95,7 @@ if __name__ == "__main__":
                                 stickyl = "##" + stickyl
                             handoutfile.write(stickyl)
                     handoutfile.write("\n\n[source](/" + str(stickyi.relative_to(notebookpath).as_posix()) + ")\n\n")
+                    handoutfile.write("</div>\n\n")
 
             historicalMode = False
             for vv in v:

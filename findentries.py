@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
 
     print("=== " + str(numEntries) + " ENTRIES; TAGS FOUND: ===")
-    print(" ".join(["x" + axx[0] for axx in sorted(alltags.items(), key=lambda ax: max(ax[1]), reverse=True)]))
+    print("; ".join(["x" + axx[0] + " (" + str(len(axx[1])) + ")" for axx in sorted(alltags.items(), key=lambda ax: max(ax[1]), reverse=True)]))
     print("\n")
 
 
