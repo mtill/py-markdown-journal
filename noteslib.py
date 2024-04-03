@@ -46,7 +46,7 @@ def writeFile(filepath, prefix, entries):
             qf.write("\n")
 
 
-def parseEntries(thepath, notebookpath):
+def parseEntries(thepath, notebookpath, untaggedtag="untagged"):
     entries = []
     prefix = []
 
@@ -73,6 +73,8 @@ def parseEntries(thepath, notebookpath):
 
                 if len(lastcontent) != 0:
                     _stripcontent(thecontent=lastcontent)
+                    if untaggedtag is not None and len(lasttags) == 0:
+                        lasttags = [untaggedtag]
                     entries.append({"date": lasttime, "content": lastcontent, "tags": lasttags, "pos": lastpos, "location": ("/" + thepath.relative_to(notebookpath).as_posix() + "#L" + str(lastpos))})
 
                 lasttime = thedate
@@ -89,6 +91,8 @@ def parseEntries(thepath, notebookpath):
 
         if len(lastcontent) != 0:
             _stripcontent(thecontent=lastcontent)
+            if untaggedtag is not None and len(lasttags) == 0:
+                lasttags = [untaggedtag]
             entries.append({"date": lasttime, "content": lastcontent, "tags": lasttags, "pos": lastpos, "location": ("/" + thepath.relative_to(notebookpath).as_posix() + "#L" + str(lastpos))})
 
     return {"prefix": prefix, "entries": entries}

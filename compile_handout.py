@@ -9,6 +9,9 @@ from datetime import datetime, timedelta
 from noteslib import parseEntries, makeLinksRelativeTo
 
 
+IGNORE_TAG = "ignore"
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="compile_handout")
     parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
@@ -52,6 +55,9 @@ if __name__ == "__main__":
         if x.is_file():
             entriesDict = parseEntries(thepath=x, notebookpath=notebookpath)
             for e in entriesDict["entries"]:
+                if IGNORE_TAG in e["tags"]:
+                    continue
+
                 e["path"] = x
                 inInbox = "inbox" in e["tags"]
                 for t in e["tags"]:
@@ -71,11 +77,12 @@ if __name__ == "__main__":
     for k, v in tags.items():
         tags[k] = sorted(v, key=lambda ii: ii["date"], reverse=True)
     tags = OrderedDict(sorted(tags.items(), key=lambda xy: None if len(xy[1]) == 0 else xy[1][0]["date"], reverse=True))
+    oldertags = []
 
     print("filename prefix: recent - in inbox - older")
     for k, v in tags.items():
         if len(v) == 0 or (ignoreOlderThanDate is not None and v[0]["date"] < ignoreOlderThanDate):
-            print("skipping tag " + k + " (older than " + str(ignoreOlderThanMonths) + " months)")
+            oldertags.append(k)
             continue
 
         #print(k + ":\t\t" + str(tagsMetadata[k][0]) + " recent\t" + str(tagsMetadata[k][1]) + " in inbox\t" + str(tagsMetadata[k][2]) + " older")
@@ -123,6 +130,9 @@ if __name__ == "__main__":
                 handoutfile.write("</details>\n\n")
 
         filename.chmod(0o444)
+
+    if len(oldertags) != 0:
+        print("skipped tags (older than " + str(ignoreOlderThanMonths) + " months): " + (" ".join(oldertags)))
 
     #print("\nHandout folder: /" + handoutpath.relative_to(notebookpath).as_posix())
 
