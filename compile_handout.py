@@ -103,6 +103,7 @@ if __name__ == "__main__":
                         tagsMetadata[t][2] = tagsMetadata[t][2] + 1
                     else:
                         tagsMetadata[t][0] = tagsMetadata[t][0] + 1
+            entriesDict = None
 
     for k, v in tags.items():
         tags[k] = sorted(v, key=lambda ii: ii["date"], reverse=True)
@@ -181,6 +182,12 @@ if __name__ == "__main__":
         filepath.chmod(0o444)
 
 
+    if len(oldertags) != 0:
+        print("skipped tags (older than " + str(ignoreOlderThanMonths) + " months): " + (" ".join(oldertags)))
+
+    #print("\nHandout folder: /" + handoutpath.relative_to(notebookpath).as_posix())
+
+
     if generateHTMLOutput:
         indexpath = handoutpath / "index.html"
         with open(indexpath, "w", encoding="utf-8") as indexfile:
@@ -206,8 +213,4 @@ if __name__ == "__main__":
 
     writeProtectFolder(thepath=handoutpath)
 
-    if len(oldertags) != 0:
-        print("skipped tags (older than " + str(ignoreOlderThanMonths) + " months): " + (" ".join(oldertags)))
-
-    #print("\nHandout folder: /" + handoutpath.relative_to(notebookpath).as_posix())
 
