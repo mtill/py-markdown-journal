@@ -10,6 +10,28 @@ from noteslib import parseEntries, makeLinksRelativeTo
 
 
 IGNORE_TAG = "ignore"
+TAG_NAMESPACE_SEPARATOR = "_"
+
+
+def writeProtectFolder(thepath: Path):
+    for c in thepath.iterdir():
+        if c.is_dir():
+            writeProtectFolder(thepath=c)
+
+    thepath.chmod(0o555)
+
+
+def recDelete(thepath: Path):
+    thepath.chmod(0o777)
+
+    for c in thepath.iterdir():
+        if c.is_file():
+            c.chmod(0o666)
+            c.unlink()
+        else:
+            recDelete(thepath=c)
+
+    thepath.rmdir()
 
 
 if __name__ == "__main__":
@@ -36,11 +58,9 @@ if __name__ == "__main__":
     journalpath = notebookpath / "journal"
     handoutpath = notebookpath / "handout"
     if handoutpath.exists():
-        for c in handoutpath.glob("*.md"):
-            c.chmod(0o666)
-            c.unlink()
-    else:
-        handoutpath.mkdir()
+        recDelete(thepath=handoutpath)
+
+    handoutpath.mkdir()
 
     today = datetime.today()
     afterDate = (today - timedelta(weeks=numberOfWeeksToConsider)).replace(hour=0, minute=0, second=0)
@@ -85,10 +105,20 @@ if __name__ == "__main__":
             oldertags.append(k)
             continue
 
+        namespaceComponents = k.split(TAG_NAMESPACE_SEPARATOR)
+        # a_b_c --> a/b/00-01-001-c.md
+        folderpath = handoutpath
+        filename = k
+        if len(namespaceComponents) > 1:
+            folderpath = handoutpath / ("/".join(namespaceComponents[0:-1]))
+            filename = namespaceComponents[-1]
+            if not folderpath.exists():
+                folderpath.mkdir(parents=True)
+
         #print(k + ":\t\t" + str(tagsMetadata[k][0]) + " recent\t" + str(tagsMetadata[k][1]) + " in inbox\t" + str(tagsMetadata[k][2]) + " older")
-        filename = handoutpath / (f"{tagsMetadata[k][0]:03d}" + "-" + f"{tagsMetadata[k][1]:03d}" + "-" + f"{tagsMetadata[k][2]:03d}" + "_" + k + ".md")
-        print("/" + filename.relative_to(notebookpath).as_posix())
-        with open(filename, "w", encoding="utf-8") as handoutfile:
+        filepath = folderpath / (f"{tagsMetadata[k][0]:02d}" + "-" + f"{tagsMetadata[k][1]:02d}" + "-" + f"{tagsMetadata[k][2]:03d}" + "_" + filename + ".md")
+        print("/" + filepath.relative_to(notebookpath).as_posix())
+        with open(filepath, "w", encoding="utf-8") as handoutfile:
             handoutfile.write("# " + k + "\n**" + afterDate.strftime("%d.%m.%Y") + " - " + today.strftime("%d.%m.%Y") + "  //  " + str(tagsMetadata[k][0]) + " recent / " + str(tagsMetadata[k][1]) + " in inbox / " + str(tagsMetadata[k][2]) + " older**\n\n")
 
             for stickyi in notebookpath.glob('**/*.md'):
@@ -129,7 +159,9 @@ if __name__ == "__main__":
             if historicalMode:
                 handoutfile.write("</details>\n\n")
 
-        filename.chmod(0o444)
+        filepath.chmod(0o444)
+
+    writeProtectFolder(thepath=handoutpath)
 
     if len(oldertags) != 0:
         print("skipped tags (older than " + str(ignoreOlderThanMonths) + " months): " + (" ".join(oldertags)))
