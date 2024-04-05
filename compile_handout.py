@@ -96,7 +96,7 @@ if __name__ == "__main__":
                     tags[t].append(e)
 
                     if t not in tagsMetadata:
-                        tagsMetadata[t] = [0, 0, 0]
+                        tagsMetadata[t] = [0, 0, 0, None]
                     if inInbox:
                         tagsMetadata[t][1] = tagsMetadata[t][1] + 1
                     if e["date"] < afterDate:
@@ -128,6 +128,7 @@ if __name__ == "__main__":
         #print(k + ":\t\t" + str(tagsMetadata[k][0]) + " recent\t" + str(tagsMetadata[k][1]) + " in inbox\t" + str(tagsMetadata[k][2]) + " older")
         fileextension = ".html" if generateHTMLOutput else ".md"
         filepath = folderpath / (f"{tagsMetadata[k][0]:02d}" + "-" + f"{tagsMetadata[k][1]:02d}" + "-" + f"{tagsMetadata[k][2]:03d}" + "_" + filename + fileextension)
+        tagsMetadata[k][3] = filepath
         print("/" + filepath.relative_to(notebookpath).as_posix())
         filecontent = ["# " + k + "\n**" + afterDate.strftime("%d.%m.%Y") + " - " + today.strftime("%d.%m.%Y") + "  //  " + str(tagsMetadata[k][0]) + " recent / " + str(tagsMetadata[k][1]) + " in inbox / " + str(tagsMetadata[k][2]) + " older**\n\n"]
 
@@ -171,13 +172,37 @@ if __name__ == "__main__":
 
         if generateHTMLOutput:
             with open(filepath, "w", encoding="utf-8") as handoutfile:
-                handoutfile.write("<!DOCTYPE html>\n\n<html><head><meta charset=\"UTF-8\"><title>" + k + "</title></head><body>" + md.render("".join(filecontent)) + "</body></html>\n")
+                handoutfile.write("<!DOCTYPE html>\n\n<html><head><meta charset=\"UTF-8\"><title>" + k + "</title></head><body style=\"background-color: #1d2327; color: #d6d6d6;'\">" + md.render("".join(filecontent)) + "</body></html>\n")
         else:
             with open(filepath, "w", encoding="utf-8") as handoutfile:
                 for filecontentline in filecontent:
                     handoutfile.write(filecontentline)
 
         filepath.chmod(0o444)
+
+
+    if generateHTMLOutput:
+        indexpath = handoutpath / "index.html"
+        with open(indexpath, "w", encoding="utf-8") as indexfile:
+            indexfile.write("<!DOCTYPE html>\n\n<html><head><meta charset=\"UTF-8\"><title>index</title></head><body>\n")
+            indexfile.write("<h1>index</h1>\n<table><tr><th>tag</th><th>recent</th><th>in inbox</th><th>older</th>\n")
+            for k, v in tags.items():
+                if tagsMetadata[k][3] is not None:
+                    indexfile.write("<tr><td><a href=\"" + tagsMetadata[k][3].relative_to(handoutpath).as_posix() + "\">" + k + "</a></td><td>" + str(tagsMetadata[k][0]) + "</td><td>" + str(tagsMetadata[k][1]) + "</td><td>" + str(tagsMetadata[k][2]) + "</td></tr>\n")
+            indexfile.write("</table>\n</body></html>\n")
+        indexpath.chmod(0o444)
+        print("index file: " + indexpath.as_posix())
+    else:
+        indexpath = handoutpath / "index.md"
+        with open(indexpath, "w", encoding="utf-8") as indexfile:
+            indexfile.write("# index\n\n")
+            indexfile.write("| tag | recent | in inbox | older |\n")
+            indexfile.write("| --- | ------ | -------- | ----- |\n")
+            for k, v in tags.items():
+                if tagsMetadata[k][3] is not None:
+                    indexfile.write("| [" + k + "](" + tagsMetadata[k][3].relative_to(handoutpath).as_posix() + ") | " + str(tagsMetadata[k][0]) + " | " + str(tagsMetadata[k][1]) + " | " + str(tagsMetadata[k][2]) + " |\n")
+        indexpath.chmod(0o444)
+        print("index file: " + indexpath.as_posix())
 
     writeProtectFolder(thepath=handoutpath)
 
