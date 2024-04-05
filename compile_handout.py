@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from noteslib import parseEntries, makeLinksRelativeTo
 
 
+INBOX_TAG = "inbox"
 IGNORE_TAG = "ignore"
 TAG_NAMESPACE_SEPARATOR = "_"
 
@@ -21,7 +22,7 @@ def writeProtectFolder(thepath: Path):
     thepath.chmod(0o555)
 
 
-def recDelete(thepath: Path):
+def recDelete(thepath: Path, skipFirst=False):
     thepath.chmod(0o777)
 
     for c in thepath.iterdir():
@@ -29,7 +30,7 @@ def recDelete(thepath: Path):
             c.chmod(0o666)
             c.unlink()
         else:
-            recDelete(thepath=c)
+            recDelete(thepath=c, skipFirst=False)
 
     thepath.rmdir()
 
@@ -39,8 +40,17 @@ if __name__ == "__main__":
     parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
     parser.add_argument("--weeks", type=int, default=-1, help="number of weeks considered as \"recent\"; if set to -1, user is asked for input")
     parser.add_argument("--ignoreOlderThanMonths", type=int, default=-1, help="tags older than this will be ignored; if set to -1, user is asked for input, if set to 0, no entries are ignored")
+    parser.add_argument("--output_format", type=str, default="markdown", help="output format (\"markdown\" or \"html\")")
     args = parser.parse_args()
 
+    generateHTMLOutput = False
+    md = None
+    if args.output_format == "html":
+        generateHTMLOutput = True
+        from markdown_it import MarkdownIt
+        md = MarkdownIt()
+    elif args.output_format != "markdown":
+        raise Exception("invalid output format: " + args.output_format)
 
     notebookpath = Path(args.notebookpath).resolve()
     numberOfWeeksToConsider = args.weeks
@@ -58,7 +68,7 @@ if __name__ == "__main__":
     journalpath = notebookpath / "journal"
     handoutpath = notebookpath / "handout"
     if handoutpath.exists():
-        recDelete(thepath=handoutpath)
+        recDelete(thepath=handoutpath, skipFirst=True)
 
     handoutpath.mkdir()
 
@@ -79,7 +89,7 @@ if __name__ == "__main__":
                     continue
 
                 e["path"] = x
-                inInbox = "inbox" in e["tags"]
+                inInbox = INBOX_TAG in e["tags"]
                 for t in e["tags"]:
                     if t not in tags:
                         tags[t] = []
@@ -101,7 +111,7 @@ if __name__ == "__main__":
 
     print("filename prefix: recent - in inbox - older")
     for k, v in tags.items():
-        if len(v) == 0 or (ignoreOlderThanDate is not None and v[0]["date"] < ignoreOlderThanDate):
+        if len(v) == 0 or (k != INBOX_TAG and (ignoreOlderThanDate is not None and v[0]["date"] < ignoreOlderThanDate)):
             oldertags.append(k)
             continue
 
@@ -116,48 +126,56 @@ if __name__ == "__main__":
                 folderpath.mkdir(parents=True)
 
         #print(k + ":\t\t" + str(tagsMetadata[k][0]) + " recent\t" + str(tagsMetadata[k][1]) + " in inbox\t" + str(tagsMetadata[k][2]) + " older")
-        filepath = folderpath / (f"{tagsMetadata[k][0]:02d}" + "-" + f"{tagsMetadata[k][1]:02d}" + "-" + f"{tagsMetadata[k][2]:03d}" + "_" + filename + ".md")
+        fileextension = ".html" if generateHTMLOutput else ".md"
+        filepath = folderpath / (f"{tagsMetadata[k][0]:02d}" + "-" + f"{tagsMetadata[k][1]:02d}" + "-" + f"{tagsMetadata[k][2]:03d}" + "_" + filename + fileextension)
         print("/" + filepath.relative_to(notebookpath).as_posix())
-        with open(filepath, "w", encoding="utf-8") as handoutfile:
-            handoutfile.write("# " + k + "\n**" + afterDate.strftime("%d.%m.%Y") + " - " + today.strftime("%d.%m.%Y") + "  //  " + str(tagsMetadata[k][0]) + " recent / " + str(tagsMetadata[k][1]) + " in inbox / " + str(tagsMetadata[k][2]) + " older**\n\n")
+        filecontent = ["# " + k + "\n**" + afterDate.strftime("%d.%m.%Y") + " - " + today.strftime("%d.%m.%Y") + "  //  " + str(tagsMetadata[k][0]) + " recent / " + str(tagsMetadata[k][1]) + " in inbox / " + str(tagsMetadata[k][2]) + " older**\n\n"]
 
-            for stickyi in notebookpath.glob('**/*.md'):
-                if stickyi.stem.lower() == k:
-                    handoutfile.write("<div style=\"color:#00FFFF\">\n\n")
-                    handoutfile.write("## 📌 " + stickyi.relative_to(notebookpath).as_posix() + "\n\n")
-                    with open(stickyi, "r", encoding="utf-8") as stickyf:
-                        for stickyl in stickyf:
-                            stickyl = makeLinksRelativeTo(stickyl, notebookPath=notebookpath, originPath=stickyi)
-                            if stickyl.startswith("#"):
-                                stickyl = "##" + stickyl
-                            handoutfile.write(stickyl)
-                    handoutfile.write("\n\n[source](/" + str(stickyi.relative_to(notebookpath).as_posix()) + ")\n\n")
-                    handoutfile.write("</div>\n\n")
+        for stickyi in notebookpath.glob('**/*.md'):
+            if stickyi.stem.lower() == k:
+                filecontent.append("<div style=\"color:#00FFFF\">\n\n")
+                filecontent.append("## 📌 " + stickyi.relative_to(notebookpath).as_posix() + "\n\n")
+                with open(stickyi, "r", encoding="utf-8") as stickyf:
+                    for stickyl in stickyf:
+                        stickyl = makeLinksRelativeTo(stickyl, notebookPath=notebookpath, originPath=stickyi)
+                        if stickyl.startswith("#"):
+                            stickyl = "##" + stickyl
+                        filecontent.append(stickyl)
+                filecontent.append("\n\n[source](/" + str(stickyi.relative_to(notebookpath).as_posix()) + ")\n\n")
+                filecontent.append("</div>\n\n")
 
-            historicalMode = False
-            for vv in v:
-                if not historicalMode and vv["date"] < afterDate:
-                    historicalMode = True
-                    handoutfile.write("<details style=\"color:gray; border:2px solid; padding: 1em\">\n  <summary>" + k + ": older entries</summary>\n\n")
+        historicalMode = False
+        for vv in v:
+            if not historicalMode and vv["date"] < afterDate:
+                historicalMode = True
+                filecontent.append("<details style=\"color:gray; border:2px solid; padding: 1em\">\n  <summary>" + k + ": older entries</summary>\n\n")
 
-                isininbox = False
-                if "inbox" in vv["tags"]:
-                    isininbox = True
-                    handoutfile.write("<div style=\"color:orange\">\n\n")
+            isininbox = False
+            if INBOX_TAG in vv["tags"]:
+                isininbox = True
+                filecontent.append("<div style=\"color:orange\">\n\n")
 
-                for cv in vv["content"]:
-                    cv = makeLinksRelativeTo(cv, notebookPath=notebookpath, originPath=vv["path"])
-                    #if historicalMode and cv.startswith("#"):
-                    #    cv = "#" + cv
-                    handoutfile.write(cv + "\n")
+            for cv in vv["content"]:
+                cv = makeLinksRelativeTo(cv, notebookPath=notebookpath, originPath=vv["path"])
+                #if historicalMode and cv.startswith("#"):
+                #    cv = "#" + cv
+                filecontent.append(cv + "\n")
 
-                handoutfile.write("\n\n[source](" + vv["location"] + ")\n\n")
+            filecontent.append("\n\n[source](" + vv["location"] + ")\n\n")
 
-                if isininbox:
-                    handoutfile.write("</div>\n\n")
+            if isininbox:
+                filecontent.append("</div>\n\n")
 
-            if historicalMode:
-                handoutfile.write("</details>\n\n")
+        if historicalMode:
+            filecontent.append("</details>\n\n")
+
+        if generateHTMLOutput:
+            with open(filepath, "w", encoding="utf-8") as handoutfile:
+                handoutfile.write("<!DOCTYPE html>\n\n<html><head><meta charset=\"UTF-8\"><title>" + k + "</title></head><body>" + md.render("".join(filecontent)) + "</body></html>\n")
+        else:
+            with open(filepath, "w", encoding="utf-8") as handoutfile:
+                for filecontentline in filecontent:
+                    handoutfile.write(filecontentline)
 
         filepath.chmod(0o444)
 
