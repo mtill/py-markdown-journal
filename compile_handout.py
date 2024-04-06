@@ -100,7 +100,8 @@ if __name__ == "__main__":
                                            "in inbox": 0,
                                            "older": 0,
                                            "filepath": None,
-                                           "filenameprefix": None}
+                                           "filepathstr": "",
+                                           "date of latest entry": ""}
                     if inInbox:
                         tagsMetadata[t]["in inbox"] = tagsMetadata[t]["in inbox"] + 1
                     if e["date"] < afterDate:
@@ -110,12 +111,14 @@ if __name__ == "__main__":
             entriesDict = None
 
     for k, v in tags.items():
-        tags[k] = sorted(v, key=lambda ii: ii["date"], reverse=True)
+        v = sorted(v, key=lambda ii: ii["date"], reverse=True)
+        tags[k] = v
+        tagsMetadata[k]["date of latest entry"] = "" if len(v) == 0 else v[0]['date'].strftime("%y%m%d")
 
     #tags = OrderedDict(sorted(tags.items(), key=lambda xy: None if len(xy[1]) == 0 else xy[1][0]["date"], reverse=True))
     oldertags = []
 
-    print("filename prefix: recent - in inbox - older")
+    print("filename prefix: recent - in inbox - date of last entry")
     for k, v in tags.items():
         if len(v) == 0 or (k != INBOX_TAG and (ignoreOlderThanDate is not None and v[0]["date"] < ignoreOlderThanDate)):
             oldertags.append(k)
@@ -134,14 +137,15 @@ if __name__ == "__main__":
         if tagsMetadata[k]["in inbox"] > 0:
             filename = filename.upper()
 
-        # ("" if len(v) == 0 else v[0]['date'].strftime("%Y%m%d") + "-") + \
+        # f"{tagsMetadata[k]['older']:03d}" + "_"
         # ("" if len(v) == 0 else ("{:03d}".format((today - v[0]['date']).days)) + "-") + \
         filenameprefix = f"{tagsMetadata[k]['recent']:02d}" + "-" + \
                          f"{tagsMetadata[k]['in inbox']:02d}" + "-" + \
-                         f"{tagsMetadata[k]['older']:03d}" + "_"
+                         ("" if len(tagsMetadata[k]['date of latest entry']) == 0 else tagsMetadata[k]['date of latest entry'] + "-")
 
         filepath = folderpath / (filenameprefix + filename + fileextension)
         tagsMetadata[k]["filepath"] = filepath
+        tagsMetadata[k]["filepathstr"] = filepath.relative_to(notebookpath).as_posix()
         # print("/" + filepath.relative_to(notebookpath).as_posix())
         filecontent = ["# " + k + "\n**" + afterDate.strftime("%d.%m.%Y") + " - " \
                        + today.strftime("%d.%m.%Y") + "  //  " \
@@ -209,19 +213,18 @@ if __name__ == "__main__":
         with open(indexpath, "w", encoding="utf-8") as indexfile:
             indexfile.write("<!DOCTYPE html>\n\n<html><head><meta charset=\"UTF-8\"><title>index</title></head><body>\n")
             indexfile.write("<h1>index</h1>\n<table><tr><th>tag</th><th>recent</th><th>in inbox</th><th>older</th>\n")
-            for k, v in sorted(tags.items(), key=lambda kvk: "" if tagsMetadata[kvk[0]]["filepath"] is None else tagsMetadata[kvk[0]]["filepath"].relative_to(notebookpath).as_posix()):
+            for k, v in sorted(tags.items(), key=lambda kvk: tagsMetadata[kvk[0]]["filepathstr"]):
                 if tagsMetadata[k]["filepath"] is not None:
                     indexfile.write("<tr><td><a href=\"" + tagsMetadata[k]["filepath"].relative_to(handoutpath).as_posix() + "\">" + k + "</a></td><td>" + str(tagsMetadata[k]["recent"]) + "</td><td>" + str(tagsMetadata[k]["in inbox"]) + "</td><td>" + str(tagsMetadata[k]["older"]) + "</td></tr>\n")
             indexfile.write("</table>\n</body></html>\n")
         indexpath.chmod(0o444)
-        print("index file: " + indexpath.as_posix())
     else:
         indexpath = handoutpath / "index.md"
         with open(indexpath, "w", encoding="utf-8") as indexfile:
             indexfile.write("# index\n\n")
             indexfile.write("| tag                                                                    | recent | in inbox | older |\n")
             indexfile.write("| ---------------------------------------------------------------------- | ------ | -------- | ----- |\n")
-            for k, v in sorted(tags.items(), key=lambda kvk: "" if tagsMetadata[kvk[0]]["filepath"] is None else tagsMetadata[kvk[0]]["filepath"].relative_to(notebookpath).as_posix()):
+            for k, v in sorted(tags.items(), key=lambda kvk: tagsMetadata[kvk[0]]["filepathstr"]):
                 if tagsMetadata[k]["filepath"] is not None:
                     indexfile.write("| " +
                                     ("{:70}".format("[" + k + "](" + tagsMetadata[k]["filepath"].relative_to(handoutpath).as_posix() + ")")) +
@@ -229,8 +232,8 @@ if __name__ == "__main__":
                                     " | " + ("{:>8}".format(tagsMetadata[k]["in inbox"])) +
                                     " | " + ("{:>5}".format(tagsMetadata[k]["older"])) + " |\n")
         indexpath.chmod(0o444)
-        print("index file: " + indexpath.as_posix())
 
+    print("index file: " + indexpath.as_posix())
     print("handout folder: " + handoutpath.as_posix())
 
     writeProtectFolder(thepath=handoutpath)

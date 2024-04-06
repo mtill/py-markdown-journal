@@ -2,8 +2,8 @@
 
 | tag                                                                    | recent | in inbox | older |
 | ---------------------------------------------------------------------- | ------ | -------- | ----- |
-| [bike](00-00-001_bike.md)                                              |      0 |        0 |     1 |
-| [journalling](00-00-001_journalling.md)                                |      0 |        0 |     1 |
-| [family](00-01-003_FAMILY.md)                                          |      0 |        1 |     3 |
-| [research](00-01-003_RESEARCH.md)                                      |      0 |        1 |     3 |
-| [inbox](00-03-003_INBOX.md)                                            |      0 |        3 |     3 |
+| [journalling](00-00-240101-journalling.md)                             |      0 |        0 |     1 |
+| [bike](00-00-240301-bike.md)                                           |      0 |        0 |     1 |
+| [research](02-01-240310-RESEARCH.md)                                   |      2 |        1 |     1 |
+| [family](02-01-240311-FAMILY.md)                                       |      2 |        1 |     1 |
+| [inbox](02-03-240311-INBOX.md)                                         |      2 |        3 |     1 |
