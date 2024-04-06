@@ -203,11 +203,15 @@ if __name__ == "__main__":
         indexpath = handoutpath / "index.md"
         with open(indexpath, "w", encoding="utf-8") as indexfile:
             indexfile.write("# index\n\n")
-            indexfile.write("| tag | recent | in inbox | older |\n")
-            indexfile.write("| --- | ------ | -------- | ----- |\n")
+            indexfile.write("| tag                                                                    | recent | in inbox | older |\n")
+            indexfile.write("| ---------------------------------------------------------------------- | ------ | -------- | ----- |\n")
             for k, v in tags.items():
                 if tagsMetadata[k][3] is not None:
-                    indexfile.write("| [" + k + "](" + tagsMetadata[k][3].relative_to(handoutpath).as_posix() + ") | " + str(tagsMetadata[k][0]) + " | " + str(tagsMetadata[k][1]) + " | " + str(tagsMetadata[k][2]) + " |\n")
+                    indexfile.write("| " +
+                                    ("{:70}".format("[" + k + "](" + tagsMetadata[k][3].relative_to(handoutpath).as_posix() + ")")) +
+                                    " | " + ("{:>6}".format(tagsMetadata[k][0])) +
+                                    " | " + ("{:>8}".format(tagsMetadata[k][1])) +
+                                    " | " + ("{:>5}".format(tagsMetadata[k][2])) + " |\n")
         indexpath.chmod(0o444)
         print("index file: " + indexpath.as_posix())
 

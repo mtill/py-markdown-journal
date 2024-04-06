@@ -46,6 +46,34 @@ def writeFile(filepath, prefix, entries):
             qf.write("\n")
 
 
+def prettyTable(table, rightAlign=False):
+    result = []
+    formatPrefix = "{:>" if rightAlign else "{:"
+
+    result = []
+    width = []
+    for l in range(0, len(table)):
+        for c in range(0, len(table[l])):
+            le = len(table[l][c])
+            if c >= len(width):
+                width.append(le)
+            elif le > width[c]:
+                width[c] = le
+
+    isFirst = True
+    for l in range(0, len(table)):
+        r = []
+        for c in range(0, len(width)):
+            st = "" if c >= len(table[l]) else table[l][c]
+            r.append((formatPrefix + str(width[c]) + "}").format(st))
+        result.append("| " + (" | ".join(r)) + " |")
+        if isFirst:
+            result.append("-" * (sum(width) + (len(width)-1)*3 + 4))
+            isFirst = False
+
+    return result
+
+
 def parseEntries(thepath, notebookpath, untaggedtag="untagged"):
     entries = []
     prefix = []
