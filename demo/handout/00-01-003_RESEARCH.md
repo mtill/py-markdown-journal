@@ -1,30 +1,30 @@
-# family
-**03.03.2024 - 24.03.2024  //  2 recent / 1 in inbox / 1 older**
+# research
+**30.03.2024 - 06.04.2024  //  0 recent / 1 in inbox / 3 older**
 
-<div style="color:orange">
+<details style="color:gray; border:2px solid; padding: 1em;">
+  <summary>research: older entries</summary>
 
-## 2024-03-11 06:28 xfamily xinbox
+<div style="color:orange;">
+
+## 2024-03-10 06:28 xresearch xinbox new idea for improved results
 Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
 
 
-[source](/journal/2024-Q1.md#L29)
+[source](/journal/2024-Q1.md#L23)
 
 </div>
 
-## 2024-03-03 06:28 xfamily idea for next birthday party
+## 2024-03-10 06:28 xresearch summary for new AI paper
 Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
 
 
-[source](/journal/2024-Q1.md#L20)
+[source](/journal/2024-Q1.md#L26)
 
-<details style="color:gray; border:2px solid; padding: 1em">
-  <summary>family: older entries</summary>
-
-## 2024-02-26 06:28 xfamily phone call with wife
+## 2024-02-24 06:28 xresearch phone call with Adam
 Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
 
 
-[source](/journal/2024-Q1.md#L14)
+[source](/journal/2024-Q1.md#L11)
 
 </details>
 

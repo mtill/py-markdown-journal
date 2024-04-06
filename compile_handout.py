@@ -4,7 +4,6 @@
 
 import argparse
 from pathlib import Path
-from collections import OrderedDict
 from datetime import datetime, timedelta
 from noteslib import parseEntries, makeLinksRelativeTo
 
@@ -39,7 +38,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="compile_handout")
     parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
     parser.add_argument("--weeks", type=int, default=-1, help="number of weeks considered as \"recent\"; if set to -1, user is asked for input")
-    parser.add_argument("--ignoreOlderThanMonths", type=int, default=-1, help="tags older than this will be ignored; if set to -1, user is asked for input, if set to 0, no entries are ignored")
+    parser.add_argument("--ignoreOlderThanWeeks", type=int, default=-1, help="tags older than this will be ignored; if set to -1, user is asked for input, if set to 0, no entries are ignored")
     parser.add_argument("--output_format", type=str, default="markdown", help="output format (\"markdown\" or \"html\")")
     args = parser.parse_args()
 
@@ -51,6 +50,7 @@ if __name__ == "__main__":
         md = MarkdownIt()
     elif args.output_format != "markdown":
         raise Exception("invalid output format: " + args.output_format)
+    fileextension = ".html" if generateHTMLOutput else ".md"
 
     notebookpath = Path(args.notebookpath).resolve()
     numberOfWeeksToConsider = args.weeks
@@ -59,11 +59,11 @@ if __name__ == "__main__":
         print()
         numberOfWeeksToConsider = 1 if len(numberOfWeeksToConsiderStr.strip()) == 0 else int(numberOfWeeksToConsiderStr)
 
-    ignoreOlderThanMonths = args.ignoreOlderThanMonths
-    if ignoreOlderThanMonths == -1:
-        ignoreOlderThanMonthsStr = input("ignore tags older than (in months) [default: 3]: ")
+    ignoreOlderThanWeeks = args.ignoreOlderThanWeeks
+    if ignoreOlderThanWeeks == -1:
+        ignoreOlderThanWeeksStr = input("ignore tags older than (in weeks) [default: 12]: ")
         print()
-        ignoreOlderThanMonths = 3 if len(ignoreOlderThanMonthsStr.strip()) == 0 else int(ignoreOlderThanMonthsStr)
+        ignoreOlderThanWeeks = 12 if len(ignoreOlderThanWeeksStr.strip()) == 0 else int(ignoreOlderThanWeeksStr)
 
     journalpath = notebookpath / "journal"
     handoutpath = notebookpath / "handout"
@@ -75,8 +75,8 @@ if __name__ == "__main__":
     today = datetime.today()
     afterDate = (today - timedelta(weeks=numberOfWeeksToConsider)).replace(hour=0, minute=0, second=0)
     ignoreOlderThanDate = None
-    if ignoreOlderThanMonths > 0:
-        ignoreOlderThanDate = today - timedelta(days=(ignoreOlderThanMonths*30))
+    if ignoreOlderThanWeeks > 0:
+        ignoreOlderThanDate = today - timedelta(days=(ignoreOlderThanWeeks*7))
 
     tags = {}
     tagsMetadata = {}
@@ -96,18 +96,23 @@ if __name__ == "__main__":
                     tags[t].append(e)
 
                     if t not in tagsMetadata:
-                        tagsMetadata[t] = [0, 0, 0, None]
+                        tagsMetadata[t] = {"recent": 0,
+                                           "in inbox": 0,
+                                           "older": 0,
+                                           "filepath": None,
+                                           "filenameprefix": None}
                     if inInbox:
-                        tagsMetadata[t][1] = tagsMetadata[t][1] + 1
+                        tagsMetadata[t]["in inbox"] = tagsMetadata[t]["in inbox"] + 1
                     if e["date"] < afterDate:
-                        tagsMetadata[t][2] = tagsMetadata[t][2] + 1
+                        tagsMetadata[t]["older"] = tagsMetadata[t]["older"] + 1
                     else:
-                        tagsMetadata[t][0] = tagsMetadata[t][0] + 1
+                        tagsMetadata[t]["recent"] = tagsMetadata[t]["recent"] + 1
             entriesDict = None
 
     for k, v in tags.items():
         tags[k] = sorted(v, key=lambda ii: ii["date"], reverse=True)
-    tags = OrderedDict(sorted(tags.items(), key=lambda xy: None if len(xy[1]) == 0 else xy[1][0]["date"], reverse=True))
+
+    #tags = OrderedDict(sorted(tags.items(), key=lambda xy: None if len(xy[1]) == 0 else xy[1][0]["date"], reverse=True))
     oldertags = []
 
     print("filename prefix: recent - in inbox - older")
@@ -126,16 +131,27 @@ if __name__ == "__main__":
             if not folderpath.exists():
                 folderpath.mkdir(parents=True)
 
-        #print(k + ":\t\t" + str(tagsMetadata[k][0]) + " recent\t" + str(tagsMetadata[k][1]) + " in inbox\t" + str(tagsMetadata[k][2]) + " older")
-        fileextension = ".html" if generateHTMLOutput else ".md"
-        filepath = folderpath / (f"{tagsMetadata[k][0]:02d}" + "-" + f"{tagsMetadata[k][1]:02d}" + "-" + f"{tagsMetadata[k][2]:03d}" + "_" + filename + fileextension)
-        tagsMetadata[k][3] = filepath
-        print("/" + filepath.relative_to(notebookpath).as_posix())
-        filecontent = ["# " + k + "\n**" + afterDate.strftime("%d.%m.%Y") + " - " + today.strftime("%d.%m.%Y") + "  //  " + str(tagsMetadata[k][0]) + " recent / " + str(tagsMetadata[k][1]) + " in inbox / " + str(tagsMetadata[k][2]) + " older**\n\n"]
+        if tagsMetadata[k]["in inbox"] > 0:
+            filename = filename.upper()
+
+        # ("" if len(v) == 0 else v[0]['date'].strftime("%Y%m%d") + "-") + \
+        # ("" if len(v) == 0 else ("{:03d}".format((today - v[0]['date']).days)) + "-") + \
+        filenameprefix = f"{tagsMetadata[k]['recent']:02d}" + "-" + \
+                         f"{tagsMetadata[k]['in inbox']:02d}" + "-" + \
+                         f"{tagsMetadata[k]['older']:03d}" + "_"
+
+        filepath = folderpath / (filenameprefix + filename + fileextension)
+        tagsMetadata[k]["filepath"] = filepath
+        # print("/" + filepath.relative_to(notebookpath).as_posix())
+        filecontent = ["# " + k + "\n**" + afterDate.strftime("%d.%m.%Y") + " - " \
+                       + today.strftime("%d.%m.%Y") + "  //  " \
+                       + str(tagsMetadata[k]["recent"]) + " recent / " \
+                       + str(tagsMetadata[k]["in inbox"]) + " in inbox / " \
+                       + str(tagsMetadata[k]["older"]) + " older**\n\n"]
 
         for stickyi in notebookpath.glob('**/*.md'):
             if stickyi.stem.lower() == k:
-                filecontent.append("<div style=\"color:#00FFFF\">\n\n")
+                filecontent.append("<div style=\"color:#00FFFF;\">\n\n")
                 filecontent.append("## 📌 " + stickyi.relative_to(notebookpath).as_posix() + "\n\n")
                 with open(stickyi, "r", encoding="utf-8") as stickyf:
                     for stickyl in stickyf:
@@ -150,12 +166,12 @@ if __name__ == "__main__":
         for vv in v:
             if not historicalMode and vv["date"] < afterDate:
                 historicalMode = True
-                filecontent.append("<details style=\"color:gray; border:2px solid; padding: 1em\">\n  <summary>" + k + ": older entries</summary>\n\n")
+                filecontent.append("<details style=\"color:gray; border:2px solid; padding: 1em;\">\n  <summary>" + k + ": older entries</summary>\n\n")
 
             isininbox = False
             if INBOX_TAG in vv["tags"]:
                 isininbox = True
-                filecontent.append("<div style=\"color:orange\">\n\n")
+                filecontent.append("<div style=\"color:orange;\">\n\n")
 
             for cv in vv["content"]:
                 cv = makeLinksRelativeTo(cv, notebookPath=notebookpath, originPath=vv["path"])
@@ -183,7 +199,7 @@ if __name__ == "__main__":
 
 
     if len(oldertags) != 0:
-        print("skipped tags (older than " + str(ignoreOlderThanMonths) + " months): " + (" ".join(oldertags)))
+        print("skipped tags (older than " + str(ignoreOlderThanWeeks) + " weeks): " + (" ".join(oldertags)))
 
     #print("\nHandout folder: /" + handoutpath.relative_to(notebookpath).as_posix())
 
@@ -193,9 +209,9 @@ if __name__ == "__main__":
         with open(indexpath, "w", encoding="utf-8") as indexfile:
             indexfile.write("<!DOCTYPE html>\n\n<html><head><meta charset=\"UTF-8\"><title>index</title></head><body>\n")
             indexfile.write("<h1>index</h1>\n<table><tr><th>tag</th><th>recent</th><th>in inbox</th><th>older</th>\n")
-            for k, v in tags.items():
-                if tagsMetadata[k][3] is not None:
-                    indexfile.write("<tr><td><a href=\"" + tagsMetadata[k][3].relative_to(handoutpath).as_posix() + "\">" + k + "</a></td><td>" + str(tagsMetadata[k][0]) + "</td><td>" + str(tagsMetadata[k][1]) + "</td><td>" + str(tagsMetadata[k][2]) + "</td></tr>\n")
+            for k, v in sorted(tags.items(), key=lambda kvk: "" if tagsMetadata[kvk[0]]["filepath"] is None else tagsMetadata[kvk[0]]["filepath"].relative_to(notebookpath).as_posix()):
+                if tagsMetadata[k]["filepath"] is not None:
+                    indexfile.write("<tr><td><a href=\"" + tagsMetadata[k]["filepath"].relative_to(handoutpath).as_posix() + "\">" + k + "</a></td><td>" + str(tagsMetadata[k]["recent"]) + "</td><td>" + str(tagsMetadata[k]["in inbox"]) + "</td><td>" + str(tagsMetadata[k]["older"]) + "</td></tr>\n")
             indexfile.write("</table>\n</body></html>\n")
         indexpath.chmod(0o444)
         print("index file: " + indexpath.as_posix())
@@ -205,15 +221,17 @@ if __name__ == "__main__":
             indexfile.write("# index\n\n")
             indexfile.write("| tag                                                                    | recent | in inbox | older |\n")
             indexfile.write("| ---------------------------------------------------------------------- | ------ | -------- | ----- |\n")
-            for k, v in tags.items():
-                if tagsMetadata[k][3] is not None:
+            for k, v in sorted(tags.items(), key=lambda kvk: "" if tagsMetadata[kvk[0]]["filepath"] is None else tagsMetadata[kvk[0]]["filepath"].relative_to(notebookpath).as_posix()):
+                if tagsMetadata[k]["filepath"] is not None:
                     indexfile.write("| " +
-                                    ("{:70}".format("[" + k + "](" + tagsMetadata[k][3].relative_to(handoutpath).as_posix() + ")")) +
-                                    " | " + ("{:>6}".format(tagsMetadata[k][0])) +
-                                    " | " + ("{:>8}".format(tagsMetadata[k][1])) +
-                                    " | " + ("{:>5}".format(tagsMetadata[k][2])) + " |\n")
+                                    ("{:70}".format("[" + k + "](" + tagsMetadata[k]["filepath"].relative_to(handoutpath).as_posix() + ")")) +
+                                    " | " + ("{:>6}".format(tagsMetadata[k]["recent"])) +
+                                    " | " + ("{:>8}".format(tagsMetadata[k]["in inbox"])) +
+                                    " | " + ("{:>5}".format(tagsMetadata[k]["older"])) + " |\n")
         indexpath.chmod(0o444)
         print("index file: " + indexpath.as_posix())
+
+    print("handout folder: " + handoutpath.as_posix())
 
     writeProtectFolder(thepath=handoutpath)
 
