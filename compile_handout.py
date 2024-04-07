@@ -39,7 +39,7 @@ if __name__ == "__main__":
     parser.add_argument("--weeks", type=int, default=-1, help="number of weeks considered as \"recent\"; if set to -1, user is asked for input")
     parser.add_argument("--ignoreOlderThanWeeks", type=int, default=-1, help="tags older than this will be ignored; if set to -1, user is asked for input, if set to 0, no entries are ignored")
     parser.add_argument("--output_format", type=str, default="markdown", help="output format (\"markdown\" or \"html\")")
-    parser.add_argument("--highlight_tag", type=str, default="inbox", help="highlight entries with this tag assigned, e.g., entries with \"inbox\" tag. Default: \"inbox\".")
+    parser.add_argument("--highlight_tag", type=str, default=None, help="highlight entries with this tag assigned, e.g., entries with \"inbox\" tag. Default: ask user for input")
     args = parser.parse_args()
 
     generateHTMLOutput = False
@@ -51,8 +51,6 @@ if __name__ == "__main__":
     elif args.output_format != "markdown":
         raise Exception("invalid output format: " + args.output_format)
     fileextension = ".html" if generateHTMLOutput else ".md"
-
-    highlightTag = args.highlight_tag
 
     notebookpath = Path(args.notebookpath).resolve()
     numberOfWeeksToConsider = args.weeks
@@ -66,6 +64,13 @@ if __name__ == "__main__":
         ignoreOlderThanWeeksStr = input("ignore tags older than (in weeks) [default: 12]: ")
         print()
         ignoreOlderThanWeeks = 12 if len(ignoreOlderThanWeeksStr.strip()) == 0 else int(ignoreOlderThanWeeksStr)
+
+    highlightTag = args.highlight_tag
+    if highlightTag is None:
+        highlightTag = input("highlight tag (default: inbox): ")
+        print()
+        if len(highlightTag.strip()) == 0:
+            highlightTag = "inbox"
 
     journalpath = notebookpath / "journal"
     handoutpath = notebookpath / "handout"
