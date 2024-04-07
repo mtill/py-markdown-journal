@@ -34,4 +34,4 @@ Now, run the compile\_handout script and it will generate a nicely formatted sum
 ![the generated handout files, opened in VS code](demo/images/image.png)
 
 Prefix of generated file names is as follows:
-"Number of recent entries in that file" - "number of entries in inbox" - "date of last entry (format: %y%m%d)"
+"Number of recent entries in that file" - "number of highlighted entries (e.g., with assigned 'inbox' tag)" - "date of last entry (format: %y%m%d)"
