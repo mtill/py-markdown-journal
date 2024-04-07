@@ -8,7 +8,6 @@ from datetime import datetime, timedelta
 from noteslib import parseEntries, makeLinksRelativeTo
 
 
-INBOX_TAG = "inbox"
 IGNORE_TAG = "ignore"
 TAG_NAMESPACE_SEPARATOR = "_"
 
@@ -40,6 +39,7 @@ if __name__ == "__main__":
     parser.add_argument("--weeks", type=int, default=-1, help="number of weeks considered as \"recent\"; if set to -1, user is asked for input")
     parser.add_argument("--ignoreOlderThanWeeks", type=int, default=-1, help="tags older than this will be ignored; if set to -1, user is asked for input, if set to 0, no entries are ignored")
     parser.add_argument("--output_format", type=str, default="markdown", help="output format (\"markdown\" or \"html\")")
+    parser.add_argument("--highlight_tag", type=str, default="inbox", help="highlight entries with this tag assigned, e.g., entries with \"inbox\" tag. Default: \"inbox\".")
     args = parser.parse_args()
 
     generateHTMLOutput = False
@@ -51,6 +51,8 @@ if __name__ == "__main__":
     elif args.output_format != "markdown":
         raise Exception("invalid output format: " + args.output_format)
     fileextension = ".html" if generateHTMLOutput else ".md"
+
+    highlightTag = args.highlight_tag
 
     notebookpath = Path(args.notebookpath).resolve()
     numberOfWeeksToConsider = args.weeks
@@ -89,7 +91,7 @@ if __name__ == "__main__":
                     continue
 
                 e["path"] = x
-                inInbox = INBOX_TAG in e["tags"]
+                hasHighlightTag = highlightTag in e["tags"]
                 for t in e["tags"]:
                     if t not in tags:
                         tags[t] = []
@@ -97,13 +99,13 @@ if __name__ == "__main__":
 
                     if t not in tagsMetadata:
                         tagsMetadata[t] = {"recent": 0,
-                                           "in inbox": 0,
+                                           "highlight tag": 0,
                                            "older": 0,
                                            "filepath": None,
                                            "filepathstr": "",
                                            "date of latest entry": ""}
-                    if inInbox:
-                        tagsMetadata[t]["in inbox"] = tagsMetadata[t]["in inbox"] + 1
+                    if hasHighlightTag:
+                        tagsMetadata[t]["highlight tag"] = tagsMetadata[t]["highlight tag"] + 1
                     if e["date"] < afterDate:
                         tagsMetadata[t]["older"] = tagsMetadata[t]["older"] + 1
                     else:
@@ -118,9 +120,9 @@ if __name__ == "__main__":
     #tags = OrderedDict(sorted(tags.items(), key=lambda xy: None if len(xy[1]) == 0 else xy[1][0]["date"], reverse=True))
     oldertags = []
 
-    print("filename prefix: recent - in inbox - date of last entry")
+    print("filename prefix: #recent - #" + highlightTag + " - date of last entry")
     for k, v in tags.items():
-        if len(v) == 0 or (k != INBOX_TAG and (ignoreOlderThanDate is not None and v[0]["date"] < ignoreOlderThanDate)):
+        if len(v) == 0 or (k != highlightTag and (ignoreOlderThanDate is not None and v[0]["date"] < ignoreOlderThanDate)):
             oldertags.append(k)
             continue
 
@@ -134,13 +136,13 @@ if __name__ == "__main__":
             if not folderpath.exists():
                 folderpath.mkdir(parents=True)
 
-        if tagsMetadata[k]["in inbox"] > 0:
+        if tagsMetadata[k]["highlight tag"] > 0:
             filename = filename.upper()
 
         # f"{tagsMetadata[k]['older']:03d}" + "_"
         # ("" if len(v) == 0 else ("{:03d}".format((today - v[0]['date']).days)) + "-") + \
         filenameprefix = f"{tagsMetadata[k]['recent']:02d}" + "-" + \
-                         f"{tagsMetadata[k]['in inbox']:02d}" + "-" + \
+                         f"{tagsMetadata[k]['highlight tag']:02d}" + "-" + \
                          ("" if len(tagsMetadata[k]['date of latest entry']) == 0 else tagsMetadata[k]['date of latest entry'] + "-")
 
         filepath = folderpath / (filenameprefix + filename + fileextension)
@@ -150,7 +152,7 @@ if __name__ == "__main__":
         filecontent = ["# " + k + "\n**" + afterDate.strftime("%d.%m.%Y") + " - " \
                        + today.strftime("%d.%m.%Y") + "  //  " \
                        + str(tagsMetadata[k]["recent"]) + " recent / " \
-                       + str(tagsMetadata[k]["in inbox"]) + " in inbox / " \
+                       + str(tagsMetadata[k]["highlight tag"]) + " " + highlightTag + " / " \
                        + str(tagsMetadata[k]["older"]) + " older**\n\n"]
 
         for stickyi in notebookpath.glob('**/*.md'):
@@ -172,9 +174,9 @@ if __name__ == "__main__":
                 historicalMode = True
                 filecontent.append("<details style=\"color:gray; border:2px solid; padding: 1em;\">\n  <summary>" + k + ": older entries</summary>\n\n")
 
-            isininbox = False
-            if INBOX_TAG in vv["tags"]:
-                isininbox = True
+            ishighlight = False
+            if highlightTag in vv["tags"]:
+                ishighlight = True
                 filecontent.append("<div style=\"color:orange;\">\n\n")
 
             for cv in vv["content"]:
@@ -185,7 +187,7 @@ if __name__ == "__main__":
 
             filecontent.append("\n\n[source](" + vv["location"] + ")\n\n")
 
-            if isininbox:
+            if ishighlight:
                 filecontent.append("</div>\n\n")
 
         if historicalMode:
@@ -212,24 +214,24 @@ if __name__ == "__main__":
         indexpath = handoutpath / "index.html"
         with open(indexpath, "w", encoding="utf-8") as indexfile:
             indexfile.write("<!DOCTYPE html>\n\n<html><head><meta charset=\"UTF-8\"><title>index</title></head><body>\n")
-            indexfile.write("<h1>index</h1>\n<table><tr><th>tag</th><th>recent</th><th>in inbox</th><th>older</th>\n")
+            indexfile.write("<h1>index</h1>\n<table><tr><th>tag</th><th>recent</th><th>" + highlightTag + "</th><th>older</th>\n")
             for k, v in sorted(tags.items(), key=lambda kvk: tagsMetadata[kvk[0]]["filepathstr"]):
                 if tagsMetadata[k]["filepath"] is not None:
-                    indexfile.write("<tr><td><a href=\"" + tagsMetadata[k]["filepath"].relative_to(handoutpath).as_posix() + "\">" + k + "</a></td><td>" + str(tagsMetadata[k]["recent"]) + "</td><td>" + str(tagsMetadata[k]["in inbox"]) + "</td><td>" + str(tagsMetadata[k]["older"]) + "</td></tr>\n")
+                    indexfile.write("<tr><td><a href=\"" + tagsMetadata[k]["filepath"].relative_to(handoutpath).as_posix() + "\">" + k + "</a></td><td>" + str(tagsMetadata[k]["recent"]) + "</td><td>" + str(tagsMetadata[k]["highlight tag"]) + "</td><td>" + str(tagsMetadata[k]["older"]) + "</td></tr>\n")
             indexfile.write("</table>\n</body></html>\n")
         indexpath.chmod(0o444)
     else:
         indexpath = handoutpath / "index.md"
         with open(indexpath, "w", encoding="utf-8") as indexfile:
             indexfile.write("# index\n\n")
-            indexfile.write("| tag                                                                    | recent | in inbox | older |\n")
-            indexfile.write("| ---------------------------------------------------------------------- | ------ | -------- | ----- |\n")
+            indexfile.write("| tag                                                                    | recent | " + highlightTag + " | older |\n")
+            indexfile.write("| ---------------------------------------------------------------------- | ------ | " + ("-"*len(highlightTag)) + " | ----- |\n")
             for k, v in sorted(tags.items(), key=lambda kvk: tagsMetadata[kvk[0]]["filepathstr"]):
                 if tagsMetadata[k]["filepath"] is not None:
                     indexfile.write("| " +
                                     ("{:70}".format("[" + k + "](" + tagsMetadata[k]["filepath"].relative_to(handoutpath).as_posix() + ")")) +
                                     " | " + ("{:>6}".format(tagsMetadata[k]["recent"])) +
-                                    " | " + ("{:>8}".format(tagsMetadata[k]["in inbox"])) +
+                                    " | " + (("{:>" + str(len(highlightTag)) + "}").format(tagsMetadata[k]["highlight tag"])) +
                                     " | " + ("{:>5}".format(tagsMetadata[k]["older"])) + " |\n")
         indexpath.chmod(0o444)
 
