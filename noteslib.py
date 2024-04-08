@@ -13,7 +13,7 @@ entryregexes = [[re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}) ?(.*)'), "%Y-%m-%d
                 [re.compile(r'(\d{8}) ?(.*)'), "%Y%m%d"]
                ]
 tagregex = re.compile(r'\bx(\w+)\b')
-relativeImageOrLinkRegex = re.compile(r'!?\[([^\]]*)\]\((\.\.?/[^\)]*)\)')
+relativeImageOrLinkRegex = re.compile(r'(!?)\[([^\]]*)\]\(([^\)]*)\)')
 
 entryprefixlength = len(entryprefix)
 
@@ -27,8 +27,15 @@ def _stripcontent(thecontent):
 
 
 def __replaceLinkMatch(l, notebookPath, originPath):
-    rellink = (originPath / l.group(2)).resolve()
-    return "/" + rellink.relative_to(notebookPath).as_posix()
+    thelink = l.group(3)
+    if thelink.startswith("/"):
+        rellink = (notebookPath / thelink[1:]).resolve()
+    elif not thelink.startswith("./") and not thelink.startswith("../"):
+        thelink = "./" + thelink
+        rellink = (originPath / thelink).resolve()
+    else:
+        rellink = (originPath / thelink).resolve()
+    return l.group(1) + "[" + l.group(2) + "](/" + rellink.relative_to(notebookPath).as_posix() + ")"
 
 def makeLinksRelativeTo(content, notebookPath, originPath):
     return relativeImageOrLinkRegex.sub(lambda x: __replaceLinkMatch(l=x, notebookPath=notebookPath, originPath=originPath), content)

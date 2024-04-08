@@ -166,7 +166,7 @@ if __name__ == "__main__":
                 filecontent.append("## 📌 " + stickyi.relative_to(notebookpath).as_posix() + "\n\n")
                 with open(stickyi, "r", encoding="utf-8") as stickyf:
                     for stickyl in stickyf:
-                        stickyl = makeLinksRelativeTo(stickyl, notebookPath=notebookpath, originPath=stickyi)
+                        stickyl = makeLinksRelativeTo(stickyl, notebookPath=notebookpath, originPath=stickyi.parent)
                         if stickyl.startswith("#"):
                             stickyl = "##" + stickyl
                         filecontent.append(stickyl)
@@ -185,7 +185,7 @@ if __name__ == "__main__":
                 filecontent.append("<div style=\"color:orange;\">\n\n")
 
             for cv in vv["content"]:
-                cv = makeLinksRelativeTo(cv, notebookPath=notebookpath, originPath=vv["path"])
+                cv = makeLinksRelativeTo(cv, notebookPath=notebookpath, originPath=vv["path"].parent)
                 #if historicalMode and cv.startswith("#"):
                 #    cv = "#" + cv
                 filecontent.append(cv + "\n")
@@ -244,5 +244,4 @@ if __name__ == "__main__":
     print("handout folder: " + handoutpath.as_posix())
 
     writeProtectFolder(thepath=handoutpath)
-
 
