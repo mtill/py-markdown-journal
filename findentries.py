@@ -44,7 +44,7 @@ if __name__ == "__main__":
     numEntries = 0
     for x in sorted(journalpath.iterdir()):
         if x.is_file():
-            parsedFile = parseEntries(thepath=x, notebookpath=notebookpath)
+            parsedFile = parseEntries(thepath=x, notebookpath=notebookpath, originPath=x.parent)
             parsedFiles.append(parsedFile)
 
             newEntries = []
