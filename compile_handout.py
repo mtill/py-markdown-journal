@@ -90,12 +90,11 @@ if __name__ == "__main__":
     for x in sorted(journalpath.iterdir()):
         isFirst = True
         if x.is_file():
-            entriesDict = parseEntries(thepath=x, notebookpath=notebookpath)
+            entriesDict = parseEntries(thepath=x, notebookpath=notebookpath, originPath=x.parent)
             for e in entriesDict["entries"]:
                 if IGNORE_TAG in e["tags"]:
                     continue
 
-                e["path"] = x
                 hasHighlightTag = highlightTag in e["tags"]
                 for t in e["tags"]:
                     if t not in tags:
@@ -185,9 +184,6 @@ if __name__ == "__main__":
                 filecontent.append("<div style=\"color:orange;\">\n\n")
 
             for cv in vv["content"]:
-                cv = makeLinksRelativeTo(cv, notebookPath=notebookpath, originPath=vv["path"].parent)
-                #if historicalMode and cv.startswith("#"):
-                #    cv = "#" + cv
                 filecontent.append(cv + "\n")
 
             filecontent.append("\n\n[source](" + vv["location"] + ")\n\n")

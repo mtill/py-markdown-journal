@@ -81,7 +81,7 @@ def prettyTable(table, rightAlign=False):
     return result
 
 
-def parseEntries(thepath, notebookpath, untaggedtag="untagged"):
+def parseEntries(thepath, notebookpath, untaggedtag="untagged", originPath=None):
     entries = []
     prefix = []
 
@@ -93,6 +93,8 @@ def parseEntries(thepath, notebookpath, untaggedtag="untagged"):
         pos = -1
         for line in f:
             line = line.rstrip()
+            if originPath is not None:
+                line = makeLinksRelativeTo(line, notebookPath=notebookpath, originPath=originPath)
             pos = pos + 1
 
             thematch = None
