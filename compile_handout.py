@@ -89,7 +89,7 @@ if __name__ == "__main__":
     thequarterFile = journalpath / thequarter
     if not thequarterFile.exists():
         with open(thequarterFile, "w") as qf:
-            qf.write("# " + thequarter + "\n\n\n")
+            qf.write("# " + thequarter + "\n\n")
 
     tags = {}
     tagsMetadata = {}
