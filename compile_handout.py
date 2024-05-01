@@ -85,6 +85,12 @@ if __name__ == "__main__":
     if ignoreOlderThanWeeks > 0:
         ignoreOlderThanDate = today - timedelta(days=(ignoreOlderThanWeeks*7))
 
+    thequarter = today.strftime("%Y") + "-Q" + str((today.month // 3) + 1) + ".md"
+    thequarterFile = journalpath / thequarter
+    if not thequarterFile.exists():
+        with open(thequarterFile, "w") as qf:
+            qf.write("# " + thequarter + "\n\n\n")
+
     tags = {}
     tagsMetadata = {}
     for x in sorted(journalpath.iterdir()):
