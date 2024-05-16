@@ -10,7 +10,7 @@ from noteslib import parseEntries, makeLinksRelativeTo
 
 IGNORE_TAG = "ignore"
 TAG_NAMESPACE_SEPARATOR = "_"
-
+MARKDOWN_SUFFIX = ".md"
 
 def writeProtectFolder(thepath: Path):
     for c in thepath.iterdir():
@@ -40,6 +40,8 @@ if __name__ == "__main__":
     parser.add_argument("--ignoreOlderThanWeeks", type=int, default=-1, help="tags older than this will be ignored; if set to -1, user is asked for input, if set to 0, no entries are ignored")
     parser.add_argument("--output_format", type=str, default="markdown", help="output format (\"markdown\" or \"html\")")
     parser.add_argument("--highlight_tag", type=str, default=None, help="highlight entries with this tag assigned, e.g., entries with \"inbox\" tag. Default: ask user for input")
+    parser.add_argument("--journalpath", type=str, default="journal", help="relative path to journal directory")
+    parser.add_argument("--handoutpath", type=str, default="handout", help="relative path to handout directory")
     args = parser.parse_args()
 
     generateHTMLOutput = False
@@ -72,8 +74,8 @@ if __name__ == "__main__":
         if len(highlightTag.strip()) == 0:
             highlightTag = "inbox"
 
-    journalpath = notebookpath / "journal"
-    handoutpath = notebookpath / "handout"
+    journalpath = notebookpath / args.journalpath
+    handoutpath = notebookpath / args.handoutpath
     if handoutpath.exists():
         recDelete(thepath=handoutpath, skipFirst=True)
 
@@ -93,7 +95,8 @@ if __name__ == "__main__":
 
     tags = {}
     tagsMetadata = {}
-    for x in sorted(journalpath.iterdir()):
+    for x in journalpath.glob("**/*" + MARKDOWN_SUFFIX):
+
         isFirst = True
         if x.is_file():
             entriesDict = parseEntries(thepath=x, notebookpath=notebookpath, originPath=x.parent)
@@ -121,6 +124,7 @@ if __name__ == "__main__":
                     else:
                         tagsMetadata[t]["recent"] = tagsMetadata[t]["recent"] + 1
             entriesDict = None
+
 
     for k, v in tags.items():
         v = sorted(v, key=lambda ii: ii["date"], reverse=True)
