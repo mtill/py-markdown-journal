@@ -94,13 +94,20 @@ if __name__ == "__main__":
             qf.write("# " + thequarter + "\n\n")
 
     tags = {}
+    tagsPrefix = {}
     tagsMetadata = {}
-    for x in journalpath.glob("**/*" + MARKDOWN_SUFFIX):
+    for x in notebookpath.glob("**/*" + MARKDOWN_SUFFIX):
 
         isFirst = True
         if x.is_file():
-            entriesDict = parseEntries(thepath=x, notebookpath=notebookpath, originPath=x.parent)
+            fileTag = TAG_NAMESPACE_SEPARATOR.join(x.relative_to(notebookpath).with_suffix("").parts)
+            entriesDict = parseEntries(thepath=x, notebookpath=notebookpath, untaggedtag=None, originPath=x.parent)
+            tagsPrefix[fileTag] = {"prefix": entriesDict["prefix"], "file": x}
+
             for e in entriesDict["entries"]:
+                if fileTag not in e["tags"]:
+                    e["tags"].append(fileTag)
+
                 if IGNORE_TAG in e["tags"]:
                     continue
 
@@ -169,18 +176,16 @@ if __name__ == "__main__":
                        + str(tagsMetadata[k]["highlight tag"]) + " " + highlightTag + " / " \
                        + str(tagsMetadata[k]["older"]) + " older**\n\n"]
 
-        for stickyi in notebookpath.glob('**/*.md'):
-            if stickyi.stem.lower() == k:
-                filecontent.append("<div style=\"color:#00FFFF;\">\n\n")
-                filecontent.append("## 📌 " + stickyi.relative_to(notebookpath).as_posix() + "\n\n")
-                with open(stickyi, "r", encoding="utf-8") as stickyf:
-                    for stickyl in stickyf:
-                        stickyl = makeLinksRelativeTo(stickyl, notebookPath=notebookpath, originPath=stickyi.parent)
-                        if stickyl.startswith("#"):
-                            stickyl = "##" + stickyl
-                        filecontent.append(stickyl)
-                filecontent.append("\n\n[source](/" + str(stickyi.relative_to(notebookpath).as_posix()) + ")\n\n")
-                filecontent.append("</div>\n\n")
+        if k in tagsPrefix and len(tagsPrefix[k]["prefix"]) != 0:
+            filecontent.append("<div style=\"color:#00FFFF;\">\n\n")
+            filecontent.append("## 📌 " + tagsPrefix[k]["file"].relative_to(notebookpath).as_posix() + "\n\n")
+            for stickyl in tagsPrefix[k]["prefix"]:
+                stickyl = makeLinksRelativeTo(stickyl, notebookPath=notebookpath, originPath=tagsPrefix[k]["file"].parent)
+                if stickyl.startswith("#"):
+                    stickyl = "##" + stickyl
+                filecontent.append(stickyl)
+            filecontent.append("\n\n[source](/" + str(tagsPrefix[k]["file"].relative_to(notebookpath).as_posix()) + ")\n\n")
+            filecontent.append("</div>\n\n")
 
         historicalMode = False
         for vv in v:
