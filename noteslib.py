@@ -12,7 +12,7 @@ entryregexes = [[re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}) ?(.*)'), "%Y-%m-%d
                 [re.compile(r'(\d{4}-\d{2}-\d{2}) ?(.*)'), "%Y-%m-%d"],
                 [re.compile(r'(\d{8}) ?(.*)'), "%Y%m%d"]
                ]
-tagregex = re.compile(r'\bx(\w+)\b')
+tagregex = re.compile(r'\W@(\w+)\b')
 relativeImageOrLinkRegex = re.compile(r'(!?)\[([^\]]*)\]\(([^\)]*)\)')
 
 entryprefixlength = len(entryprefix)
@@ -103,14 +103,18 @@ def parseEntries(thepath, notebookpath, untaggedtag="untagged", originPath=None)
 
             thematch = None
             thedateformat = None
+            isEntryHeadline = False
             if line.startswith(entryprefix):
                 for entryregex in entryregexes:
                     thematch = entryregex[0].match(line[entryprefixlength:].lstrip())
                     if thematch is not None:
                         thedateformat = entryregex[1]
+                        isEntryHeadline = True
                         break
 
-                thedate = datetime.datetime.min if thedateformat is None else datetime.datetime.strptime(thematch.group(1), thedateformat)
+            if isEntryHeadline:
+                #thedate = datetime.datetime.min if thedateformat is None else datetime.datetime.strptime(thematch.group(1), thedateformat)
+                thedate = datetime.datetime.strptime(thematch.group(1), thedateformat)
 
                 if len(lastcontent) != 0:
                     _stripcontent(thecontent=lastcontent)
