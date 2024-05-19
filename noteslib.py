@@ -6,6 +6,9 @@ import re
 import datetime
 
 
+ARCHIVE_FOLDERNAME = "_Archive"
+MARKDOWN_SUFFIX = ".md"
+TAG_NAMESPACE_SEPARATOR = "_"
 ENTRY_PREFIX = "## "
 TAG_REGEX = re.compile(r'(?:^|\s+)#(\w+)\b')
 entryregexes = [[re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}) ?(.*)'), "%Y-%m-%d %H:%M"],
