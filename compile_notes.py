@@ -6,6 +6,7 @@ import argparse
 from pathlib import Path
 from datetime import datetime, timedelta
 from noteslib import parseEntries, writeFile, ARCHIVE_FOLDERNAME, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR
+from archive_entries import archive_entries
 
 
 STICKY_TAG = "sticky"
@@ -16,11 +17,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="compile_notes")
     parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
     parser.add_argument("--workingdirectory", type=str, default="./", help="working directory, relative to notebook directory")
+    parser.add_argument("--archiveEntriesOlderThanWeeks", type=int, default=12, help="entries older than the specified number are moved to archive (in weeks; set to -1 to disable)")
     args = parser.parse_args()
 
     today = datetime.today()
     notebookpath = Path(args.notebookpath).resolve()
     workingdirectory = notebookpath / args.workingdirectory
+    archiveEntriesOlderThanDate = None
+    archiveEntriesOlderThanWeeks = args.archiveEntriesOlderThanWeeks
+    if archiveEntriesOlderThanWeeks >= 0:
+        archiveEntriesOlderThanDate = (today - timedelta(weeks=archiveEntriesOlderThanWeeks)).replace(hour=0, minute=0, second=0)
 
 
     tags = {}
@@ -80,4 +86,6 @@ if __name__ == "__main__":
         if modified:
             writeFile(filepath=filepath, prefix=prefix, entries=fileEntries, mode="w", reverse=REVERSE_ORDER)
 
+    if archiveEntriesOlderThanDate is not None:
+        archive_entries(notebookpath=notebookpath, workingdirectory=workingdirectory, archiveEntriesOlderThanDate=archiveEntriesOlderThanDate)
 
