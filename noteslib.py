@@ -4,18 +4,15 @@
 
 import re
 import datetime
-from pathlib import Path
 
 
-entryprefix = "## "
+ENTRY_PREFIX = "## "
+TAG_REGEX = re.compile(r'(?:^|\s+)#(\w+)\b')
 entryregexes = [[re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}) ?(.*)'), "%Y-%m-%d %H:%M"],
                 [re.compile(r'(\d{4}-\d{2}-\d{2}) ?(.*)'), "%Y-%m-%d"],
                 [re.compile(r'(\d{8}) ?(.*)'), "%Y%m%d"]
                ]
-tagregex = re.compile(r'\W@(\w+)\b')
 relativeImageOrLinkRegex = re.compile(r'(!?)\[([^\]]*)\]\(([^\)]*)\)')
-
-entryprefixlength = len(entryprefix)
 
 
 def _stripcontent(thecontent):
@@ -104,9 +101,9 @@ def parseEntries(thepath, notebookpath, untaggedtag="untagged", originPath=None)
             thematch = None
             thedateformat = None
             isEntryHeadline = False
-            if line.startswith(entryprefix):
+            if line.startswith(ENTRY_PREFIX):
                 for entryregex in entryregexes:
-                    thematch = entryregex[0].match(line[entryprefixlength:].lstrip())
+                    thematch = entryregex[0].match(line[len(ENTRY_PREFIX):].lstrip())
                     if thematch is not None:
                         thedateformat = entryregex[1]
                         isEntryHeadline = True
@@ -124,7 +121,7 @@ def parseEntries(thepath, notebookpath, untaggedtag="untagged", originPath=None)
 
                 lasttime = thedate
                 lastcontent = [line]
-                lasttags = tagregex.findall(line)
+                lasttags = TAG_REGEX.findall(line)
                 lastpos = pos + 1
             else:
 
@@ -132,7 +129,7 @@ def parseEntries(thepath, notebookpath, untaggedtag="untagged", originPath=None)
                     prefix.append(line)
                 else:
                     lastcontent.append(line)
-                    lasttags.extend(tagregex.findall(line))
+                    lasttags.extend(TAG_REGEX.findall(line))
 
         if len(lastcontent) != 0:
             _stripcontent(thecontent=lastcontent)

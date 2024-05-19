@@ -8,8 +8,8 @@ from datetime import datetime, timedelta
 from noteslib import parseEntries, writeFile
 
 
-IGNORE_TAGS = ["inbox", "rs"]
 TAG_NAMESPACE_SEPARATOR = "_"
+STICKY_TAG = "sticky"
 MARKDOWN_SUFFIX = ".md"
 REVERSE_ORDER = False
 ARCHIVE_FOLDERNAME = "_Archive"
@@ -17,21 +17,14 @@ ARCHIVE_FOLDERNAME = "_Archive"
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="compile_notes")
     parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
-    parser.add_argument("--journalpath", type=str, default="journal", help="relative path to journal directory")
     parser.add_argument("--archiveEntriesOlderThanWeeks", type=int, default=12, help="entries older than the specified number are moved to archive (in weeks; set to -1 to disable)")
     args = parser.parse_args()
 
     today = datetime.today()
     notebookpath = Path(args.notebookpath).resolve()
-    journalpath = notebookpath / args.journalpath
     archiveEntriesOlderThanWeeks = args.archiveEntriesOlderThanWeeks
     archiveEntriesOlderThanDate = None if archiveEntriesOlderThanWeeks == -1 else (today - timedelta(weeks=archiveEntriesOlderThanWeeks)).replace(hour=0, minute=0, second=0)
 
-    thequarter = today.strftime("%Y") + "-Q" + str(((today.month - 1) // 3) + 1) + ".md"
-    thequarterFile = journalpath / thequarter
-    if not thequarterFile.exists():
-        with open(thequarterFile, "w") as qf:
-            qf.write("# " + thequarter + "\n\n")
 
     tags = {}
     for x in notebookpath.glob("**/*" + MARKDOWN_SUFFIX):
@@ -46,10 +39,9 @@ if __name__ == "__main__":
                 e["content"].append("[source](" + e["location"] + ")")
 
                 for t in e["tags"]:
-                    if t not in IGNORE_TAGS:
-                        if t not in tags:
-                            tags[t] = []
-                        tags[t].append(e)
+                    if t not in tags:
+                        tags[t] = []
+                    tags[t].append(e)
             entriesDict = None
 
 
@@ -105,7 +97,7 @@ if __name__ == "__main__":
                 oldEntries = {}
                 for e in entriesDict["entries"]:
                     eDate = e["date"]
-                    if eDate < archiveEntriesOlderThanDate:
+                    if STICKY_TAG not in e["tags"] and eDate < archiveEntriesOlderThanDate:
                         eQuarter = eDate.strftime("%Y") + "-Q" + str(((eDate.month - 1) // 3) + 1)
                         if eQuarter not in oldEntries:
                             oldEntries[eQuarter] = []

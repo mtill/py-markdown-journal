@@ -9,13 +9,13 @@ from noteslib import parseEntries, writeFile
 
 
 MARKDOWN_SUFFIX = ".md"
-RECENT_TAG = "@recent"
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="compile_notes")
     parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
     parser.add_argument("--weeks", type=int, default=-1, help="number of weeks considered as \"recent\"; if set to -1, user is asked for input")
+    parser.add_argument("--tag", type=str, default="recent", help="tag that will be added to entries considered as \"recent\"")
     args = parser.parse_args()
 
     numberOfWeeksToConsider = args.weeks
@@ -26,6 +26,7 @@ if __name__ == "__main__":
 
 
     notebookpath = Path(args.notebookpath).resolve()
+    recentTag = "#" + args.tag
     today = datetime.today()
     afterDate = (today - timedelta(weeks=numberOfWeeksToConsider)).replace(hour=0, minute=0, second=0)
 
@@ -35,10 +36,10 @@ if __name__ == "__main__":
 
             modified = False
             for e in entriesDict["entries"]:
-                if RECENT_TAG not in e["tags"]:
+                if recentTag not in e["tags"]:
                     if e["date"] >= afterDate:
-                        e["content"][0] = e["content"][0] + " " + RECENT_TAG
-                        e["tags"].append(RECENT_TAG)
+                        e["content"][0] = e["content"][0].rstrip() + " " + recentTag
+                        e["tags"].append(recentTag)
                         modified = True
 
             if modified:
