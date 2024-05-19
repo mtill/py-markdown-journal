@@ -9,7 +9,7 @@ import datetime
 ARCHIVE_FOLDERNAME = "_Archive"
 MARKDOWN_SUFFIX = ".md"
 TAG_NAMESPACE_SEPARATOR = "_"
-ENTRY_PREFIX = "## "
+ENTRY_PREFIX = "### "
 TAG_REGEX = re.compile(r'(?:^|\s+)#(\w+)\b')
 entryregexes = [[re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}) ?(.*)'), "%Y-%m-%d %H:%M"],
                 [re.compile(r'(\d{4}-\d{2}-\d{2}) ?(.*)'), "%Y-%m-%d"],
@@ -37,11 +37,12 @@ def __replaceLinkMatch(l, notebookPath, originPath):
         rellink = (originPath / thelink).resolve()
     return l.group(1) + "[" + l.group(2) + "](/" + rellink.relative_to(notebookPath).as_posix() + ")"
 
+
 def makeLinksRelativeTo(content, notebookPath, originPath):
     return relativeImageOrLinkRegex.sub(lambda x: __replaceLinkMatch(l=x, notebookPath=notebookPath, originPath=originPath), content)
 
 
-def writeFile(filepath, prefix, entries, mode="w", reverse=True):
+def writeFile(filepath, prefix, entries, mode="w", reverse=False):
     if mode == "a" and len(prefix) != 0:
         raise Exception("prefix not empty and mode == 'a'")
 

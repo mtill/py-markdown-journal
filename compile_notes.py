@@ -12,18 +12,25 @@ from archive_entries import archive_entries
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="compile_notes")
     parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
+    parser.add_argument("--journalpath", type=str, default="journal", help="relative path to journal directory")
     parser.add_argument("--workingdirectory", type=str, default="./", help="working directory, relative to notebook directory")
     parser.add_argument("--archiveEntriesOlderThanWeeks", type=int, default=12, help="entries older than the specified number are moved to archive (in weeks; set to -1 to disable)")
     args = parser.parse_args()
 
     today = datetime.today()
     notebookpath = Path(args.notebookpath).resolve()
+    journalpath = notebookpath / args.journalpath
     workingdirectory = notebookpath / args.workingdirectory
     archiveEntriesOlderThanDate = None
     archiveEntriesOlderThanWeeks = args.archiveEntriesOlderThanWeeks
     if archiveEntriesOlderThanWeeks >= 0:
         archiveEntriesOlderThanDate = (today - timedelta(weeks=archiveEntriesOlderThanWeeks)).replace(hour=0, minute=0, second=0)
 
+    thequarter = today.strftime("%Y") + "-Q" + str(((today.month - 1) // 3) + 1) + ".md"
+    thequarterFile = journalpath / thequarter
+    if not thequarterFile.exists():
+        with open(thequarterFile, "w") as qf:
+            qf.write("\n")
 
     tags = {}
     for x in workingdirectory.glob("**/*" + MARKDOWN_SUFFIX):
@@ -35,7 +42,7 @@ if __name__ == "__main__":
 
             for e in entriesDict["entries"]:
                 e["id"] = e["date"].strftime("%Y%m%d-%H%M%S")
-                e["content"].append("[source](" + e["location"] + ")")
+                e["content"].append("\n[source: " + e["location"] + "](" + e["location"] + ")")
 
                 for t in e["tags"]:
                     if t not in tags:
