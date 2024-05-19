@@ -42,4 +42,5 @@ if __name__ == "__main__":
                         modified = True
 
             if modified:
-                writeFile(filepath=x, prefix=entriesDict["prefix"], entries=entriesDict["entries"], mode="w", reverse=False)
+                writeFile(filepath=x, prefix=entriesDict["prefix"], entries=entriesDict["entries"], mode="w")
+

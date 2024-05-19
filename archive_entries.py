@@ -10,7 +10,6 @@ from noteslib import parseEntries, writeFile, MARKDOWN_SUFFIX, ARCHIVE_FOLDERNAM
 
 TAG_NAMESPACE_SEPARATOR = "_"
 STICKY_TAG = "sticky"
-REVERSE_ORDER = False
 
 
 # move older entries to archive
@@ -41,7 +40,7 @@ def archive_entries(notebookpath, workingdirectory, archiveEntriesOlderThanDate)
                 if len(recentEntries) == 0 and len(entriesDict["prefix"]) == 0:
                     x.unlink()
                 else:
-                    writeFile(filepath=x, prefix=entriesDict["prefix"], entries=recentEntries, mode="w", reverse=REVERSE_ORDER)
+                    writeFile(filepath=x, prefix=entriesDict["prefix"], entries=recentEntries, mode="w")
 
                 for theyear, thequartersDict in oldEntries.items():
                     for thequarter, theentries in thequartersDict.items():
@@ -54,7 +53,7 @@ def archive_entries(notebookpath, workingdirectory, archiveEntriesOlderThanDate)
                         if archiveFile.exists():
                             oldEntriesDict = parseEntries(thepath=archiveFile, notebookpath=notebookpath, untaggedtag=None, originPath=archiveFile.parent)
                             theentries.extend(oldEntriesDict["entries"])
-                        writeFile(filepath=archiveFile, prefix=theprefix, entries=theentries, mode="w", reverse=REVERSE_ORDER)
+                        writeFile(filepath=archiveFile, prefix=theprefix, entries=theentries, mode="w")
 
 
 if __name__ == "__main__":

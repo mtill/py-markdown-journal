@@ -9,10 +9,6 @@ from noteslib import parseEntries, writeFile, ARCHIVE_FOLDERNAME, MARKDOWN_SUFFI
 from archive_entries import archive_entries
 
 
-STICKY_TAG = "sticky"
-REVERSE_ORDER = False
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="compile_notes")
     parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
@@ -84,7 +80,7 @@ if __name__ == "__main__":
 
 
         if modified:
-            writeFile(filepath=filepath, prefix=prefix, entries=fileEntries, mode="w", reverse=REVERSE_ORDER)
+            writeFile(filepath=filepath, prefix=prefix, entries=fileEntries, mode="w")
 
     if archiveEntriesOlderThanDate is not None:
         archive_entries(notebookpath=notebookpath, workingdirectory=workingdirectory, archiveEntriesOlderThanDate=archiveEntriesOlderThanDate)

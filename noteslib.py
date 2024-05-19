@@ -41,7 +41,7 @@ def makeLinksRelativeTo(content, notebookPath, originPath):
     return relativeImageOrLinkRegex.sub(lambda x: __replaceLinkMatch(l=x, notebookPath=notebookPath, originPath=originPath), content)
 
 
-def writeFile(filepath, prefix, entries, mode="w", reverse=False):
+def writeFile(filepath, prefix, entries, mode="w", reverse=True):
     if mode == "a" and len(prefix) != 0:
         raise Exception("prefix not empty and mode == 'a'")
 
