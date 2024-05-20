@@ -42,7 +42,7 @@ def makeLinksRelativeTo(content, notebookPath, originPath):
     return relativeImageOrLinkRegex.sub(lambda x: __replaceLinkMatch(l=x, notebookPath=notebookPath, originPath=originPath), content)
 
 
-def writeFile(filepath, prefix, entries, mode="w", reverse=False):
+def writeFile(filepath, prefix, entries, mode="w", reverse=False, addLocation=False):
     if mode == "a" and len(prefix) != 0:
         raise Exception("prefix not empty and mode == 'a'")
 
@@ -55,6 +55,8 @@ def writeFile(filepath, prefix, entries, mode="w", reverse=False):
         for v in sortedEntries:
             for vline in v["content"]:
                 qf.write(vline + "\n")
+            if addLocation:
+                qf.write("\n[source: " + v["location"] + "](" + v["location"] + ")")
             qf.write("\n")
 
 
