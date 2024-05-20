@@ -5,7 +5,7 @@
 import argparse
 from pathlib import Path
 from datetime import datetime, timedelta
-from noteslib import parseEntries, writeFile, ARCHIVE_FOLDERNAME, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR
+from noteslib import createQuarterJournalFile, parseEntries, writeFile, ARCHIVE_FOLDERNAME, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR
 from archive_entries import archive_entries
 
 
@@ -28,7 +28,6 @@ if __name__ == "__main__":
         archiveEntriesOlderThanDate = (today - timedelta(weeks=archiveEntriesOlderThanWeeks)).replace(hour=0, minute=0, second=0)
     removeTaggedEntriesFromJournal = args.removeTaggedEntriesFromJournal
 
-    thequarter = today.strftime("%Y") + "-Q" + str(((today.month - 1) // 3) + 1) + ".md"
 
     tags = {}
     for x in notebookpath.glob("**/*" + MARKDOWN_SUFFIX):
@@ -103,8 +102,6 @@ if __name__ == "__main__":
     if archiveEntriesOlderThanDate is not None:
         archive_entries(notebookpath=notebookpath, workingdirectory=notebookpath, archiveEntriesOlderThanDate=archiveEntriesOlderThanDate)
 
-    thequarterFile = journalpath / thequarter
-    if not thequarterFile.exists():
-        with open(thequarterFile, "w") as qf:
-            qf.write("\n")
+
+    createQuarterJournalFile(today=today, journalpath=journalpath)
 

@@ -38,6 +38,14 @@ def __replaceLinkMatch(l, notebookPath, originPath):
     return l.group(1) + "[" + l.group(2) + "](/" + rellink.relative_to(notebookPath).as_posix() + ")"
 
 
+def createQuarterJournalFile(today, journalpath):
+    thequarter = today.strftime("%Y") + "-Q" + str(((today.month - 1) // 3) + 1) + MARKDOWN_SUFFIX
+    thequarterFile = journalpath / thequarter
+    if not thequarterFile.exists():
+        with open(thequarterFile, "w") as qf:
+            qf.write("\n")
+
+
 def makeLinksRelativeTo(content, notebookPath, originPath):
     return relativeImageOrLinkRegex.sub(lambda x: __replaceLinkMatch(l=x, notebookPath=notebookPath, originPath=originPath), content)
 
