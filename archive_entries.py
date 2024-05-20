@@ -12,6 +12,13 @@ TAG_NAMESPACE_SEPARATOR = "_"
 STICKY_TAG = "sticky"
 
 
+def _isEmpty(lines):
+    for l in lines:
+        if len(l.strip()) != 0:
+            return False
+    return True
+
+
 # move older entries to archive
 def archive_entries(notebookpath, workingdirectory, archiveEntriesOlderThanDate):
     for x in workingdirectory.glob("**/*" + MARKDOWN_SUFFIX):
@@ -37,7 +44,7 @@ def archive_entries(notebookpath, workingdirectory, archiveEntriesOlderThanDate)
                     recentEntries.append(e)
 
             if len(oldEntries) != 0:
-                if len(recentEntries) == 0 and len(entriesDict["prefix"]) == 0:
+                if len(recentEntries) == 0 and _isEmpty(entriesDict["prefix"]):
                     x.unlink()
                 else:
                     writeFile(filepath=x, prefix=entriesDict["prefix"], entries=recentEntries, mode="w")
