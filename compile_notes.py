@@ -22,6 +22,7 @@ if __name__ == "__main__":
     today = datetime.today()
     notebookpath = Path(args.notebookpath).resolve()
     journalpath = notebookpath / RELATIVE_JOURNAL_PATH
+    journalpathPosix = journalpath.as_posix()
     archiveEntriesOlderThanDate = None
     archiveEntriesOlderThanWeeks = args.archiveEntriesOlderThanWeeks
     if archiveEntriesOlderThanWeeks >= 0:
@@ -55,7 +56,7 @@ if __name__ == "__main__":
                         tags[t].append(e)
 
             # move entries from journal, don't copy them
-            if removeTaggedEntriesFromJournal and hasTaggedEntries and x.is_relative_to(journalpath):
+            if removeTaggedEntriesFromJournal and hasTaggedEntries and x.as_posix().startswith(journalpathPosix + "/"):
                 writeFile(filepath=x, prefix=entriesDict["prefix"], entries=untaggedEntries, mode="w", addLocation=False)
 
             entriesDict = None
