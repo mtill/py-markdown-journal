@@ -5,7 +5,7 @@
 import argparse
 from pathlib import Path
 from datetime import datetime
-from noteslib import createQuarterJournalFile
+from noteslib import createQuarterFile
 
 
 RELATIVE_JOURNAL_PATH = "journal"
@@ -20,5 +20,6 @@ if __name__ == "__main__":
     notebookpath = Path(args.notebookpath).resolve()
     journalpath = notebookpath / RELATIVE_JOURNAL_PATH
 
-    createQuarterJournalFile(today=today, journalpath=journalpath)
+    createQuarterJournalFile(today=today, thepath=journalpath, fileprefix="journal-")
+
 

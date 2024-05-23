@@ -5,37 +5,23 @@
 import argparse
 from pathlib import Path
 from datetime import datetime, timedelta
-from noteslib import createQuarterJournalFile, parseEntries, writeFile, ARCHIVE_FOLDERNAME, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR
+from noteslib import createQuarterFile, parseEntries, writeFile, ARCHIVE_FOLDERNAME, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR
 from archive_entries import archive_entries
 
 
-RELATIVE_JOURNAL_PATH = "journal"
+UNTAGGED_FOLDERNAME = "untagged"
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="compile_notes")
-    parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
-    parser.add_argument("--archiveEntriesOlderThanWeeks", type=int, default=12, help="entries older than the specified number are moved to archive (in weeks; set to -1 to disable)")
-    parser.add_argument("--removeTaggedEntriesFromJournal", action="store_true", default=True, help="#tagged entries are moved from journal (not copied)")
-    args = parser.parse_args()
+def _scanFiles(thefolder, tags, isInUntaggedFolder=False):
+    if thefolder.name == ARCHIVE_FOLDERNAME:
+        return
+    if thefolder.name == UNTAGGED_FOLDERNAME:
+        isInUntaggedFolder = True
 
-    today = datetime.today()
-    notebookpath = Path(args.notebookpath).resolve()
-    journalpath = notebookpath / RELATIVE_JOURNAL_PATH
-    journalpathPosix = journalpath.as_posix()
-    archiveEntriesOlderThanDate = None
-    archiveEntriesOlderThanWeeks = args.archiveEntriesOlderThanWeeks
-    if archiveEntriesOlderThanWeeks >= 0:
-        archiveEntriesOlderThanDate = (today - timedelta(weeks=archiveEntriesOlderThanWeeks)).replace(hour=0, minute=0, second=0)
-    removeTaggedEntriesFromJournal = args.removeTaggedEntriesFromJournal
-
-
-    tags = {}
-    for x in notebookpath.glob("**/*" + MARKDOWN_SUFFIX):
-        if ARCHIVE_FOLDERNAME in x.parts:
-            continue
-
-        if x.is_file():
+    for x in thefolder.iterdir():
+        if x.is_dir():
+            _scanFiles(thefolder=x, tags=tags, isInUntaggedFolder=isInUntaggedFolder)
+        elif x.is_file() and x.suffix.lower() == MARKDOWN_SUFFIX:
             entriesDict = parseEntries(thepath=x, notebookpath=notebookpath, untaggedtag=None, originPath=x.parent)
 
             hasTaggedEntries = False
@@ -55,12 +41,28 @@ if __name__ == "__main__":
                             tags[t] = []
                         tags[t].append(e)
 
-            # move entries from journal, don't copy them
-            if removeTaggedEntriesFromJournal and hasTaggedEntries and x.as_posix().startswith(journalpathPosix + "/"):
+            # move entries from untagged file, don't copy them
+            if hasTaggedEntries and isInUntaggedFolder:
                 writeFile(filepath=x, prefix=entriesDict["prefix"], entries=untaggedEntries, mode="w", addLocation=False)
 
-            entriesDict = None
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="compile_notes")
+    parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
+    parser.add_argument("--archiveEntriesOlderThanWeeks", type=int, default=12, help="entries older than the specified number are moved to archive (in weeks; set to -1 to disable)")
+    args = parser.parse_args()
+
+    today = datetime.today()
+    notebookpath = Path(args.notebookpath).resolve()
+    untaggedpath = notebookpath / UNTAGGED_FOLDERNAME
+    archiveEntriesOlderThanDate = None
+    archiveEntriesOlderThanWeeks = args.archiveEntriesOlderThanWeeks
+    if archiveEntriesOlderThanWeeks >= 0:
+        archiveEntriesOlderThanDate = (today - timedelta(weeks=archiveEntriesOlderThanWeeks)).replace(hour=0, minute=0, second=0)
+
+
+    tags = {}
+    _scanFiles(thefolder=notebookpath, tags=tags)
 
     for k, v in tags.items():
         namespaceComponents = k.split(TAG_NAMESPACE_SEPARATOR)
@@ -104,5 +106,6 @@ if __name__ == "__main__":
         archive_entries(notebookpath=notebookpath, workingdirectory=notebookpath, archiveEntriesOlderThanDate=archiveEntriesOlderThanDate)
 
 
-    createQuarterJournalFile(today=today, journalpath=journalpath)
+    createQuarterFile(today=today, thepath=untaggedpath, fileprefix="untagged-")
+
 
