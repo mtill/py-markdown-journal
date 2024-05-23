@@ -10,6 +10,7 @@ from archive_entries import archive_entries
 
 
 UNTAGGED_FOLDERNAME = "untagged"
+ENTRY_ID_FORMAT = "%Y%m%d-%H%M%S"
 
 
 def _scanFiles(thefolder, tags, untaggedFolders, isInUntaggedFolder=False):
@@ -29,7 +30,7 @@ def _scanFiles(thefolder, tags, untaggedFolders, isInUntaggedFolder=False):
             untaggedEntries = []
             for e in entriesDict["entries"]:
                 eTags = e["tags"]
-                eId = e["date"].strftime("%Y%m%d-%H%M%S")
+                eId = e["date"].strftime(ENTRY_ID_FORMAT)
                 e["id"] = eId
 
                 if isInUntaggedFolder:
@@ -91,7 +92,7 @@ if __name__ == "__main__":
             prefix = entriesDict["prefix"]
             fileEntries = entriesDict["entries"]
             for fe in fileEntries:
-                fileEntriesIds[fe["date"].strftime("%Y%m%d-%H%M%S")] = fe
+                fileEntriesIds[fe["date"].strftime(ENTRY_ID_FORMAT)] = fe
 
         for tagEntry in v:
             if tagEntry["id"] not in fileEntriesIds:
