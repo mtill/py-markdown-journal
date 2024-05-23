@@ -43,10 +43,10 @@ def archive_entries(notebookpath, workingdirectory, archiveEntriesOlderThanDate)
                 else:
                     recentEntries.append(e)
 
-            if len(oldEntries) != 0:
-                if len(recentEntries) == 0 and _isEmpty(entriesDict["prefix"]):
-                    x.unlink()
-                else:
+            if len(recentEntries) == 0 and _isEmpty(entriesDict["prefix"]):
+                x.unlink()
+            else:
+                if len(oldEntries) != 0:
                     writeFile(filepath=x, prefix=entriesDict["prefix"], entries=recentEntries, mode="w")
 
                 for theyear, thequartersDict in oldEntries.items():

@@ -32,6 +32,9 @@ def _scanFiles(thefolder, tags, untaggedFolders, isInUntaggedFolder=False):
                 eId = e["date"].strftime("%Y%m%d-%H%M%S")
                 e["id"] = eId
 
+                if isInUntaggedFolder:
+                    e["location"] = None
+
                 if len(eTags) == 0:
                     untaggedEntries.append(e)
                 else:
@@ -88,7 +91,7 @@ if __name__ == "__main__":
             prefix = entriesDict["prefix"]
             fileEntries = entriesDict["entries"]
             for fe in fileEntries:
-                fileEntriesIds[fe["date"].strftime("%Y%m%d-%H%M%S")] = e
+                fileEntriesIds[fe["date"].strftime("%Y%m%d-%H%M%S")] = fe
 
         for tagEntry in v:
             if tagEntry["id"] not in fileEntriesIds:

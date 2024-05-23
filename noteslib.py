@@ -63,7 +63,7 @@ def writeFile(filepath, prefix, entries, mode="w", reverse=False, addLocation=Fa
         for v in sortedEntries:
             for vline in v["content"]:
                 qf.write(vline + "\n")
-            if addLocation:
+            if addLocation and v["location"] is not None:
                 qf.write("\n[source: " + v["location"] + "](" + v["location"] + ")")
             qf.write("\n")
 
