@@ -12,15 +12,16 @@ from archive_entries import archive_entries
 UNTAGGED_FOLDERNAME = "untagged"
 
 
-def _scanFiles(thefolder, tags, isInUntaggedFolder=False):
+def _scanFiles(thefolder, tags, untaggedFolders, isInUntaggedFolder=False):
     if thefolder.name == ARCHIVE_FOLDERNAME:
         return
     if thefolder.name == UNTAGGED_FOLDERNAME:
         isInUntaggedFolder = True
+        untaggedFolders.append(thefolder)
 
     for x in thefolder.iterdir():
         if x.is_dir():
-            _scanFiles(thefolder=x, tags=tags, isInUntaggedFolder=isInUntaggedFolder)
+            _scanFiles(thefolder=x, tags=tags, untaggedFolders=untaggedFolders, isInUntaggedFolder=isInUntaggedFolder)
         elif x.is_file() and x.suffix.lower() == MARKDOWN_SUFFIX:
             entriesDict = parseEntries(thepath=x, notebookpath=notebookpath, untaggedtag=None, originPath=x.parent)
 
@@ -54,7 +55,6 @@ if __name__ == "__main__":
 
     today = datetime.today()
     notebookpath = Path(args.notebookpath).resolve()
-    untaggedpath = notebookpath / UNTAGGED_FOLDERNAME
     archiveEntriesOlderThanDate = None
     archiveEntriesOlderThanWeeks = args.archiveEntriesOlderThanWeeks
     if archiveEntriesOlderThanWeeks >= 0:
@@ -62,7 +62,8 @@ if __name__ == "__main__":
 
 
     tags = {}
-    _scanFiles(thefolder=notebookpath, tags=tags)
+    untaggedFolders = []
+    _scanFiles(thefolder=notebookpath, tags=tags, untaggedFolders=untaggedFolders)
 
     for k, v in tags.items():
         namespaceComponents = k.split(TAG_NAMESPACE_SEPARATOR)
@@ -105,7 +106,7 @@ if __name__ == "__main__":
     if archiveEntriesOlderThanDate is not None:
         archive_entries(notebookpath=notebookpath, workingdirectory=notebookpath, archiveEntriesOlderThanDate=archiveEntriesOlderThanDate)
 
-
-    createQuarterFile(today=today, thepath=untaggedpath, fileprefix="untagged-")
+    for untaggedFolder in untaggedFolders:
+        createQuarterFile(today=today, thepath=untaggedFolder, fileprefix=UNTAGGED_FOLDERNAME+"-")
 
 
