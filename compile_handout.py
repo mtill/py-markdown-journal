@@ -37,18 +37,18 @@ def recDelete(thepath: Path, skipFirst=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="compile_handout")
     parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
-    parser.add_argument("--ignoreOlderThanWeeks", type=int, default=-1, help="tags older than this will be ignored; if set to -1, user is asked for input, if set to 0, no entries are ignored")
+    parser.add_argument("--ignoreOlderThanDays", type=int, default=-1, help="tags older than this will be ignored; if set to -1, user is asked for input, if set to 0, no entries are ignored")
     parser.add_argument("--output_format", type=str, default="markdown", help="output format (\"markdown\" or \"html\")")
     parser.add_argument("--journalpath", type=str, default="journal", help="relative path to journal directory")
     parser.add_argument("--handoutpath", type=str, default="handout", help="relative path to handout directory")
     args = parser.parse_args()
 
     notebookpath = Path(args.notebookpath).resolve()
-    ignoreOlderThanWeeks = args.ignoreOlderThanWeeks
-    if ignoreOlderThanWeeks == -1:
-        ignoreOlderThanWeeksStr = input("ignore tags older than (in weeks) [default: 12]: ")
+    ignoreOlderThanDays = args.ignoreOlderThanDays
+    if ignoreOlderThanDays == -1:
+        ignoreOlderThanDaysStr = input("ignore tags older than (in days) [default: 7]: ")
         print()
-        ignoreOlderThanWeeks = 12 if len(ignoreOlderThanWeeksStr.strip()) == 0 else int(ignoreOlderThanWeeksStr)
+        ignoreOlderThanDays = 7 if len(ignoreOlderThanDaysStr.strip()) == 0 else int(ignoreOlderThanDaysStr)
 
 
     journalpath = notebookpath / args.journalpath
@@ -60,8 +60,8 @@ if __name__ == "__main__":
 
     today = datetime.today()
     ignoreOlderThanDate = None
-    if ignoreOlderThanWeeks > 0:
-        ignoreOlderThanDate = today - timedelta(days=(ignoreOlderThanWeeks*7))
+    if ignoreOlderThanDays > 0:
+        ignoreOlderThanDate = today - timedelta(days=(ignoreOlderThanDays))
 
     thequarter = today.strftime("%Y") + "-Q" + str(((today.month - 1) // 3) + 1) + ".md"
     thequarterFile = journalpath / thequarter
@@ -97,13 +97,12 @@ if __name__ == "__main__":
         tags[k] = v
 
     #tags = OrderedDict(sorted(tags.items(), key=lambda xy: None if len(xy[1]) == 0 else xy[1][0]["date"], reverse=True))
-    oldertags = []
 
     for k, v in tags.items():
         if len(v) == 0 or (ignoreOlderThanDate is not None and v[0]["date"] < ignoreOlderThanDate):
-            oldertags.append(k)
             continue
 
+        print(k)
         namespaceComponents = k.split(TAG_NAMESPACE_SEPARATOR)
         # a_b_c --> a/b/00-01-001-c.md
         folderpath = handoutpath
@@ -130,7 +129,13 @@ if __name__ == "__main__":
             filecontent.append("\n\n[source](/" + str(tagsPrefix[k]["file"].relative_to(notebookpath).as_posix()) + ")\n\n")
             filecontent.append("</div>\n\n")
 
+        isFirstOlder = True
         for vv in v:
+
+            if isFirstOlder and vv["date"] < ignoreOlderThanDate:
+                isFirstOlder = False
+                filecontent.append("\n\n" + ("="*50) + "\n\n")
+
             for cv in vv["content"]:
                 filecontent.append(cv + "\n")
 
@@ -143,12 +148,10 @@ if __name__ == "__main__":
         filepath.chmod(0o444)
 
 
-    if len(oldertags) != 0:
-        print("skipped tags (older than " + str(ignoreOlderThanWeeks) + " weeks): " + (" ".join(oldertags)))
-
     #print("\nHandout folder: /" + handoutpath.relative_to(notebookpath).as_posix())
 
 
+    print()
     print("handout folder: " + handoutpath.as_posix())
 
     writeProtectFolder(thepath=handoutpath)
