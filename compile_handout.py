@@ -257,6 +257,6 @@ if __name__ == "__main__":
     writeProtectFolder(thepath=handoutpath)
 
 
-    createQuarterFile(today=today, thepath=journalpath)
+    createQuarterFile(today=today, thepath=journalpath, fileprefix="")
 
 
