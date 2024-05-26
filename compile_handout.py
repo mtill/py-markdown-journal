@@ -5,7 +5,7 @@
 import argparse
 from pathlib import Path
 from datetime import datetime, timedelta
-from noteslib import parseEntries, makeLinksRelativeTo
+from noteslib import parseEntries, makeLinksRelativeTo, createQuarterFile
 
 
 IGNORE_TAG = "ignore"
@@ -255,4 +255,8 @@ if __name__ == "__main__":
     print("handout folder: " + handoutpath.as_posix())
 
     writeProtectFolder(thepath=handoutpath)
+
+
+    createQuarterFile(today=today, thepath=journalpath)
+
 

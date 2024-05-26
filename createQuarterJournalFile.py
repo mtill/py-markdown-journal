@@ -20,6 +20,6 @@ if __name__ == "__main__":
     notebookpath = Path(args.notebookpath).resolve()
     journalpath = notebookpath / RELATIVE_JOURNAL_PATH
 
-    createQuarterJournalFile(today=today, thepath=journalpath, fileprefix="journal-")
+    createQuarterFile(today=today, thepath=journalpath, fileprefix="journal-")
 
 
