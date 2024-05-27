@@ -53,6 +53,7 @@ if __name__ == "__main__":
     tagsFilterStr = args.tagsFilter
     if tagsFilterStr is None:
         tagsFilterStr = input("filter tags: ")
+        print()
     tagsFilter = [] if len(tagsFilterStr.strip()) == 0 else tagsFilterStr.split(" ")
     journalpath = notebookpath / args.journalpath
     handoutpath = notebookpath / args.handoutpath
@@ -69,7 +70,7 @@ if __name__ == "__main__":
     thequarter = today.strftime("%Y") + "-Q" + str(((today.month - 1) // 3) + 1) + ".md"
     thequarterFile = journalpath / thequarter
     if not thequarterFile.exists():
-        with open(thequarterFile, "w") as qf:
+        with open(thequarterFile, "w", encoding="utf-8") as qf:
             qf.write("# " + thequarter + "\n\n")
 
     tags = {}
@@ -128,7 +129,7 @@ if __name__ == "__main__":
 
         filepath = folderpath / (filename + MARKDOWN_SUFFIX)
         # print("/" + filepath.relative_to(notebookpath).as_posix())
-        filecontent = ["# " + k + "\n**" + today.strftime("%d.%m.%Y")]
+        filecontent = ["# " + k + "\n**" + today.strftime("%d.%m.%Y") + ("" if len(tagsFilter) == 0 else " // tagsFilter: " + (" ".join(tagsFilter))) + "**\n\n"]
 
         if k in tagsPrefix and len(tagsPrefix[k]["prefix"]) != 0:
             filecontent.append("<div style=\"color:#00FFFF;\">\n\n")
