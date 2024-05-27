@@ -11,6 +11,7 @@ from noteslib import parseEntries, makeLinksRelativeTo, createQuarterFile
 IGNORE_TAG = "ignore"
 TAG_NAMESPACE_SEPARATOR = "_"
 MARKDOWN_SUFFIX = ".md"
+EXACT_MATCH_SUFFIX = "-NO-OTHER-TAGS"
 
 
 def writeProtectFolder(thepath: Path):
@@ -37,18 +38,18 @@ def recDelete(thepath: Path, skipFirst=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="compile_handout")
     parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
-    parser.add_argument("--ignoreOlderThanDays", type=int, default=-1, help="tags older than this will be ignored; if set to -1, user is asked for input, if set to 0, no entries are ignored")
+    parser.add_argument("--days", type=int, default=-1, help="tags older than this will be ignored; if set to -1, user is asked for input, if set to 0, no entries are ignored")
     parser.add_argument("--tagsFilter", type=str, default=None, help="ignore entries not tagged with the listed tags (separated by space); if not specified, user is prompted for input. Set this option to empty string to disable filtering.")
     parser.add_argument("--journalpath", type=str, default="journal", help="relative path to journal directory")
     parser.add_argument("--handoutpath", type=str, default="handout", help="relative path to handout directory")
     args = parser.parse_args()
 
     notebookpath = Path(args.notebookpath).resolve()
-    ignoreOlderThanDays = args.ignoreOlderThanDays
-    if ignoreOlderThanDays == -1:
-        ignoreOlderThanDaysStr = input("ignore tags older than (in days) [default: 7]: ")
+    thedays = args.days
+    if thedays == -1:
+        daysStr = input("ignore tags older than (in days) [default: 7]: ")
         print()
-        ignoreOlderThanDays = 7 if len(ignoreOlderThanDaysStr.strip()) == 0 else int(ignoreOlderThanDaysStr)
+        thedays = 7 if len(daysStr.strip()) == 0 else int(daysStr)
 
     tagsFilterStr = args.tagsFilter
     if tagsFilterStr is None:
@@ -64,8 +65,8 @@ if __name__ == "__main__":
 
     today = datetime.today()
     ignoreOlderThanDate = None
-    if ignoreOlderThanDays > 0:
-        ignoreOlderThanDate = today - timedelta(days=(ignoreOlderThanDays))
+    if thedays > 0:
+        ignoreOlderThanDate = today - timedelta(days=thedays)
 
     thequarter = today.strftime("%Y") + "-Q" + str(((today.month - 1) // 3) + 1) + ".md"
     thequarterFile = journalpath / thequarter
@@ -75,6 +76,8 @@ if __name__ == "__main__":
 
     tags = {}
     tagsPrefix = {}
+    exactMatchTag = "-".join(tagsFilter) + EXACT_MATCH_SUFFIX
+
     for x in notebookpath.glob("**/*" + MARKDOWN_SUFFIX):
 
         isFirst = True
@@ -97,6 +100,9 @@ if __name__ == "__main__":
                 if ignoreEntry:
                     continue
 
+                if len(tagsFilter) == len(eTags):
+                    eTags.append(exactMatchTag)
+
                 for t in eTags:
                     if t not in tags:
                         tags[t] = []
@@ -112,12 +118,16 @@ if __name__ == "__main__":
     #tags = OrderedDict(sorted(tags.items(), key=lambda xy: None if len(xy[1]) == 0 else xy[1][0]["date"], reverse=True))
 
     for k, v in tags.items():
+
         if len(v) == 0 or (ignoreOlderThanDate is not None and v[0]["date"] < ignoreOlderThanDate):
+            continue
+
+        if k in tagsFilter:
             continue
 
         print(k)
         namespaceComponents = k.split(TAG_NAMESPACE_SEPARATOR)
-        # a_b_c --> a/b/00-01-001-c.md
+        # a_b_c --> a/b/c.md
         folderpath = handoutpath
         filename = k
         if len(namespaceComponents) > 1:
