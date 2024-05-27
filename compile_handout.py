@@ -38,7 +38,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="compile_handout")
     parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
     parser.add_argument("--ignoreOlderThanDays", type=int, default=-1, help="tags older than this will be ignored; if set to -1, user is asked for input, if set to 0, no entries are ignored")
-    parser.add_argument("--output_format", type=str, default="markdown", help="output format (\"markdown\" or \"html\")")
+    parser.add_argument("--tagsFilter", type=str, default=None, help="ignore entries not tagged with the listed tags (separated by space); if not specified, user is prompted for input. Set this option to empty string to disable filtering.")
     parser.add_argument("--journalpath", type=str, default="journal", help="relative path to journal directory")
     parser.add_argument("--handoutpath", type=str, default="handout", help="relative path to handout directory")
     args = parser.parse_args()
@@ -50,7 +50,10 @@ if __name__ == "__main__":
         print()
         ignoreOlderThanDays = 7 if len(ignoreOlderThanDaysStr.strip()) == 0 else int(ignoreOlderThanDaysStr)
 
-
+    tagsFilterStr = args.tagsFilter
+    if tagsFilterStr is None:
+        tagsFilterStr = input("filter tags: ")
+    tagsFilter = [] if len(tagsFilterStr.strip()) == 0 else tagsFilterStr.split(" ")
     journalpath = notebookpath / args.journalpath
     handoutpath = notebookpath / args.handoutpath
     if handoutpath.exists():
@@ -81,10 +84,19 @@ if __name__ == "__main__":
 
             for e in entriesDict["entries"]:
 
-                if IGNORE_TAG in e["tags"]:
+                eTags = e["tags"]
+                if IGNORE_TAG in eTags:
                     continue
 
-                for t in e["tags"]:
+                ignoreEntry = False
+                for tFilter in tagsFilter:
+                    if tFilter not in eTags:
+                        ignoreEntry = True
+                        break
+                if ignoreEntry:
+                    continue
+
+                for t in eTags:
                     if t not in tags:
                         tags[t] = []
                     tags[t].append(e)
