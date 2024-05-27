@@ -92,16 +92,17 @@ if __name__ == "__main__":
                 if IGNORE_TAG in eTags:
                     continue
 
-                ignoreEntry = False
-                for tFilter in tagsFilter:
-                    if tFilter not in eTags:
-                        ignoreEntry = True
-                        break
-                if ignoreEntry:
-                    continue
+                if len(tagsFilter) != 0:
+                    ignoreEntry = False
+                    for tFilter in tagsFilter:
+                        if tFilter not in eTags:
+                            ignoreEntry = True
+                            break
+                    if ignoreEntry:
+                        continue
 
-                if len(tagsFilter) == len(eTags):
-                    eTags.append(exactMatchTag)
+                    if len(tagsFilter) == len(eTags):
+                        eTags.append(exactMatchTag)
 
                 for t in eTags:
                     if t not in tags:
