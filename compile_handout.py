@@ -137,8 +137,8 @@ if __name__ == "__main__":
             if not folderpath.exists():
                 folderpath.mkdir(parents=True)
 
-
-        filepath = folderpath / (filename + MARKDOWN_SUFFIX)
+        filenameprefix = "" if len(v) == 0 else (v[0]['date'].strftime("%y%m%d") + "_")
+        filepath = folderpath / (filenameprefix + filename + MARKDOWN_SUFFIX)
         # print("/" + filepath.relative_to(notebookpath).as_posix())
         filecontent = ["# " + k + "\n**" + today.strftime("%d.%m.%Y") + ("" if len(tagsFilter) == 0 else " // tagsFilter: " + (" ".join(tagsFilter))) + "**\n\n"]
 
