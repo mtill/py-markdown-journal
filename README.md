@@ -7,7 +7,6 @@ This small toolkit enables you to simply write down all of your meeting minutes,
 Instead of thinking about file structures, you simply put everything in one place and tag your daily notes.
 
 The compile\_handout-script generates a "handout" for your notes, i.e., for each tag, a dedicated markdown file is generated, subsuming all relevant journal entries.
-The script can also be used to highlight recent entries, e.g., from the last 2 weeks, which enables the user to get a quick glimpse on recent additions.
 
 All words starting with an "#" are considered as a tag, e.g., by adding the word "#journalling" somewhere in your journal, the respective tag is assigned to that journal entry.
 
