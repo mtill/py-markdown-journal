@@ -11,8 +11,8 @@ from noteslib import parseEntries, makeLinksRelativeTo, createQuarterFile
 IGNORE_TAG = "ignore"
 TAG_NAMESPACE_SEPARATOR = "_"
 MARKDOWN_SUFFIX = ".md"
-EXACT_MATCH_SUFFIX = "-NO-OTHER-TAGS"
-
+EXACT_MATCH_SUFFIX = "NO-OTHER-TAGS"
+TIMELINE_SUFFIX = "TIMELINE"
 
 def writeProtectFolder(thepath: Path):
     for c in thepath.iterdir():
@@ -76,7 +76,11 @@ if __name__ == "__main__":
 
     tags = {}
     tagsPrefix = {}
-    exactMatchTag = "-".join(tagsFilter) + EXACT_MATCH_SUFFIX
+    tagsFilterJoin = "" if len(tagsFilter) == 0 else "-".join(tagsFilter) + "-"
+    exactMatchTag = tagsFilterJoin + EXACT_MATCH_SUFFIX
+    timelineTag = tagsFilterJoin + TIMELINE_SUFFIX
+    timelineList = []
+    tags[timelineTag] = timelineList
 
     for x in notebookpath.glob("**/*" + MARKDOWN_SUFFIX):
 
@@ -89,20 +93,23 @@ if __name__ == "__main__":
             for e in entriesDict["entries"]:
 
                 eTags = e["tags"]
+
                 if IGNORE_TAG in eTags:
                     continue
 
-                if len(tagsFilter) != 0:
-                    ignoreEntry = False
-                    for tFilter in tagsFilter:
-                        if tFilter not in eTags:
-                            ignoreEntry = True
-                            break
-                    if ignoreEntry:
-                        continue
+                ignoreEntry = False
+                for tFilter in tagsFilter:
+                    if tFilter not in eTags:
+                        ignoreEntry = True
+                        break
+                if ignoreEntry:
+                    continue
 
-                    if len(tagsFilter) == len(eTags):
-                        eTags.append(exactMatchTag)
+                if len(tagsFilter) != 0 and len(tagsFilter) == len(eTags):
+                    eTags.append(exactMatchTag)
+
+                if ignoreOlderThanDate is None or e["date"] >= ignoreOlderThanDate:
+                    timelineList.append(e)
 
                 for t in eTags:
                     if t not in tags:
