@@ -42,6 +42,7 @@ if __name__ == "__main__":
     parser.add_argument("--tagsFilter", type=str, default=None, help="ignore entries not tagged with the listed tags (separated by space); if not specified, user is prompted for input. Set this option to empty string to disable filtering.")
     parser.add_argument("--journalpath", type=str, default="journal", help="relative path to journal directory")
     parser.add_argument("--handoutpath", type=str, default="handout", help="relative path to handout directory")
+    parser.add_argument("--enableTimeline", action="store_true", help="generate timeline file")
     args = parser.parse_args()
 
     notebookpath = Path(args.notebookpath).resolve()
@@ -58,6 +59,7 @@ if __name__ == "__main__":
     tagsFilter = [] if len(tagsFilterStr.strip()) == 0 else tagsFilterStr.split(" ")
     journalpath = notebookpath / args.journalpath
     handoutpath = notebookpath / args.handoutpath
+    enableTimeline = args.enableTimeline
     if handoutpath.exists():
         recDelete(thepath=handoutpath, skipFirst=True)
 
@@ -80,7 +82,6 @@ if __name__ == "__main__":
     exactMatchTag = tagsFilterJoin + EXACT_MATCH_SUFFIX
     timelineTag = tagsFilterJoin + TIMELINE_SUFFIX
     timelineList = []
-    tags[timelineTag] = timelineList
 
     for x in notebookpath.glob("**/*" + MARKDOWN_SUFFIX):
 
@@ -118,6 +119,9 @@ if __name__ == "__main__":
 
             entriesDict = None
 
+
+    if enableTimeline:
+        tags[timelineTag] = timelineList
 
     for k, v in tags.items():
         v = sorted(v, key=lambda ii: ii["date"], reverse=True)
