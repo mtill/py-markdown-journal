@@ -88,7 +88,7 @@ if __name__ == "__main__":
         isFirst = True
         if x.is_file():
             fileTag = TAG_NAMESPACE_SEPARATOR.join(x.relative_to(notebookpath).with_suffix("").parts)
-            entriesDict = parseEntries(thepath=x, notebookpath=notebookpath, untaggedtag=None, originPath=x.parent)
+            entriesDict = parseEntries(thepath=x, notebookpath=notebookpath, originPath=x.parent)
             tagsPrefix[fileTag] = {"prefix": entriesDict["prefix"], "file": x}
 
             for e in entriesDict["entries"]:
