@@ -10,7 +10,8 @@ ARCHIVE_FOLDERNAME = "_Archive"
 MARKDOWN_SUFFIX = ".md"
 TAG_NAMESPACE_SEPARATOR = "_"
 ENTRY_PREFIX = "### "
-TAG_REGEX = re.compile(r'(?:^|\s+)#(\w+)\b')
+TAG_PREFIX = r"x"
+TAG_REGEX = re.compile(r'(?:^|\s+)' + TAG_PREFIX + r'(\w+)\b')
 entryregexes = [[re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}) ?(.*)'), "%Y-%m-%d %H:%M"],
                 [re.compile(r'(\d{4}-\d{2}-\d{2}) ?(.*)'), "%Y-%m-%d"],
                 [re.compile(r'(\d{8}) ?(.*)'), "%Y%m%d"]
@@ -28,6 +29,9 @@ def _stripcontent(thecontent):
 
 def __replaceLinkMatch(l, notebookPath, originPath):
     thelink = l.group(3)
+    if "://" in thelink:
+        return l.group(1) + "[" + l.group(2) + "](" + thelink + ")"
+
     if thelink.startswith("/"):
         rellink = (notebookPath / thelink[1:]).resolve()
     elif not thelink.startswith("./") and not thelink.startswith("../"):

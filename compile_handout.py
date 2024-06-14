@@ -43,9 +43,11 @@ if __name__ == "__main__":
     parser.add_argument("--journalpath", type=str, default="journal", help="relative path to journal directory")
     parser.add_argument("--handoutpath", type=str, default="handout", help="relative path to handout directory")
     parser.add_argument("--enableTimeline", action="store_true", help="generate timeline file")
+    parser.add_argument("--writeProtect", action="store_true", help="write-protect handout folder")
     args = parser.parse_args()
 
     notebookpath = Path(args.notebookpath).resolve()
+    writeProtect = args.writeProtect
     thedays = args.days
     if thedays == -1:
         daysStr = input("ignore tags older than (in days) [default: 7]: ")
@@ -180,7 +182,8 @@ if __name__ == "__main__":
             for filecontentline in filecontent:
                 handoutfile.write(filecontentline)
 
-        filepath.chmod(0o444)
+        if writeProtect:
+            filepath.chmod(0o444)
 
 
     #print("\nHandout folder: /" + handoutpath.relative_to(notebookpath).as_posix())
@@ -189,7 +192,8 @@ if __name__ == "__main__":
     print()
     print("handout folder: " + handoutpath.as_posix())
 
-    writeProtectFolder(thepath=handoutpath)
+    if writeProtect:
+        writeProtectFolder(thepath=handoutpath)
 
 
     createQuarterFile(today=today, thepath=journalpath, fileprefix="")
