@@ -38,30 +38,22 @@ def recDelete(thepath: Path, skipFirst=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="compile_handout")
     parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
-    parser.add_argument("--days", type=int, default=-1, help="tags older than this will be ignored; if set to -1, user is asked for input, if set to 0, no entries are ignored")
-    parser.add_argument("--tagsFilter", type=str, default=None, help="ignore entries not tagged with the listed tags (separated by space); if not specified, user is prompted for input. Set this option to empty string to disable filtering.")
+    parser.add_argument("--days", type=int, default=-1, help="tags older than this will be ignored; if set to 0, all entries are considered")
     parser.add_argument("--journalpath", type=str, default="journal", help="relative path to journal directory")
     parser.add_argument("--handoutpath", type=str, default="handout", help="relative path to handout directory")
     parser.add_argument("--enableTimeline", action="store_true", help="generate timeline file")
     parser.add_argument("--writeProtect", action="store_true", help="write-protect handout folder")
+    parser.add_argument("tagsFilter", type=str, nargs="*", help="ignore entries not tagged with the listed tags; if not specified, filtering is disabled.")
     args = parser.parse_args()
 
     notebookpath = Path(args.notebookpath).resolve()
-    writeProtect = args.writeProtect
     thedays = args.days
-    if thedays == -1:
-        daysStr = input("ignore tags older than (in days) [default: 7]: ")
-        print()
-        thedays = 7 if len(daysStr.strip()) == 0 else int(daysStr)
-
-    tagsFilterStr = args.tagsFilter
-    if tagsFilterStr is None:
-        tagsFilterStr = input("filter tags: ")
-        print()
-    tagsFilter = [] if len(tagsFilterStr.strip()) == 0 else tagsFilterStr.split(" ")
     journalpath = notebookpath / args.journalpath
     handoutpath = notebookpath / args.handoutpath
     enableTimeline = args.enableTimeline
+    writeProtect = args.writeProtect
+    tagsFilter = args.tagsFilter
+
     if handoutpath.exists():
         recDelete(thepath=handoutpath, skipFirst=True)
 
