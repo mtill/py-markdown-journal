@@ -5,14 +5,15 @@
 import argparse
 from pathlib import Path
 from datetime import datetime, timedelta
-from noteslib import parseEntries, makeLinksRelativeTo, createQuarterFile
+from noteslib import parseEntries, makeLinksRelativeTo, createQuarterFile, MARKDOWN_SUFFIX
 
 
 IGNORE_TAG = "ignore"
 TAG_NAMESPACE_SEPARATOR = "_"
-MARKDOWN_SUFFIX = ".md"
 EXACT_MATCH_SUFFIX = "NO-OTHER-TAGS"
 TIMELINE_SUFFIX = "TIMELINE"
+HTML_SUFFIX = ".html"
+
 
 def writeProtectFolder(thepath: Path):
     for c in thepath.iterdir():
@@ -43,6 +44,7 @@ if __name__ == "__main__":
     parser.add_argument("--handoutpath", type=str, default="handout", help="relative path to handout directory")
     parser.add_argument("--enableTimeline", action="store_true", help="generate timeline file")
     parser.add_argument("--writeProtect", action="store_true", help="write-protect handout folder")
+    parser.add_argument("--output_format", type=str, default="markdown", help="output format (\"markdown\" or \"html\")")
     parser.add_argument("tagsFilter", type=str, nargs="*", help="ignore entries not tagged with the listed tags; if not specified, filtering is disabled.")
     args = parser.parse_args()
 
@@ -53,6 +55,19 @@ if __name__ == "__main__":
     enableTimeline = args.enableTimeline
     writeProtect = args.writeProtect
     tagsFilter = args.tagsFilter
+
+    generateHTMLOutput = False
+    useAbsoluteLinks = False
+    fileextension = MARKDOWN_SUFFIX
+    md = None
+    if args.output_format == "html":
+        generateHTMLOutput = True
+        useAbsoluteLinks = True
+        fileextension = HTML_SUFFIX
+        from markdown_it import MarkdownIt
+        md = MarkdownIt()
+    elif args.output_format != "markdown":
+        raise Exception("invalid output format: " + args.output_format)
 
     if handoutpath.exists():
         recDelete(thepath=handoutpath, skipFirst=True)
@@ -82,7 +97,7 @@ if __name__ == "__main__":
         isFirst = True
         if x.is_file():
             fileTag = TAG_NAMESPACE_SEPARATOR.join(x.relative_to(notebookpath).with_suffix("").parts)
-            entriesDict = parseEntries(thepath=x, notebookpath=notebookpath, originPath=x.parent)
+            entriesDict = parseEntries(thepath=x, notebookpath=notebookpath, originPath=x.parent, useAbsoluteLinks=useAbsoluteLinks)
             tagsPrefix[fileTag] = {"prefix": entriesDict["prefix"], "file": x}
 
             for e in entriesDict["entries"]:
@@ -143,7 +158,7 @@ if __name__ == "__main__":
                 folderpath.mkdir(parents=True)
 
         filenameprefix = "" if len(v) == 0 else (v[0]['date'].strftime("%y%m%d") + "_")
-        filepath = folderpath / (filenameprefix + filename + MARKDOWN_SUFFIX)
+        filepath = folderpath / (filenameprefix + filename + fileextension)
         # print("/" + filepath.relative_to(notebookpath).as_posix())
         filecontent = ["# " + k + "\n**" + today.strftime("%d.%m.%Y") + ("" if len(tagsFilter) == 0 else " // tagsFilter: " + (" ".join(tagsFilter))) + "**\n\n"]
 
@@ -151,7 +166,7 @@ if __name__ == "__main__":
             filecontent.append("<div style=\"color:#00FFFF;\">\n\n")
             filecontent.append("## 📌 " + tagsPrefix[k]["file"].relative_to(notebookpath).as_posix() + "\n\n")
             for stickyl in tagsPrefix[k]["prefix"]:
-                stickyl = makeLinksRelativeTo(stickyl, notebookPath=notebookpath, originPath=tagsPrefix[k]["file"].parent)
+                stickyl = makeLinksRelativeTo(stickyl, notebookPath=notebookpath, originPath=tagsPrefix[k]["file"].parent, useAbsoluteLinks=useAbsoluteLinks)
                 if stickyl.startswith("#"):
                     stickyl = "##" + stickyl
                 filecontent.append(stickyl)
@@ -168,17 +183,25 @@ if __name__ == "__main__":
             for cv in vv["content"]:
                 filecontent.append(cv + "\n")
 
-            filecontent.append("\n\n[source](" + vv["location"] + ")\n\n")
+            if generateHTMLOutput:
+                npathposix = notebookpath.as_posix()
+                if not npathposix.startswith("/"):
+                    npathposix = "/" + npathposix
+                filecontent.append("\n\n[source](vscode://file" + npathposix + vv["location"].replace("#L", ":") + ")\n\n")
+            else:
+                filecontent.append("\n\n[source](" + vv["location"] + ")\n\n")
 
-        with open(filepath, "w", encoding="utf-8") as handoutfile:
-            for filecontentline in filecontent:
-                handoutfile.write(filecontentline)
+        if generateHTMLOutput:
+            with open(filepath, "w", encoding="utf-8") as handoutfile:
+                handoutfile.write("<!DOCTYPE html>\n\n<html><head><meta charset=\"UTF-8\"><title>" + k + "</title></head><body style=\"background-color: #1d2327; color: #d6d6d6;\">\n\n" + md.render("".join(filecontent)) + "\n\n</body></html>\n")
+
+        else:
+            with open(filepath, "w", encoding="utf-8") as handoutfile:
+                for filecontentline in filecontent:
+                    handoutfile.write(filecontentline)
 
         if writeProtect:
             filepath.chmod(0o444)
-
-
-    #print("\nHandout folder: /" + handoutpath.relative_to(notebookpath).as_posix())
 
 
     print()

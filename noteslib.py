@@ -27,7 +27,7 @@ def _stripcontent(thecontent):
             return
 
 
-def __replaceLinkMatch(l, notebookPath, originPath):
+def __replaceLinkMatch(l, notebookPath, originPath, useAbsoluteLinks=False):
     thelink = l.group(3)
     if "://" in thelink:
         return l.group(1) + "[" + l.group(2) + "](" + thelink + ")"
@@ -39,7 +39,12 @@ def __replaceLinkMatch(l, notebookPath, originPath):
         rellink = (originPath / thelink).resolve()
     else:
         rellink = (originPath / thelink).resolve()
-    return l.group(1) + "[" + l.group(2) + "](/" + rellink.relative_to(notebookPath).as_posix() + ")"
+
+    resultPath = rellink.relative_to(notebookPath)
+    if useAbsoluteLinks:
+        resultPath = resultPath.absolute()
+
+    return l.group(1) + "[" + l.group(2) + "](/" + resultPath.as_posix() + ")"
 
 
 def createQuarterFile(today, thepath, fileprefix, filesuffix="", filecontent="\n"):
@@ -50,8 +55,8 @@ def createQuarterFile(today, thepath, fileprefix, filesuffix="", filecontent="\n
             qf.write(filecontent)
 
 
-def makeLinksRelativeTo(content, notebookPath, originPath):
-    return relativeImageOrLinkRegex.sub(lambda x: __replaceLinkMatch(l=x, notebookPath=notebookPath, originPath=originPath), content)
+def makeLinksRelativeTo(content, notebookPath, originPath, useAbsoluteLinks=False):
+    return relativeImageOrLinkRegex.sub(lambda x: __replaceLinkMatch(l=x, notebookPath=notebookPath, originPath=originPath, useAbsoluteLinks=useAbsoluteLinks), content)
 
 
 def writeFile(filepath, prefix, entries, mode="w", reverse=False, addLocation=False):
@@ -100,7 +105,7 @@ def prettyTable(table, rightAlign=False):
     return result
 
 
-def parseEntries(thepath, notebookpath, untaggedtag="untagged", originPath=None):
+def parseEntries(thepath, notebookpath, untaggedtag="untagged", originPath=None, useAbsoluteLinks=False):
     entries = []
     prefix = []
 
@@ -113,7 +118,7 @@ def parseEntries(thepath, notebookpath, untaggedtag="untagged", originPath=None)
         for line in f:
             line = line.rstrip()
             if originPath is not None:
-                line = makeLinksRelativeTo(line, notebookPath=notebookpath, originPath=originPath)
+                line = makeLinksRelativeTo(line, notebookPath=notebookpath, originPath=originPath, useAbsoluteLinks=useAbsoluteLinks)
             pos = pos + 1
 
             thematch = None
