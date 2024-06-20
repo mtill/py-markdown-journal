@@ -41,10 +41,9 @@ def __replaceLinkMatch(l, notebookPath, originPath, useAbsoluteLinks=False):
         rellink = (originPath / thelink).resolve()
 
     resultPath = rellink.relative_to(notebookPath)
-    if useAbsoluteLinks:
-        resultPath = resultPath.absolute()
+    resultPathStr = resultPath.absolute().as_posix() if useAbsoluteLinks else ("/" + resultPath.as_posix())
 
-    return l.group(1) + "[" + l.group(2) + "](/" + resultPath.as_posix() + ")"
+    return l.group(1) + "[" + l.group(2) + "](" + resultPathStr + ")"
 
 
 def createQuarterFile(today, thepath, fileprefix, filesuffix="", filecontent="\n"):
