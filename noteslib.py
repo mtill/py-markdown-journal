@@ -29,7 +29,7 @@ def _stripcontent(thecontent):
             return
 
 
-def __replaceLinkMatch(l, notebookPath, originPath, destinationPath=None):
+def __replaceLinkMatch(l, notebookPath, originPath, destinationPathAbsolute=None):
     thelink = l.group(3)
     if "://" in thelink:
         return l.group(1) + "[" + l.group(2) + "](" + thelink + ")"
@@ -43,11 +43,11 @@ def __replaceLinkMatch(l, notebookPath, originPath, destinationPath=None):
         rellink = (originPath / thelink).resolve()
 
     resultPathStr = None
-    if destinationPath is None:
+    if destinationPathAbsolute is None:
         resultPathStr = "/" + rellink.relative_to(notebookPath).as_posix()
     else:
         # python >= 3.12: rellink.relative_to(destinationPath, walk_up=True).as_posix()
-        resultPathStr = Path(os.path.relpath(path=rellink.absolute(), start=destinationPath.absolute())).as_posix()
+        resultPathStr = Path(os.path.relpath(path=rellink.absolute(), start=destinationPathAbsolute)).as_posix()
 
     return l.group(1) + "[" + l.group(2) + "](" + resultPathStr + ")"
 
@@ -60,8 +60,8 @@ def createQuarterFile(today, thepath, fileprefix, filesuffix="", filecontent="\n
             qf.write(filecontent)
 
 
-def updateLinks(content, notebookPath, originPath, destinationPath=None):
-    return relativeImageOrLinkRegex.sub(lambda x: __replaceLinkMatch(l=x, notebookPath=notebookPath, originPath=originPath, destinationPath=destinationPath), content)
+def updateLinks(content, notebookPath, originPath, destinationPathAbsolute=None):
+    return relativeImageOrLinkRegex.sub(lambda x: __replaceLinkMatch(l=x, notebookPath=notebookPath, originPath=originPath, destinationPathAbsolute=destinationPathAbsolute), content)
 
 
 def writeFile(filepath, prefix, entries, mode="w", reverse=False, addLocation=False):
