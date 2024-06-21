@@ -5,7 +5,7 @@
 import argparse
 from pathlib import Path
 from datetime import datetime, timedelta
-from noteslib import parseEntries, makeLinksRelativeTo, createQuarterFile
+from noteslib import parseEntries, updateLinks, createQuarterFile
 
 
 IGNORE_TAG = "ignore"
@@ -180,7 +180,7 @@ if __name__ == "__main__":
             filecontent.append("<div style=\"color:#00FFFF;\">\n\n")
             filecontent.append("## 📌 " + tagsPrefix[k]["file"].relative_to(notebookpath).as_posix() + "\n\n")
             for stickyl in tagsPrefix[k]["prefix"]:
-                stickyl = makeLinksRelativeTo(stickyl, notebookPath=notebookpath, originPath=tagsPrefix[k]["file"].parent)
+                stickyl = updateLinks(stickyl, notebookPath=notebookpath, originPath=tagsPrefix[k]["file"].parent)
                 if stickyl.startswith("#"):
                     stickyl = "##" + stickyl
                 filecontent.append(stickyl)

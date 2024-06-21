@@ -3,6 +3,8 @@
 
 
 import re
+import os
+from pathlib import Path
 import datetime
 
 
@@ -27,7 +29,7 @@ def _stripcontent(thecontent):
             return
 
 
-def __replaceLinkMatch(l, notebookPath, originPath, useAbsoluteLinks=False):
+def __replaceLinkMatch(l, notebookPath, originPath, destinationPath=None):
     thelink = l.group(3)
     if "://" in thelink:
         return l.group(1) + "[" + l.group(2) + "](" + thelink + ")"
@@ -40,8 +42,12 @@ def __replaceLinkMatch(l, notebookPath, originPath, useAbsoluteLinks=False):
     else:
         rellink = (originPath / thelink).resolve()
 
-    resultPath = rellink.relative_to(notebookPath)
-    resultPathStr = resultPath.absolute().as_posix() if useAbsoluteLinks else ("/" + resultPath.as_posix())
+    resultPathStr = None
+    if destinationPath is None:
+        resultPathStr = "/" + rellink.relative_to(notebookPath).as_posix()
+    else:
+        # python >= 3.12: rellink.relative_to(destinationPath, walk_up=True).as_posix()
+        resultPathStr = Path(os.path.relpath(path=rellink.absolute(), start=destinationPath.absolute())).as_posix()
 
     return l.group(1) + "[" + l.group(2) + "](" + resultPathStr + ")"
 
@@ -54,8 +60,8 @@ def createQuarterFile(today, thepath, fileprefix, filesuffix="", filecontent="\n
             qf.write(filecontent)
 
 
-def makeLinksRelativeTo(content, notebookPath, originPath, useAbsoluteLinks=False):
-    return relativeImageOrLinkRegex.sub(lambda x: __replaceLinkMatch(l=x, notebookPath=notebookPath, originPath=originPath, useAbsoluteLinks=useAbsoluteLinks), content)
+def updateLinks(content, notebookPath, originPath, destinationPath=None):
+    return relativeImageOrLinkRegex.sub(lambda x: __replaceLinkMatch(l=x, notebookPath=notebookPath, originPath=originPath, destinationPath=destinationPath), content)
 
 
 def writeFile(filepath, prefix, entries, mode="w", reverse=False, addLocation=False):
@@ -104,7 +110,7 @@ def prettyTable(table, rightAlign=False):
     return result
 
 
-def parseEntries(thepath, notebookpath, untaggedtag="untagged", originPath=None, useAbsoluteLinks=False):
+def parseEntries(thepath, notebookpath, untaggedtag="untagged", originPath=None):
     entries = []
     prefix = []
 
@@ -117,7 +123,7 @@ def parseEntries(thepath, notebookpath, untaggedtag="untagged", originPath=None,
         for line in f:
             line = line.rstrip()
             if originPath is not None:
-                line = makeLinksRelativeTo(line, notebookPath=notebookpath, originPath=originPath, useAbsoluteLinks=useAbsoluteLinks)
+                line = updateLinks(line, notebookPath=notebookpath, originPath=originPath)
             pos = pos + 1
 
             thematch = None

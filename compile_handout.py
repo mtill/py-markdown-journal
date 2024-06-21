@@ -5,7 +5,7 @@
 import argparse
 from pathlib import Path
 from datetime import datetime, timedelta
-from noteslib import parseEntries, makeLinksRelativeTo, createQuarterFile, MARKDOWN_SUFFIX
+from noteslib import parseEntries, updateLinks, createQuarterFile, MARKDOWN_SUFFIX
 
 
 IGNORE_TAG = "ignore"
@@ -97,12 +97,12 @@ if __name__ == "__main__":
         isFirst = True
         if x.is_file():
             fileTag = TAG_NAMESPACE_SEPARATOR.join(x.relative_to(notebookpath).with_suffix("").parts)
-            entriesDict = parseEntries(thepath=x, notebookpath=notebookpath, originPath=x.parent, useAbsoluteLinks=useAbsoluteLinks)
+            entriesDict = parseEntries(thepath=x, notebookpath=notebookpath)
             tagsPrefix[fileTag] = {"prefix": entriesDict["prefix"], "file": x}
 
             for e in entriesDict["entries"]:
-
                 eTags = e["tags"]
+                e["origin"] = x
 
                 if IGNORE_TAG in eTags:
                     continue
@@ -166,7 +166,7 @@ if __name__ == "__main__":
             filecontent.append("<div style=\"color:#00FFFF;\">\n\n")
             filecontent.append("## 📌 " + tagsPrefix[k]["file"].relative_to(notebookpath).as_posix() + "\n\n")
             for stickyl in tagsPrefix[k]["prefix"]:
-                stickyl = makeLinksRelativeTo(stickyl, notebookPath=notebookpath, originPath=tagsPrefix[k]["file"].parent, useAbsoluteLinks=useAbsoluteLinks)
+                stickyl = updateLinks(stickyl, notebookPath=notebookpath, originPath=tagsPrefix[k]["file"].parent, useAbsoluteLinks=useAbsoluteLinks)
                 if stickyl.startswith("#"):
                     stickyl = "##" + stickyl
                 filecontent.append(stickyl)
@@ -181,7 +181,7 @@ if __name__ == "__main__":
                 filecontent.append("\n\n" + ("="*50) + "\n\n")
 
             for cv in vv["content"]:
-                filecontent.append(cv + "\n")
+                filecontent.append(updateLinks(content=cv, notebookPath=notebookpath, originPath=vv["origin"].parent, destinationPath=folderpath) + "\n")
 
             if generateHTMLOutput:
                 npathposix = notebookpath.as_posix()
