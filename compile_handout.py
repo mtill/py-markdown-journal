@@ -193,7 +193,26 @@ if __name__ == "__main__":
 
         if generateHTMLOutput:
             with open(filepath, "w", encoding="utf-8") as handoutfile:
-                handoutfile.write("<!DOCTYPE html>\n\n<html><head><meta charset=\"UTF-8\"><title>" + k + "</title></head><body style=\"background-color: #1d2327; color: #d6d6d6;\">\n\n" + md.render("".join(filecontent)) + "\n\n</body></html>\n")
+                handoutfile.write("""<!DOCTYPE html>
+
+<html>
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      background-color: #1d2327;
+      color: #d6d6d6;
+    }
+    img {
+      max-width: 100%;
+    }
+  </style>
+  <title>""" + k + """</title>
+ </head>
+ <body>
+
+""" + md.render("".join(filecontent)) + "\n\n </body>\n</html>\n")
 
         else:
             with open(filepath, "w", encoding="utf-8") as handoutfile:
