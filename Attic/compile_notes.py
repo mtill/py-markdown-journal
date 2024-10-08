@@ -6,7 +6,7 @@ import argparse
 from pathlib import Path
 from datetime import datetime, timedelta
 from noteslib import createQuarterFile, parseEntries, writeFile, ARCHIVE_FOLDERNAME, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR
-from archive_entries import archive_entries
+from Attic.archive_entries import archive_entries
 
 
 UNTAGGED_FOLDERNAME = "untagged"

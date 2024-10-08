@@ -6,7 +6,7 @@ import argparse
 import time
 import json
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
 from noteslib import createQuarterFile, parseEntries, writeFile, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR
 
 
