@@ -54,7 +54,7 @@ def _scanFiles(thefiles, doMove, notebookpath, tags):
 
         # move entries from file, don't copy them
         if doMove:
-            if len(untaggedEntries) == 0 and len(entriesDict["prefix"].strip()) == 0:
+            if len(untaggedEntries) == 0 and len(entriesDict["prefix"]) == 0:
                 x.unlink()
             elif hasTaggedEntries:   # update file only if needed (when entries will be moved to some other file) 
                 writeFile(filepath=x, prefix=entriesDict["prefix"], entries=untaggedEntries, mode="w", addLocation=False)
