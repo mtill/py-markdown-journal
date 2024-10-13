@@ -21,7 +21,7 @@ def _findModifiedFiles(thefolder, journalpath, lastrun_timestamp, results_journa
                 cIsInJournalFolder = True
 
             _findModifiedFiles(thefolder=x, journalpath=journalpath, lastrun_timestamp=lastrun_timestamp, results_journalfiles=results_journalfiles, results_notesfiles=results_notesfiles, isInJournalFolder=cIsInJournalFolder)
-        elif x.is_file() and x.suffix.lower() == MARKDOWN_SUFFIX and x.stat().st_mtime > lastrun_timestamp:
+        elif x.is_file() and x.suffix.lower() == MARKDOWN_SUFFIX and (lastrun_timestamp is None or x.stat().st_mtime > lastrun_timestamp):
             if isInJournalFolder:
                 results_journalfiles.append(x)
             else:
@@ -64,6 +64,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="compile_notes")
     parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
     parser.add_argument("--journalpath", type=str, default="journal", help="relative path to journal directory")
+    parser.add_argument("--ignoreModificationTimestamps", action="store_true", help="by default, only files modified since last run are parsed. If set, file timestamps are being ignored and all files are considered.")
     args = parser.parse_args()
 
     today = datetime.today()
@@ -75,7 +76,10 @@ if __name__ == "__main__":
     if notesconfigpath.exists():
         with open(notesconfigpath, "r", encoding="utf-8") as notesconfigfile:
             notesconfig = json.load(notesconfigfile)
-    lastrun_timestamp = notesconfig.get("lastrun_timestamp", 0)
+
+    lastrun_timestamp = None
+    if not args.ignoreModificationTimestamps:
+        lastrun_timestamp = notesconfig.get("lastrun_timestamp", 0)
 
 
     results_journalfiles = []
