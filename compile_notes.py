@@ -64,7 +64,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="compile_notes")
     parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
     parser.add_argument("--journalpath", type=str, default="journal", help="relative path to journal directory")
-    parser.add_argument("--ignoreModificationTimestamps", action="store_true", help="by default, only files modified since last run are parsed. If set, file timestamps are being ignored and all files are considered.")
+    parser.add_argument("--copyJournalEntries", action="store_true", help="if set, journal entries are copied, not moved.")
+    parser.add_argument("--ignoreModificationTimestamps", action="store_true", help="by default, only files modified since last run are parsed. If set, file timestamps are ignored and all files are considered.")
     args = parser.parse_args()
 
     today = datetime.today()
@@ -77,6 +78,8 @@ if __name__ == "__main__":
         with open(notesconfigpath, "r", encoding="utf-8") as notesconfigfile:
             notesconfig = json.load(notesconfigfile)
 
+    doMoveJournalEntries = not args.copyJournalEntries
+
     lastrun_timestamp = None
     if not args.ignoreModificationTimestamps:
         lastrun_timestamp = notesconfig.get("lastrun_timestamp", 0)
@@ -87,7 +90,7 @@ if __name__ == "__main__":
     _findModifiedFiles(thefolder=notebookpath, journalpath=journalpath, lastrun_timestamp=lastrun_timestamp, results_journalfiles=results_journalfiles, results_notesfiles=results_notesfiles, isInJournalFolder=False)
 
     tags = {}
-    _scanFiles(thefiles=results_journalfiles, doMove=True, notebookpath=notebookpath, tags=tags)
+    _scanFiles(thefiles=results_journalfiles, doMove=doMoveJournalEntries, notebookpath=notebookpath, tags=tags)
     results_journalfiles = None
     _scanFiles(thefiles=results_notesfiles, doMove=False, notebookpath=notebookpath, tags=tags)
     results_notesfiles = None
