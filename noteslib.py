@@ -16,7 +16,8 @@ TAG_PREFIX = r"x"
 TAG_REGEX = re.compile(r'(?:^|\s+)' + TAG_PREFIX + r'(\w+)\b')
 entryregexes = [[re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}) ?(.*)'), "%Y-%m-%d %H:%M"],
                 [re.compile(r'(\d{4}-\d{2}-\d{2}) ?(.*)'), "%Y-%m-%d"],
-                [re.compile(r'(\d{8}) ?(.*)'), "%Y%m%d"]
+                [re.compile(r'(\d{8}) ?(.*)'), "%Y%m%d"],
+                [re.compile(r'(\d{6}) ?(.*)'), "%y%m%d"]
                ]
 relativeImageOrLinkRegex = re.compile(r'(!?)\[([^\]]*)\]\(([^\)]*)\)')
 
@@ -58,6 +59,8 @@ def createQuarterFile(today, thepath, fileprefix, filesuffix="", filecontent="\n
     if not thequarterFile.exists():
         with open(thequarterFile, "w") as qf:
             qf.write(filecontent)
+
+    return thequarterFile
 
 
 def updateLinks(content, notebookPath, originPath, destinationPathAbsolute=None):
