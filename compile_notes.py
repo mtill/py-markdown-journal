@@ -142,7 +142,7 @@ if __name__ == "__main__":
 
 
     quarterFile = createQuarterFile(today=today, thepath=journalpath, fileprefix="")
-    #quarterFileStr = quarterFile.relative_to(notebookpath).as_posix()
+    quarterFileStr = quarterFile.relative_to(notebookpath).as_posix()
 
     notesconfig["lastrun_timestamp"] = time.time()
     with open(notesconfigpath, "w", encoding="utf-8") as notesconfigfile:
@@ -156,5 +156,5 @@ if __name__ == "__main__":
             subprocess.run(vscodecmd)
 
         # if not executed separately, updated file content is not shown for some reason
-        #subprocess.run([vscodecommand, "--reuse-window", quarterFileStr])
+        subprocess.run([vscodecommand, "--reuse-window", quarterFileStr])
 
