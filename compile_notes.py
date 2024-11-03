@@ -155,6 +155,6 @@ if __name__ == "__main__":
             vscodecmd.extend(filesToOpen)
             subprocess.run(vscodecmd)
 
-        # if not executed separately, updated file content is not shown for some reason
-        subprocess.run([vscodecommand, "--reuse-window", quarterFileStr])
+            # if not executed separately, updated file content is not shown for some reason
+            subprocess.run([vscodecommand, "--reuse-window", quarterFileStr])
 
