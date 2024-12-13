@@ -14,7 +14,8 @@ TAG_NAMESPACE_SEPARATOR = "_"
 ENTRY_PREFIX = "### "
 TAG_PREFIX = r"x"
 TAG_REGEX = re.compile(r'(?:^|\s+)' + TAG_PREFIX + r'(\w+)\b')
-entryregexes = [[re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}) ?(.*)'), "%Y-%m-%d %H:%M"],
+entryregexes = [[re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) ?(.*)'), "%Y-%m-%d %H:%M:%S"],
+                [re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}) ?(.*)'), "%Y-%m-%d %H:%M"],
                 [re.compile(r'(\d{4}-\d{2}-\d{2}) ?(.*)'), "%Y-%m-%d"],
                 [re.compile(r'(\d{8}) ?(.*)'), "%Y%m%d"],
                 [re.compile(r'(\d{6}) ?(.*)'), "%y%m%d"]

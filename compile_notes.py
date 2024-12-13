@@ -67,7 +67,7 @@ if __name__ == "__main__":
     parser.add_argument("--journalpath", type=str, default="journal", help="relative path to journal directory")
     parser.add_argument("--copyJournalEntries", action="store_true", help="if set, journal entries are copied, not moved.")
     parser.add_argument("--ignoreModificationTimestamps", action="store_true", help="by default, only files modified since last run are parsed. If set, file timestamps are ignored and all files are considered.")
-    parser.add_argument("--vscodecommand", type=str, default="code", help="vs code command that will be used to open modified files; if empty string is specified, modified files will not be opened")
+    parser.add_argument("--vscodecommand", type=str, default=None, help="vs code command that will be used to open modified files; if not specified, modified files will not be opened")
     args = parser.parse_args()
 
     today = datetime.today()
@@ -149,7 +149,7 @@ if __name__ == "__main__":
         json.dump(notesconfig, notesconfigfile, indent=2)
 
 
-    if len(vscodecommand) > 0:
+    if vscodecommand is not None and len(vscodecommand) > 0:
         if len(filesToOpen) > 0:
             vscodecmd = [vscodecommand, "--reuse-window"]
             vscodecmd.extend(filesToOpen)
@@ -157,4 +157,6 @@ if __name__ == "__main__":
 
             # if not executed separately, updated file content is not shown for some reason
             subprocess.run([vscodecommand, "--reuse-window", quarterFileStr])
+
+    print(json.dumps({"modified_files": filesToOpen}, indent=2))
 
