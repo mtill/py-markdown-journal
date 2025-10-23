@@ -122,7 +122,7 @@ def parseEntries(thepath, notebookpath, untaggedtag="untagged", originPath=None)
         lasttime = None
         lastcontent = []
         lastpos = 0
-        lasttags = []
+        lasttags = {}
         pos = -1
         for line in f:
             line = line.rstrip()
@@ -148,12 +148,16 @@ def parseEntries(thepath, notebookpath, untaggedtag="untagged", originPath=None)
                 if len(lastcontent) != 0:
                     _stripcontent(thecontent=lastcontent)
                     if untaggedtag is not None and len(lasttags) == 0:
-                        lasttags = [untaggedtag]
-                    entries.append({"date": lasttime, "content": lastcontent, "tags": lasttags, "pos": lastpos, "location": ("/" + thepath.relative_to(notebookpath).as_posix() + "#L" + str(lastpos))})
+                        lasttags = {untaggedtag: True}
+
+                    rel_path = thepath.relative_to(notebookpath)
+                    entries.append({"date": lasttime, "content": lastcontent, "tags": lasttags.keys(), "pos": lastpos, "rel_path": rel_path, "location": ("/" + rel_path.as_posix() + "#L" + str(lastpos))})
 
                 lasttime = thedate
                 lastcontent = [line]
-                lasttags = TAG_REGEX.findall(line)
+                lasttags = {}
+                for l in TAG_REGEX.findall(line):
+                    lasttags[l] = True
                 lastpos = pos + 1
             else:
 
@@ -161,13 +165,16 @@ def parseEntries(thepath, notebookpath, untaggedtag="untagged", originPath=None)
                     prefix.append(line)
                 else:
                     lastcontent.append(line)
-                    lasttags.extend(TAG_REGEX.findall(line))
+                    for l in TAG_REGEX.findall(line):
+                        lasttags[l] = True
 
         if len(lastcontent) != 0:
             _stripcontent(thecontent=lastcontent)
             if untaggedtag is not None and len(lasttags) == 0:
-                lasttags = [untaggedtag]
-            entries.append({"date": lasttime, "content": lastcontent, "tags": lasttags, "pos": lastpos, "location": ("/" + thepath.relative_to(notebookpath).as_posix() + "#L" + str(lastpos))})
+                lasttags = {untaggedtag: True}
+
+            rel_path = thepath.relative_to(notebookpath)
+            entries.append({"date": lasttime, "content": lastcontent, "tags": lasttags.keys(), "pos": lastpos, "rel_path": rel_path, "location": ("/" + rel_path.as_posix() + "#L" + str(lastpos))})
 
     return {"prefix": prefix, "entries": entries}
 
