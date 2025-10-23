@@ -164,6 +164,8 @@ HTML_TEMPLATE = """
             font-size: 13px;
         }
         .tag-list { max-height: 180px; overflow:auto; font-size: 13px; margin-top:6px; }
+        #tag-selector label { font-size: 13px; margin: 4px 0; }
+        #tag-selector .tag-count { color: #666; font-size: 0.85em; margin-left:6px; }
         @media (max-width: 700px) {
             #tag-selector { width: calc(100% - 32px); top: 8px; right: 8px; padding: 8px; }
         }
@@ -436,7 +438,7 @@ HTML_TEMPLATE = """
                     <input type="checkbox" name="tags" value="{{ tag }}"
                            {% if tag in selected_tags %}checked{% endif %}
                            onchange="submitFormPreservePage()">
-                    {{ tag }}
+                    {{ tag }} <span class="tag-count">({{ tag_counts.get(tag, 0) }})</span>
                 </label>
             {% endfor %}
             </div>
@@ -834,23 +836,29 @@ def index():
         e["markdown"] = "\n".join(e["content"])
         e["content"] = md.render(fix_image_paths(e["markdown"], e["rel_path"].parent.as_posix()))
 
-    # compute available_tags from the currently filtered entries (keep selected tags visible)
-    available_tags = sorted(
-        set(tag for entry in filtered_entries for tag in entry.get('tags', [])) | set(selected_tags)
-    )
-
+    # compute available_tags and tag counts from the currently filtered entries (keep selected tags visible)
+    tag_counts = {}
+    for entry in filtered_entries:
+        for tag in entry.get('tags', []):
+            tag_counts[tag] = tag_counts.get(tag, 0) + 1
+    # ensure selected tags are present in counts (show zero if needed)
+    for t in selected_tags:
+        tag_counts.setdefault(t, 0)
+    available_tags = sorted(set(tag_counts.keys()) | set(selected_tags))
+ 
     # Implement pagination
     start = (page - 1) * ENTRIES_PER_PAGE
     end = start + ENTRIES_PER_PAGE
     paginated_entries = filtered_entries[start:end]
     total_pages = (len(filtered_entries) + ENTRIES_PER_PAGE - 1) // ENTRIES_PER_PAGE if filtered_entries else 1
-
+ 
     return render_template_string(
         HTML_TEMPLATE,
         NOTEBOOK_NAME=NOTEBOOK_NAME,
         entries=paginated_entries,
         all_tags=available_tags,
         selected_tags=selected_tags,
+        tag_counts=tag_counts,
         page=page,
         total_pages=total_pages,
         has_prev=page > 1,
