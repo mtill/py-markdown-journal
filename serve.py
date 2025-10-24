@@ -79,25 +79,50 @@ def htmlresponse(title, content):
     }, {passive:true});
   }
  
-   function updateFilter(){
-     const selected = checkboxes.filter(cb => cb.checked).map(cb => cb.value);
-     if(selected.length === 0){
-       entries.forEach(e => e.style.display = "");
-       return;
-     }
-     entries.forEach(e => {
-       const tags = (e.dataset.tags || "").split(/\\s+/).filter(Boolean);
-       const match = tags.some(t => selected.includes(t));
-       e.style.display = match ? "" : "none";
-     });
-     document.getElementById("entries").scrollIntoView({behavior: "smooth"});
-   }
+
+  // show only entries that have ALL selected tags (AND filtering)
+  function updateFilter(shouldScroll){
+    const selected = checkboxes.filter(cb => cb.checked).map(cb => cb.value);
+
+    entries.forEach(e => {
+      const tags = (e.dataset.tags || "").split(/\\s+/).filter(Boolean);
+      const match = selected.length === 0 ? true : selected.every(t => tags.includes(t));
+      e.style.display = match ? "" : "none";
+    });
+
+    // recalc tag counts based on currently visible entries
+    updateTagCounts();
+
+    if(shouldScroll){
+      const first = entries.find(e => e.style.display !== 'none');
+      if(first) setTimeout(()=> first.scrollIntoView({behavior:'smooth', block:'start'}), 50);
+    } else {
+      // keep current viewport but ensure entries container is visible
+      const container = document.getElementById("entries");
+      if(container) container.scrollIntoView({behavior: "auto"});
+    }
+  }
+ 
+  // recompute counts next to each tag control based on visible entries
+  function updateTagCounts(){
+    checkboxes.forEach(cb => {
+      const tag = cb.value;
+      let count = 0;
+      entries.forEach(e => {
+        if(e.style.display === 'none') return;
+        const tags = (e.dataset.tags || "").split(/\\s+/).filter(Boolean);
+        if(tags.includes(tag)) count += 1;
+      });
+      const span = cb.parentElement && cb.parentElement.querySelector('.tag-count');
+      if(span) span.textContent = '(' + count + ')';
+    });
+  }
 
    function writeHash(){
      const sel = checkboxes.filter(cb => cb.checked).map(cb => encodeURIComponent(cb.value)).join(',');
      history.replaceState(null, '', sel ? '#tags=' + sel : location.pathname + location.search);
    }
-
+ 
    function restoreFromHash(){
      const h = location.hash || '';
      const m = h.match(/tags=([^&]+)/);
@@ -105,14 +130,14 @@ def htmlresponse(title, content):
      const vals = m[1].split(',').map(decodeURIComponent);
      checkboxes.forEach(cb => { cb.checked = vals.includes(cb.value); });
    }
-
-   checkboxes.forEach(cb => cb.addEventListener('change', function(){
-     updateFilter();
-     writeHash();
-   }));
-
-   restoreFromHash();
-   updateFilter();
+ 
+  checkboxes.forEach(cb => cb.addEventListener('change', function(){
+    updateFilter(true); // scroll to first matching entry after user change
+    writeHash();
+  }));
+ 
+  restoreFromHash();
+  updateFilter(false);
  });
    </script>
   <style>
