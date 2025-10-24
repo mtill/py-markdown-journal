@@ -8,6 +8,8 @@ from pathlib import Path
 import datetime
 
 
+REFERENCE_ONLY = "REFERENCE_ONLY"
+UNTAGGED_TAG = "untagged"
 ARCHIVE_FOLDERNAME = "_Archive"
 MARKDOWN_SUFFIX = ".md"
 TAG_NAMESPACE_SEPARATOR = "_"
@@ -114,7 +116,7 @@ def prettyTable(table, rightAlign=False):
     return result
 
 
-def parseEntries(thepath, notebookpath, untaggedtag="untagged", originPath=None):
+def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG, originPath=None):
     entries = []
     prefix = []
 
@@ -151,7 +153,7 @@ def parseEntries(thepath, notebookpath, untaggedtag="untagged", originPath=None)
                         lasttags = {untaggedtag: True}
 
                     rel_path = thepath.relative_to(notebookpath)
-                    entries.append({"date": lasttime, "content": lastcontent, "tags": lasttags.keys(), "pos": lastpos, "rel_path": rel_path, "location": ("/" + rel_path.as_posix() + "#L" + str(lastpos))})
+                    entries.append({"date": lasttime, "content": lastcontent, "tags": list(lasttags.keys()), "pos": lastpos, "rel_path": rel_path, "location": ("/" + rel_path.as_posix() + "#L" + str(lastpos))})
 
                 lasttime = thedate
                 lastcontent = [line]
@@ -174,7 +176,7 @@ def parseEntries(thepath, notebookpath, untaggedtag="untagged", originPath=None)
                 lasttags = {untaggedtag: True}
 
             rel_path = thepath.relative_to(notebookpath)
-            entries.append({"date": lasttime, "content": lastcontent, "tags": lasttags.keys(), "pos": lastpos, "rel_path": rel_path, "location": ("/" + rel_path.as_posix() + "#L" + str(lastpos))})
+            entries.append({"date": lasttime, "content": lastcontent, "tags": list(lasttags.keys()), "pos": lastpos, "rel_path": rel_path, "location": ("/" + rel_path.as_posix() + "#L" + str(lastpos))})
 
     return {"prefix": prefix, "entries": entries}
 

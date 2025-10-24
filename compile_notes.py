@@ -8,7 +8,7 @@ import json
 import subprocess
 from pathlib import Path
 from datetime import datetime
-from noteslib import createQuarterFile, parseEntries, writeFile, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR
+from noteslib import createQuarterFile, parseEntries, writeFile, REFERENCE_ONLY, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR
 
 
 ENTRY_ID_FORMAT = "%Y%m%d-%H%M%S"
@@ -60,19 +60,10 @@ def _scanFiles(thefiles, doMove, notebookpath, tags):
             elif hasTaggedEntries:   # update file only if needed (when entries will be moved to some other file) 
                 writeFile(filepath=x, prefix=entriesDict["prefix"], entries=untaggedEntries, mode="w", addLocation=False)
 
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="compile_notes")
-    parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
-    parser.add_argument("--journalpath", type=str, default="journal", help="relative path to journal directory")
-    parser.add_argument("--copyJournalEntries", action="store_true", help="if set, journal entries are copied, not moved.")
-    parser.add_argument("--ignoreModificationTimestamps", action="store_true", help="by default, only files modified since last run are parsed. If set, file timestamps are ignored and all files are considered.")
-    parser.add_argument("--vscodecommand", type=str, default=None, help="vs code command that will be used to open modified files; if not specified, modified files will not be opened")
-    args = parser.parse_args()
-
+def main(notebookpath, journalpath="journal", referenceJournalEntries=False, ignoreModificationTimestamps=False, vscodecommand=None):
     today = datetime.today()
-    notebookpath = Path(args.notebookpath).resolve()
-    journalpath = notebookpath / args.journalpath
+    notebookpath = Path(notebookpath).resolve()
+    journalpath = notebookpath / journalpath
 
     notesconfigpath = notebookpath / ".notes.json"
     notesconfig = {}
@@ -80,20 +71,16 @@ if __name__ == "__main__":
         with open(notesconfigpath, "r", encoding="utf-8") as notesconfigfile:
             notesconfig = json.load(notesconfigfile)
 
-    doMoveJournalEntries = not args.copyJournalEntries
-
     lastrun_timestamp = None
-    if not args.ignoreModificationTimestamps:
+    if not ignoreModificationTimestamps:
         lastrun_timestamp = notesconfig.get("lastrun_timestamp", 0)
-
-    vscodecommand = args.vscodecommand
 
     results_journalfiles = []
     results_notesfiles = []
     _findModifiedFiles(thefolder=notebookpath, journalpath=journalpath, lastrun_timestamp=lastrun_timestamp, results_journalfiles=results_journalfiles, results_notesfiles=results_notesfiles, isInJournalFolder=False)
 
     tags = {}
-    _scanFiles(thefiles=results_journalfiles, doMove=doMoveJournalEntries, notebookpath=notebookpath, tags=tags)
+    _scanFiles(thefiles=results_journalfiles, doMove=not referenceJournalEntries, notebookpath=notebookpath, tags=tags)
     results_journalfiles = None
     _scanFiles(thefiles=results_notesfiles, doMove=False, notebookpath=notebookpath, tags=tags)
     results_notesfiles = None
@@ -133,11 +120,15 @@ if __name__ == "__main__":
                 #print("ADDING to " + filepath.relative_to(notebookpath).as_posix() + ":")
                 #print("\n".join(e["content"]))
                 #print()
+
+                if referenceJournalEntries:
+                    tagEntry["content"] = [tagEntry["content"][0], REFERENCE_ONLY]
+
                 modified = True
 
 
         if modified:
-            writeFile(filepath=filepath, prefix=prefix, entries=fileEntries, mode="w", addLocation=True)
+            writeFile(filepath=filepath, prefix=prefix, entries=fileEntries, mode="w", addLocation=False, reverse=True)
             filesToOpen.append(filepath.relative_to(notebookpath).as_posix())
 
 
@@ -159,4 +150,16 @@ if __name__ == "__main__":
             subprocess.run([vscodecommand, "--reuse-window", quarterFileStr])
 
     print(json.dumps({"modified_files": filesToOpen}, indent=2))
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="compile_notes")
+    parser.add_argument("--notebookpath", type=str, required=True, help="path to notebook directory")
+    parser.add_argument("--journalpath", type=str, default="journal", help="relative path to journal directory")
+    parser.add_argument("--referenceJournalEntries", action="store_true", help="if set, journal entries are referenced, not moved.")
+    parser.add_argument("--ignoreModificationTimestamps", action="store_true", help="by default, only files modified since last run are parsed. If set, file timestamps are ignored and all files are considered.")
+    parser.add_argument("--vscodecommand", type=str, default=None, help="vs code command that will be used to open modified files; if not specified, modified files will not be opened")
+    args = parser.parse_args()
+
+    main(notebookpath=args.notebookpath, journalpath=args.journalpath, referenceJournalEntries=args.referenceJournalEntries, ignoreModificationTimestamps=args.ignoreModificationTimestamps, vscodecommand=args.vscodecommand)
 
