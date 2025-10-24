@@ -8,7 +8,8 @@ from pathlib import Path
 import datetime
 
 
-REFERENCE_ONLY = "REFERENCE_ONLY"
+ENTRY_ID_FORMAT = "%Y%m%d-%H%M%S"
+REFERENCE = "REFERENCE"
 UNTAGGED_TAG = "untagged"
 ARCHIVE_FOLDERNAME = "_Archive"
 MARKDOWN_SUFFIX = ".md"

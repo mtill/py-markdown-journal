@@ -8,10 +8,8 @@ import json
 import subprocess
 from pathlib import Path
 from datetime import datetime
-from noteslib import createQuarterFile, parseEntries, writeFile, REFERENCE_ONLY, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR
+from noteslib import createQuarterFile, parseEntries, writeFile, REFERENCE, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR, ENTRY_ID_FORMAT
 
-
-ENTRY_ID_FORMAT = "%Y%m%d-%H%M%S"
 
 
 def _findModifiedFiles(thefolder, journalpath, lastrun_timestamp, results_journalfiles, results_notesfiles, isInJournalFolder=False):
@@ -122,7 +120,9 @@ def main(notebookpath, journalpath="journal", referenceJournalEntries=False, ign
                 #print()
 
                 if referenceJournalEntries:
-                    tagEntry["content"] = [tagEntry["content"][0], REFERENCE_ONLY]
+                    tagEntry["content"] = [tagEntry["content"][0],
+                                           '[' + REFERENCE + '](' + tagEntry["rel_path"] + '#' + tagEntry["date"].strptime(ENTRY_ID_FORMAT) + ')'
+                                          ]
 
                 modified = True
 

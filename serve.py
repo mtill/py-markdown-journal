@@ -5,7 +5,7 @@
 import subprocess
 from flask import Flask, send_from_directory, redirect, request
 from markdown_it import MarkdownIt
-from noteslib import parseEntries, REFERENCE_ONLY, MARKDOWN_SUFFIX, UNTAGGED_TAG
+from noteslib import parseEntries, REFERENCE, MARKDOWN_SUFFIX, UNTAGGED_TAG, relativeImageOrLinkRegex
 import compile_notes
 import os
 import html
@@ -302,6 +302,8 @@ body {
   </body>
  </html>
  """
+
+
 def get_content(thefile):
     parsed = parseEntries(thepath=thefile, notebookpath=SERVE_PATH, untaggedtag=None)
     entries_html = []
@@ -314,18 +316,23 @@ def get_content(thefile):
 
     ref_files = {}
     for entry in parsed["entries"]:
-        if len(entry["content"]) == 2 and entry["content"][1].strip() == REFERENCE_ONLY:
-            thedate = entry["date"]
-            quarter = (thedate.month - 1) // 3 + 1
-            year_quarter = f"{thedate.year}-Q{quarter}"
-            if year_quarter not in ref_files:
-                ref_files[year_quarter] = []
-            ref_files[year_quarter].append(entry)
+        if len(entry["content"]) == 2 and entry["content"][1].startswith("[" + REFERENCE + "]("):
+            entry_match = relativeImageOrLinkRegex.match(entry["content"][1])
+            if entry_match is not None:
+                entry_split = entry_match.group(3).split('#')
+                entry_ref_path = entry_split[0]
+                if entry_ref_path.startswith('/'):
+                    entry_ref_path = SERVE_PATH / entry_ref_path[1:]
+                else:
+                    entry_ref_path = SERVE_PATH / entry_ref_path
+                #entry_ref_anchor = entry_split[1]
+                if entry_ref_path not in ref_files:
+                    ref_files[entry_ref_path] = []
+                ref_files[entry_ref_path].append(entry)
 
-    for year_quarter, entries_list in ref_files.items():
-        quarter_file = JOURNAL_PATH / f"{year_quarter}{MARKDOWN_SUFFIX}"
-        if quarter_file.exists():
-            parsed_refs = parseEntries(thepath=quarter_file, notebookpath=SERVE_PATH, originPath=quarter_file.parent, untaggedtag=None)
+    for origin_file, entries_list in ref_files.items():
+        if origin_file.exists():
+            parsed_refs = parseEntries(thepath=origin_file, notebookpath=SERVE_PATH, originPath=origin_file.parent, untaggedtag=None)
             for entry in entries_list:
                 for parsed_ref_entry in parsed_refs["entries"]:
                     if parsed_ref_entry["date"] == entry["date"]:
