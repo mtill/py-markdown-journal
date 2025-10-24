@@ -121,7 +121,7 @@ def main(notebookpath, journalpath="journal", referenceJournalEntries=False, ign
 
                 if referenceJournalEntries:
                     tagEntry["content"] = [tagEntry["content"][0],
-                                           '[' + REFERENCE + '](' + tagEntry["rel_path"] + '#' + tagEntry["date"].strptime(ENTRY_ID_FORMAT) + ')'
+                                           '[' + REFERENCE + '](' + tagEntry["rel_path"].as_posix() + '#' + tagEntry["date"].strftime(ENTRY_ID_FORMAT) + ')'
                                           ]
 
                 modified = True
