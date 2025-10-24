@@ -1,3 +1,7 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+
 import subprocess
 from flask import Flask, send_from_directory, redirect, request
 from markdown_it import MarkdownIt
@@ -31,7 +35,7 @@ def htmlresponse(title, content):
    if(!controls) return;
    const checkboxes = Array.from(controls.querySelectorAll('.tag-checkbox'));
    const entries = Array.from(document.querySelectorAll('.entry'));
- 
+
   // dblclick on an entry -> request server to open the file in VSCode
   entries.forEach(e => {
     e.addEventListener('dblclick', async (ev) => {
@@ -78,45 +82,52 @@ def htmlresponse(title, content):
       }
     }, {passive:true});
   }
- 
 
-  // show only entries that have ALL selected tags (AND filtering)
-  function updateFilter(shouldScroll){
+  // For unchecked checkboxes: show how many entries WOULD match if we added that tag
+  // i.e. count entries that have ALL currently selected tags + this tag.
+  function updatePotentialCounts(){
     const selected = checkboxes.filter(cb => cb.checked).map(cb => cb.value);
-
-    entries.forEach(e => {
-      const tags = (e.dataset.tags || "").split(/\\s+/).filter(Boolean);
-      const match = selected.length === 0 ? true : selected.every(t => tags.includes(t));
-      e.style.display = match ? "" : "none";
-    });
-
-    // recalc tag counts based on currently visible entries
-    updateTagCounts();
-
-    if(shouldScroll){
-      const first = entries.find(e => e.style.display !== 'none');
-      if(first) setTimeout(()=> first.scrollIntoView({behavior:'smooth', block:'start'}), 50);
-    } else {
-      // keep current viewport but ensure entries container is visible
-      const container = document.getElementById("entries");
-      if(container) container.scrollIntoView({behavior: "auto"});
-    }
-  }
- 
-  // recompute counts next to each tag control based on visible entries
-  function updateTagCounts(){
     checkboxes.forEach(cb => {
-      const tag = cb.value;
+      const span = cb.parentElement && cb.parentElement.querySelector('.tag-count');
+      if(!span) return;
+
+      if(cb.checked){
+        span.textContent = '';
+        return;
+      }
+    
+      const candidate = selected.concat([cb.value]);
       let count = 0;
       entries.forEach(e => {
-        if(e.style.display === 'none') return;
         const tags = (e.dataset.tags || "").split(/\\s+/).filter(Boolean);
-        if(tags.includes(tag)) count += 1;
+        // entry must include all candidate tags
+        if(candidate.every(t => tags.includes(t))) count += 1;
       });
-      const span = cb.parentElement && cb.parentElement.querySelector('.tag-count');
-      if(span) span.textContent = '(' + count + ')';
+      span.textContent = '(' + count + ')';
     });
   }
+
+   // show only entries that have ALL selected tags (AND filtering)
+   function updateFilter(shouldScroll){
+     const selected = checkboxes.filter(cb => cb.checked).map(cb => cb.value);
+ 
+     entries.forEach(e => {
+       const tags = (e.dataset.tags || "").split(/\\s+/).filter(Boolean);
+       const match = selected.length === 0 ? true : selected.every(t => tags.includes(t));
+       e.style.display = match ? "" : "none";
+     });
+
+     updatePotentialCounts();
+ 
+     if(shouldScroll){
+       const first = entries.find(e => e.style.display !== 'none');
+       if(first) setTimeout(()=> first.scrollIntoView({behavior:'smooth', block:'start'}), 50);
+     } else {
+       // keep current viewport but ensure entries container is visible
+       const container = document.getElementById("entries");
+       if(container) container.scrollIntoView({behavior: "auto"});
+     }
+   }
 
    function writeHash(){
      const sel = checkboxes.filter(cb => cb.checked).map(cb => encodeURIComponent(cb.value)).join(',');
@@ -359,7 +370,11 @@ def get_content(thefile):
     tag_controls = []
     for t in tags_sorted:
         safe_t = html.escape(t)
-        tag_controls.append(f'<label><input type="checkbox" class="tag-checkbox" value="{safe_t}"> {safe_t}</label><br>')
+        # include a span.tag-count so client-side JS can show counts.
+        tag_controls.append(
+            f'<label><input type="checkbox" class="tag-checkbox" value="{safe_t}"> {safe_t} '
+            f'<span class="tag-count" aria-hidden="true"></span></label><br>'
+        )
 
     # form submits selected tags to /_update so the server can redirect back to the current page preserving selection
     update_controls = """
