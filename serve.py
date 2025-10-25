@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
+import datetime
 import subprocess
 from flask import Flask, send_from_directory, redirect, request
 from markdown_it import MarkdownIt
@@ -22,6 +23,29 @@ SERVE_PATH = Path(SERVE_DIR).absolute()
 JOURNAL_PATH = SERVE_PATH / "journal"
 
 
+def folder_htmlresponse(title, content):
+    return """<!DOCTYPE html>
+ 
+ <html>
+  <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>""" + html.escape(title) + """</title>
+  <style>
+  body {
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  font-size: 1.4rem;
+  background: #f9fafb;
+  color: #111827;
+  line-height: 1.45;
+  margin: 2em;
+}
+  </style>
+  </head>
+  <body>\n""" + content + """
+  </body>
+ </html>
+ """
+  
 def htmlresponse(title, content):
     return """<!DOCTYPE html>
  
@@ -420,23 +444,23 @@ def serve_others(mypath):
             if HIDE_DOTFILES and child.name.startswith("."):
                 continue
             if child.is_dir():
-                folders.append(child.name)
+                folders.append(child)
             else:
-                files.append(child.name)
+                files.append(child)
 
-        folders.sort(key=str.lower)
-        files.sort(key=str.lower)
+        folders.sort(key=lambda s: s.name.lower())
+        files.sort(key=lambda s: s.stat().st_mtime, reverse=True)
         entries = []
         if SERVE_PATH != p:
-            entries.append(" <li>📁 <a href=\"../\">../</a></li>")
+            entries.append("<tr><td>📁</td><td><a href=\"../\">../</a></td><td></td></tr>")
 
         for the_folder in folders:
-            entries.append(" <li>📁 <a href=\"./" + html.escape(the_folder) + "/\">" + html.escape(the_folder) + "/</a></li>")
+            entries.append("<tr><td>📁</td><td><a href=\"./" + html.escape(the_folder.name) + "/\">" + html.escape(the_folder.name) + "/</a></td><td></td></tr>")
         for the_file in files:
-            entries.append(" <li>📄 <a href=\"./" + html.escape(the_file) + "\">" + html.escape(the_file) + "</a></li>")
+            entries.append("<tr><td>📄</td><td><a style=\"margin-right:1em\" href=\"./" + html.escape(the_file.name) + "\">" + html.escape(the_file.name) + "</a></td><td>" + datetime.datetime.fromtimestamp(the_file.stat().st_mtime).strftime("%d.%m.%Y %H:%M") + "</td></tr>")
 
-        content = '<ul>\n' + ("\n".join(entries)) + "\n</ul>\n"
-        return htmlresponse(title=mypath, content=content)
+        content = '<table>\n' + ("\n".join(entries)) + "</table>\n"
+        return folder_htmlresponse(title=mypath, content=content)
     else:
         return send_from_directory(str(SERVE_PATH), mypath)
 
