@@ -127,7 +127,15 @@ def htmlresponse(title, content):
         // entry must include all candidate tags
         if(candidate.every(t => tags.includes(t))) count += 1;
       });
-      span.textContent = '(' + count + ')';
+      if (count === 0){
+        cb.disabled = true;
+        span.textContent = '';
+        span.parentElement.style.opacity = 0.4;
+      } else {
+        span.textContent = '(' + count + ')';
+        cb.disabled = false;
+        span.parentElement.style.opacity = 1.0;
+      }
     });
   }
 
