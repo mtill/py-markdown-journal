@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+ 
+ <html>
+  <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <script>
+
+  // For unchecked checkboxes: show how many entries WOULD match if we added that tag
+  // i.e. count entries that have ALL currently selected tags + this tag.
+  function updatePotentialCounts(){
+    const selected = checkboxes.filter(cb => cb.checked).map(cb => cb.value);
+    checkboxes.forEach(cb => {
+      const span = cb.parentElement && cb.parentElement.querySelector('.tag-count');
+      if(!span) return;
+
+      if(cb.checked){
+        span.textContent = '';
+        return;
+      }
+    
+      const candidate = selected.concat([cb.value]);
+      let count = 0;
+      entries.forEach(e => {
+        const tags = (e.dataset.tags || "").split(/\\s+/).filter(Boolean);
+        // entry must include all candidate tags
+        if(candidate.every(t => tags.includes(t))) count += 1;
+      });
+      if (count === 0){
+        cb.disabled = true;
+        span.textContent = '';
+        span.parentElement.style.opacity = 0.4;
+      } else {
+        span.textContent = '(' + count + ')';
+        cb.disabled = false;
+        span.parentElement.style.opacity = 1.0;
+      }
+    });
+  }
+
+   // show only entries that have ALL selected tags (AND filtering)
+   function updateFilter(shouldScroll){
+     const selected = checkboxes.filter(cb => cb.checked).map(cb => cb.value);
+ 
+     entries.forEach(e => {
+       const tags = (e.dataset.tags || "").split(/\\s+/).filter(Boolean);
+       const match = selected.length === 0 ? true : selected.every(t => tags.includes(t));
+       e.style.display = match ? "" : "none";
+     });
+
+     updatePotentialCounts();
+ 
+     if(shouldScroll){
+       const first = entries.find(e => e.style.display !== 'none');
+       if(first) setTimeout(()=> first.scrollIntoView({behavior:'smooth', block:'start'}), 50);
+     } else {
+       // keep current viewport but ensure entries container is visible
+       const container = document.getElementById("entries");
+       if(container) container.scrollIntoView({behavior: "auto"});
+     }
+   }
+
+   function writeHash(){
+     const sel = checkboxes.filter(cb => cb.checked).map(cb => encodeURIComponent(cb.value)).join(',');
+     history.replaceState(null, '', sel ? '#tags=' + sel : location.pathname + location.search);
+   }
+ 
+   function restoreFromHash(){
+     const h = location.hash || '';
+     const m = h.match(/tags=([^&]+)/);
+     if(!m) return;
+     const vals = m[1].split(',').map(decodeURIComponent);
+     checkboxes.forEach(cb => { cb.checked = vals.includes(cb.value); });
+   }
+
+
+ document.addEventListener('DOMContentLoaded', (event) => {
+   const controls = document.getElementById('tag-controls');
+   if(!controls) return;
+   const checkboxes = Array.from(controls.querySelectorAll('.tag-checkbox'));
+   const entries = Array.from(document.querySelectorAll('.entry'));
+
+  // dblclick on an entry -> request server to open the file in VSCode
+  entries.forEach(e => {
+    e.addEventListener('dblclick', async (ev) => {
+      const loc = e.dataset.location;
+      if(!loc) return;
+      try {
+        const res = await fetch('/_open', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({location: loc})
+        });
+        if(res.ok){
+          e.classList.add('opening');
+          setTimeout(()=> e.classList.remove('opening'), 700);
+        } else {
+          console.warn('open failed', res.status);
+        }
+      } catch(err){
+        console.error(err);
+      }
+    }, {passive:true});
+  });
+
+  // dblclick on the prefix area -> open the page file in VSCode
+  const prefix = document.getElementById('prefix_html');
+  if(prefix){
+    prefix.addEventListener('dblclick', async (ev) => {
+      const loc = prefix.getAttribute('location') || prefix.dataset.location;
+      if(!loc) return;
+      prefix.classList.add('opening');
+      try {
+        const res = await fetch('/_open', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({location: loc})
+        });
+        if(!res.ok && res.status !== 204){
+          console.warn('open failed', res.status);
+        }
+      } catch(err){
+        console.error(err);
+      } finally {
+        setTimeout(()=> prefix.classList.remove('opening'), 700);
+      }
+    }, {passive:true});
+  }
+ 
+  checkboxes.forEach(cb => cb.addEventListener('change', function(){
+    updateFilter(true); // scroll to first matching entry after user change
+    writeHash();
+  }));
+ 
+  restoreFromHash();
+  updateFilter(false);
+ });
+   </script>
+  <style>
+body {
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: #f9fafb;
+  color: #111827;
+  line-height: 1.45;
+  margin: 2em;
+}
+
+/* Page container and header */
+.page {
+  margin: 1.6rem auto;
+  padding: 1.2rem;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.header .title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f1720;
+}
+.header .subtitle {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+/* tag controls (kept / improved) */
+.tag-controls {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  border: 1px solid rgba(16,22,26,0.06);
+  padding: .6rem;
+  z-index: 2000;
+  overflow: auto;
+  background: #fff;
+}
+.tag-controls label {
+  display: inline-block;
+  margin: 0 .35rem .25rem 0;
+  white-space: nowrap;
+  font-size: 0.95rem;
+}
+@media (max-width:900px) { .tag-controls { max-width: 45vw; } }
+@media (max-width:700px) { .tag-controls { position: static; max-width: none; margin-bottom: 1rem; } }
+
+/* entry card layout */
+.entry {
+  position: relative;
+  background: var(--card);
+  border: 1px solid #e8eaec;
+  border-radius: 10px;
+  padding: 1.05rem 1.15rem;
+  margin: 0 0 1.2rem 0;
+  box-shadow: 0 6px 20px rgba(15,20,25,0.04);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+
+/* tags shown top-right of each entry */
+.entry .entry-tags {
+  position: absolute;
+  top: 0.9rem;
+  right: 1rem;
+  display: flex;
+  gap: .45rem;
+  align-items: center;
+  z-index: 2;
+}
+.entry .entry-tags .tag-badge {
+  font-size: .72rem;
+  padding: .14rem .45rem;
+}
+
+/* subtle hover */
+.entry:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(15,20,25,0.06);
+}
+/* visual feedback when opening an entry */
+.entry.opening { outline: 2px solid rgba(11,99,214,0.14); transform: translateY(-1px) scale(1.01); }
+
+/* metadata (title/date) */
+.entry h1, .entry h2, .entry h3 { margin: 0 0 .35rem 0; line-height: 1.15; }
+.entry .meta { font-size: .88rem; color: var(--muted); margin-bottom: .6rem; }
+
+/* tag badges */
+.entry .tags { margin-bottom: .6rem; display:flex; gap:.35rem; flex-wrap:wrap; }
+.entry .tag-badge {
+  display: inline-block;
+  background: #eef6ff;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: .78rem;
+  padding: .18rem .45rem;
+  border-radius: 999px;
+  margin-right: .35rem;
+  border: 1px solid rgba(11,99,214,0.08);
+}
+
+/* content formatting */
+.entry p { margin: .45rem 0 .9rem 0; color: #222; line-height: 1.6; }
+.entry ul, .entry ol { margin: .5rem 0 .9rem 1.2rem; }
+.entry blockquote {
+  border-left: 4px solid #e0e6ef;
+  background: #fbfdff;
+  margin: .6rem 0;
+  padding: .6rem 1rem;
+  color: #2b2f36;
+  border-radius: 6px;
+}
+
+/* code blocks and inline code */
+.entry pre {
+  background: #0f1720;
+  color: #e6eef8;
+  padding: .85rem;
+  border-radius: 6px;
+  overflow: auto;
+  margin: .7rem 0;
+}
+.entry code {
+  background: #f3f4f6;
+  padding: .12rem .28rem;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+}
+
+/* images */
+.entry img { max-width: 100%; height: auto; border-radius: 8px; display: block; margin: .6rem 0; }
+
+/* links */
+.entry a { color: var(--accent); text-decoration: none; }
+.entry a:hover { text-decoration: underline; }
+
+/* responsive tweaks */
+@media (max-width:900px) { .page { padding: .8rem; } .entry { padding: .9rem; } }
+
+  </style>
+  </head>
+  <body>
+    {{ content|safe }}
+  </body>
+ </html>
+
