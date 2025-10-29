@@ -117,9 +117,10 @@ def prettyTable(table, rightAlign=False):
     return result
 
 
-def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG, originPath=None):
+def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG):
     entries = []
     prefix = []
+    originPath = thepath.parent
 
     with open(thepath, "r", encoding="utf-8") as f:
         lasttime = None
@@ -129,8 +130,7 @@ def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG, originPath=Non
         pos = -1
         for line in f:
             line = line.rstrip()
-            if originPath is not None:
-                line = updateLinks(line, notebookPath=notebookpath, originPath=originPath)
+            line = updateLinks(line, notebookPath=notebookpath, originPath=originPath)
             pos = pos + 1
 
             thematch = None
