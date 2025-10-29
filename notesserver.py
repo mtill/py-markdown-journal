@@ -16,11 +16,21 @@ from werkzeug.utils import secure_filename
 from flask import send_from_directory, jsonify
 import subprocess
 import json
+import shutil
+
 
 app = Flask(__name__)
 md = MarkdownIt()
 NOTEBOOK_NAME = os.getenv('NOTEBOOK_NAME', 'notes')
-EDITOR_COMMAND = json.loads(os.getenv('EDITOR_COMMAND', "[\"code\", \"--goto\", \"{filepath}:{line_no}\"]"))
+
+code_cmd = shutil.which('code') or 'code'
+DEFAULT_CODE_CMD = [code_cmd, "--goto", "{filepath}:{line_no}"]
+EDITOR_COMMAND = os.getenv('EDITOR_COMMAND', None)
+if EDITOR_COMMAND is None:
+    EDITOR_COMMAND = DEFAULT_CODE_CMD
+else:
+    EDITOR_COMMAND = json.loads(EDITOR_COMMAND)
+
 ENTRIES_PER_PAGE = 25
 HIDE_DOTFILES = True
 
@@ -190,6 +200,7 @@ def index(mypath="/"):
                     p = p.parent / (p.name + MARKDOWN_SUFFIX)
                     if p.is_file():
                         show_journal, mypath_content, mypath_tags, mypath_tag, title = parseMarkdown(p=p)
+                        mypath = mypath + MARKDOWN_SUFFIX
 
     if show_journal:
 
