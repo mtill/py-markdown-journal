@@ -20,71 +20,16 @@
             document.getElementById('tagForm').submit();
         }
 
-        // Show the edit form for an entry
-        function showEdit(entryId) {
-            let cid = document.getElementById('content-' + entryId);
-            //let cid_height = cid.parentElement.style.height;
-            cid.style.display = 'none';
-            let eid = document.getElementById('edit-' + entryId);
-            eid.style.display = 'block';
-            //eid.style.minHeight = cid_height;
-            // focus first textarea in the edit form for convenience
-            const ta = document.querySelector('#edit-' + entryId + ' textarea');
-            if (ta) ta.focus();
-        }
-
-        // Hide the edit form for an entry
-        function hideEdit(entryId) {
-            document.getElementById('content-' + entryId).style.display = 'block';
-            document.getElementById('edit-' + entryId).style.display = 'none';
-        }
-
-        // New Entry toggling
-        function toggleNewEntry() {
-            const panel = document.getElementById('newEntryPanel');
-            const btn = document.getElementById('toggleNewEntry');
-            if (!panel || !btn) return;
-            const isVisible = panel.classList.toggle('visible');
-            if (isVisible === true || panel.classList.contains('visible')) {
-                panel.classList.add('visible');
-                panel.setAttribute('aria-hidden', 'false');
-                btn.textContent = 'Close';
-                btn.setAttribute('aria-expanded', 'true');
-                // focus the title input
-                const title = panel.querySelector('input[name="title"]');
-                if (title) title.focus();
-                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            } else {
-                panel.classList.remove('visible');
-                panel.setAttribute('aria-hidden', 'true');
-                btn.textContent = 'New Entry';
-                btn.setAttribute('aria-expanded', 'false');
-            }
-        }
-
         document.addEventListener('DOMContentLoaded', function(){
-            // existing initializations...
-            const toggle = document.getElementById('toggleNewEntry');
-            if (toggle) toggle.addEventListener('click', function(){ toggleNewEntry(); });
             // initial highlight pass and start watching for later changes
             applyHighlights();
 
-            const cancelBtn = document.getElementById('cancelNewEntry');
-            if (cancelBtn) cancelBtn.addEventListener('click', function(){ toggleNewEntry(); });
-
             // double-click content to enter edit mode
-            document.querySelectorAll('.entry-content').forEach(el => {
+            document.querySelectorAll('.entry').forEach(el => {
                 el.addEventListener('dblclick', function(e){
-                    // ignore dblclicks originating from interactive elements
-                    if (e.target.closest('button, a, input, textarea, label, .tag-pill')) return;
-                    const entry = el.closest('.entry');
-                    if (!entry) return;
-                    const id = entry.getAttribute('data-entry-id');
-                    if (id) showEdit(id);
+                    openInEditor(thetype="entry", entryId=el.getAttribute('data-entry-id'))
                 });
             });
-            
-            updatePendingPanel();
         });
 
 
@@ -96,9 +41,6 @@
         q: '{{ q | e }}',
         page: '{{ page }}'
     };
-    
-    // Queue-based tag removal: user stages removals and clicks Apply to perform them.
-    const pendingRemovals = []; // { entryId, tag, markdown }
 
     function findTagButton(container, tag){
         const btns = container.querySelectorAll('.tag-pill');
@@ -108,132 +50,32 @@
         return null;
     }
 
-    function updatePendingPanel(){
-        let panel = document.getElementById('pending-panel');
-        if (!panel){
-            panel = document.createElement('div');
-            panel.id = 'pending-panel';
-            Object.assign(panel.style, {
-                position: 'fixed',
-                left: '20px',
-                bottom: '20px',
-                background: 'white',
-                padding: '10px',
-                borderRadius: '8px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-                zIndex: 2000,
-                display: 'flex',
-                gap: '8px',
-                alignItems: 'center'
-            });
-            document.body.appendChild(panel);
-        }
-        panel.innerHTML = '';
-
-        const count = pendingRemovals.length;
-        const info = document.createElement('span');
-        info.textContent = count ? `${count} pending change${count>1?'s':''}` : 'No pending changes';
-        panel.appendChild(info);
-
-        const applyBtn = document.createElement('button');
-        applyBtn.textContent = 'Apply';
-        applyBtn.disabled = count === 0;
-        applyBtn.style.padding = '6px 10px';
-        applyBtn.style.borderRadius = '6px';
-        applyBtn.style.border = 'none';
-        applyBtn.style.background = count ? '#1572e8' : '#ccc';
-        applyBtn.style.color = '#fff';
-        applyBtn.onclick = async function(){
-            applyBtn.disabled = true;
-            applyBtn.textContent = 'Applying...';
-            try {
-                // perform removals sequentially
-                for (const item of [...pendingRemovals]){
-                    const fd = new FormData();
-                    fd.append('content', item.markdown);
-                    fd.append('remove_tag', item.tag);
-                    // preserve filters
-                    if (window.currentFilters){
-                        if (window.currentFilters.start) fd.append('start', window.currentFilters.start);
-                        if (window.currentFilters.q) fd.append('q', window.currentFilters.q);
-                        if (window.currentFilters.page) fd.append('page', window.currentFilters.page);
-                        (window.currentFilters.tags || []).forEach(t => fd.append('tags', t));
-                    }
-                    const url = '/edit/' + encodeURIComponent(item.entryId);
-                    const resp = await fetch(url, { method: 'POST', body: fd });
-                    if (!resp.ok) {
-                        console.error('failed to apply removal', item, resp.status);
-                        alert('Failed to apply some changes. See console.');
-                        applyBtn.disabled = false;
-                        applyBtn.textContent = 'Apply';
-                        return;
-                    }
-                    // on success, remove from pending and unmark button
-                    const idx = pendingRemovals.findIndex(p => p.entryId===item.entryId && p.tag===item.tag);
-                    if (idx !== -1) pendingRemovals.splice(idx, 1);
-                }
-                // reload to reflect changes (preserve filters via currentFilters)
-                const params = new URLSearchParams();
-                if (window.currentFilters){
-                    if (window.currentFilters.start) params.set('start', window.currentFilters.start);
-                    if (window.currentFilters.q) params.set('q', window.currentFilters.q);
-                    if (window.currentFilters.page) params.set('page', window.currentFilters.page);
-                    (window.currentFilters.tags || []).forEach(t => params.append('tags', t));
-                }
-                window.location = window.location.pathname + (params.toString() ? '?'+params.toString() : '');
-            } catch (err){
-                console.error(err);
-                alert('Error applying changes. See console.');
-                applyBtn.disabled = false;
-                applyBtn.textContent = 'Apply';
-            }
-        };
-        panel.appendChild(applyBtn);
-
-        const resetBtn = document.createElement('button');
-        resetBtn.textContent = 'Cancel all';
-        resetBtn.style.padding = '6px 10px';
-        resetBtn.style.borderRadius = '6px';
-        resetBtn.style.border = '1px solid #ddd';
-        resetBtn.onclick = function(){
-            // unmark all buttons
-            pendingRemovals.forEach(it => {
-                const container = document.getElementById('content-' + it.entryId);
-                if (!container) return;
-                const btn = findTagButton(container, it.tag);
-                if (btn) btn.classList.remove('pending');
-            });
-            pendingRemovals.length = 0;
-            updatePendingPanel();
-        };
-        panel.appendChild(resetBtn);
-    }
-
     // toggle staging a tag removal (called by inline onclick)
-    function removeTagContent(entryId, tag){
-        const container = document.getElementById('content-' + entryId);
-        if (!container) return;
-        const ta = container.querySelector('.entry-markdown');
-        if (!ta) return;
+    async function removeTagContent(btn, entryId, tag){
+        btn.classList.add('pending');
 
-        // check if already pending
-        const exists = pendingRemovals.find(p => p.entryId===entryId && p.tag===tag);
-        const btn = findTagButton(container, tag);
-        if (exists){
-            // unstage
-            const idx = pendingRemovals.indexOf(exists);
-            if (idx !== -1) pendingRemovals.splice(idx, 1);
-            if (btn) btn.classList.remove('pending');
-        } else {
-            // stage removal
-            pendingRemovals.push({ entryId: entryId, tag: tag, markdown: ta.value });
-            if (btn) btn.classList.add('pending');
+        try {
+            const fd = new FormData();
+            fd.append('entryId', entryId);
+            fd.append('remove_tag', tag);
+            const resp = await fetch('/remove_tag', { method: 'POST', body: fd });
+            if (!resp.ok) {
+                const txt = await resp.text();
+                alert('Failed to remove tag: ' + resp.status + ' ' + txt);
+            } else {
+                btn.parentElement.removeChild(btn);
+                let count_display = document.getElementById("tag-count-" + tag);
+                count_display.textContent = parseInt(count_display.textContent) - 1;
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error removing tag. See console.');
+        } finally {
         }
-        updatePendingPanel();
     }
 
-    // Opens entry in VS Code on the server via AJAX POST to /open_in_vscode
-    async function openInVSCode(btn, thetype, entryId){
+    // Opens entry in editor on the server via AJAX POST to /edit
+    async function openInEditor(thetype, entryId){
         let rel;
         let line_no;
 
@@ -249,27 +91,20 @@
             line_no = 1;
         }
 
-        const prevText = btn ? btn.textContent : null;
-        if (btn) { btn.disabled = true; btn.textContent = 'Opening...'; }
-
         try {
             const fd = new FormData();
             fd.append('rel_path', rel);
             fd.append('line_no', line_no);
-            const resp = await fetch('/open_in_vscode', { method: 'POST', body: fd });
+            const resp = await fetch('/edit', { method: 'POST', body: fd });
             if (!resp.ok) {
                 const txt = await resp.text();
-                alert('Failed to open in VS Code: ' + resp.status + ' ' + txt);
+                alert('Failed to open in editor on server: ' + resp.status + ' ' + txt);
             } else {
-                // optionally give visual feedback
-                if (btn) btn.textContent = 'Opened';
-                setTimeout(() => { if (btn) btn.textContent = prevText; }, 1200);
             }
         } catch (err) {
             console.error(err);
-            alert('Error opening in VS Code. See console.');
+            alert('Error opening in editor on server. See console.');
         } finally {
-            if (btn) btn.disabled = false;
         }
     }
 
@@ -308,19 +143,6 @@
             line-height: 1.25;
             z-index: 1000;
         }
-        /* New Entry button inside tag-selector (compact) */
-        #tag-selector .new-entry-button {
-            display: inline-block;
-            float: right;
-            margin-left: 8px;
-            padding: 4px 8px;
-            font-size: 12px;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-            background: #2c3e50;
-            color: #fff;
-            cursor: pointer;
-        }
         #tag-selector h3 { margin: 0 0 6px 0; font-size: 1em; display: block; }
         #tag-selector label { font-size: 13px; margin: 4px 0; }
         #tag-selector input[type="search"],
@@ -334,10 +156,6 @@
         @media (max-width: 700px) {
             #tag-selector { width: calc(100% - 32px); top: 8px; right: 8px; padding: 8px; }
         }
-
-        /* Hide new-entry by default; reveal when .visible is applied */
-        .new-entry { display: none; background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .new-entry.visible { display: block; }
 
         h2 {
             padding: 5px;
@@ -432,121 +250,6 @@
             margin-top: 8px;
         }
 
-        /* Add styles for new entry form inputs */
-        .new-entry input[type="text"],
-        .new-entry textarea {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        
-        .new-entry textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-        
-        .new-entry button.submit {
-            background: #2c3e50;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .new-entry button.cancel {
-            background: transparent;
-            border: 1px solid #ddd;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-left: 8px;
-        }
-
-        /* Edit functionality styles */
-        .edit-btn {
-            background: var(--accent, #2c3e50);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: background-color 0.2s;
-        }
-
-        .edit-btn:hover {
-            background: #34495e;
-        }
-
-        .edit-form {
-            margin-top: 16px;
-        }
-
-        .edit-form input[type="text"],
-        .edit-form textarea {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 0.95em;
-            transition: border-color 0.2s;
-        }
-
-        .edit-form input[type="text"]:focus,
-        .edit-form textarea:focus {
-            border-color: #2c3e50;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(44,62,80,0.1);
-        }
-
-        .edit-form textarea {
-            min-height: 120px;
-            resize: vertical;
-            font-family: inherit;
-            line-height: 1.5;
-        }
-
-        .edit-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .edit-actions button {
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            border: none;
-            font-size: 0.9em;
-            transition: all 0.2s;
-        }
-
-        .edit-actions button[type="submit"] {
-            background: var(--accent, #2c3e50);
-            color: white;
-            flex: 1;
-        }
-
-        .edit-actions button[type="submit"]:hover {
-            background: #34495e;
-        }
-
-        .edit-actions button[type="button"] {
-            background: #e5e7eb;
-            color: #374151;
-        }
-
-        .edit-actions button[type="button"]:hover {
-            background: #d1d5db;
-        }
-
-        /* Animation for edit form transition */
-        .edit-form, .entry-content {
-            transition: opacity 0.2s;
-        }
-
         /* tag pill style */
         .tag-pill {
             display: inline-block;
@@ -588,11 +291,7 @@
 </head>
 <body>
     <div id="tag-selector">
-        <h3>Filter
-            {% if showOpenInBrower %}
-            <button type="button" id="toggleNewEntry" class="new-entry-button" aria-expanded="false">New Entry</button>
-            {% endif %}
-        </h3>
+        <h3>Filter</h3>
         <form id="tagForm" method="GET" action="/{{ mypath if mypath is not none }}">
 
             <div class="date-range">
@@ -618,20 +317,16 @@
                     <input type="checkbox" name="tags" value="{{ tag }}"
                            {% if tag in selected_tags %}checked{% endif %}
                            onchange="submitFormPreservePage()">
-                    {{ tag }}{% if tag not in selected_tags %} <span class="tag-count">({{ tag_counts.get(tag, 0) }})</span>{% endif %}
+                    {{ tag }}{% if tag not in selected_tags %} <span class="tag-count" id="tag-count-{{ tag }}">{{ tag_counts.get(tag, 0) }}</span>{% endif %}
                 </label><br>
             {% endfor %}
             </div>
         </form>
-        <button type="button" class="new-entry-button" aria-expanded="false" onclick="document.getElementById('journal_entries').scrollIntoView({ behavior: 'smooth', block: 'start' })">goto entries</button>
     </div>
 
 {% if mypath_content is not none %}
-<div id="mypath_content">
+<div id="mypath_content" ondblclick="openInEditor(thetype='page', entryId='{{ mypath }}')">
 {{ mypath_content | safe }}
-{% if showOpenInVSCode %}
-<button onclick="openInVSCode(this, 'page', '{{ mypath }}')" class="edit-btn vscode-btn">Edit in VS Code</button>
-{% endif %}
 </div>
 {% endif %}
 
@@ -641,64 +336,26 @@
 <p style="font-weight: bold;">related tags: {{ mypath_tags | sort | join(" | ") }}</p>
 {% endif %}
 
-    <!-- New Entry: hidden by default, revealed via button in tag-selector -->
-    <div class="new-entry" id="newEntryPanel" aria-hidden="true">
-        <h3>New Entry</h3>
-        <form method="POST" action="/new" id="newEntryForm">
-            <input type="text" name="title" placeholder="Title" required>
-            <textarea name="content" placeholder="Content (Markdown supported)" required>{% if new_entry_tags %}Tags: {{ ", ".join(new_entry_tags) }}
-
-{% endif %}</textarea>
-            <div style="margin-top:6px">
-                <button type="submit" class="submit">Add Entry</button>
-                <button type="button" class="cancel" id="cancelNewEntry">Cancel</button>
-            </div>
-        </form>
-    </div>
-
     <!-- Replace the existing entry list in HTML_TEMPLATE -->
     <ul>
         {% for entry in entries %}
         <li class="entry" data-entry-id="{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}" data-tags="{{ ' '.join(entry.tags) }}" data-rel-path="{{ entry.rel_path }}" data-line-no="{{ entry.pos }}">
              <div class="entry-date">{{ entry.date.strftime('%Y-%m-%d') }}</div>
-             <div class="entry-content" id="content-{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}">
+             <div class="entry-content">
                  <p>{{ entry.content | safe }}</p>
-                 <!-- Store original markdown in data attribute -->
-                 <textarea class="entry-markdown" style="display:none;">{{ entry.markdown }}</textarea>
                  {% if not (entry.tags|length == 1 and entry.tags|first == "untagged") %}
                    <p>Tags:
                    {% for tag in entry.tags %}
                      <button type="button" 
                              class="tag-pill" 
-                             onclick="removeTagContent('{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}', '{{ tag }}')"
+                             onclick="removeTagContent(this, '{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}', '{{ tag }}')"
                              title="Remove tag '{{ tag }}' from entry">
                          {{ tag }}
                      </button>
                      {% endfor %}
                    </p>
                  {% endif %}
-                 {% if showOpenInBrower %}
-                 <button onclick="showEdit('{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}')" class="edit-btn">Edit in Browser</button>
-                 {% endif %}
-                 {% if showOpenInVSCode %}
-                 <button onclick="openInVSCode(this, 'entry', '{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}')" class="edit-btn vscode-btn">Edit in VS Code</button>
-                 {% endif %}
                 </div>
-            <form method="POST" action="/edit/{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}" class="edit-form" id="edit-{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}" style="display:none">
-                <!-- preserve client-side filters when submitting the edit form -->
-                <input type="hidden" name="start" value="{{ start }}">
-                <input type="hidden" name="q" value="{{ q }}">
-                <input type="hidden" name="page" value="{{ page }}">
-                {% for tag in selected_tags %}
-                  <input type="hidden" name="tags" value="{{ tag }}">
-                {% endfor %}
-
-                <textarea name="content" required>{{ entry.markdown }}</textarea>
-                <div class="edit-actions">
-                    <button type="submit">Save</button>
-                    <button type="button" onclick="hideEdit('{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}')">Cancel</button>
-                </div>
-            </form>
         </li>
         {% endfor %}
     </ul>

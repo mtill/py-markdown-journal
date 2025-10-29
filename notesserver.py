@@ -3,7 +3,6 @@
 
 
 import os
-import sys
 from flask import Flask, render_template, request, redirect
 from datetime import datetime, timedelta
 from markdown_it import MarkdownIt
@@ -20,7 +19,8 @@ import shutil
 
 app = Flask(__name__)
 md = MarkdownIt()
-NOTEBOOK_NAME = "notes"
+NOTEBOOK_NAME = os.getenv('NOTEBOOK_NAME', 'notes')
+EDITOR_COMMAND = os.getenv('EDITOR_COMMAND', 'code --goto {filepath}:{line_no}').split()
 ENTRIES_PER_PAGE = 25
 HIDE_DOTFILES = True
 
@@ -389,10 +389,10 @@ def upload_image():
     # return URL that the client can insert (served by /media/<filename>)
     return jsonify({'url': f'/media/{filename}'})
 
-@app.route('/open_in_vscode', methods=['POST'])
-def open_in_vscode():
+@app.route('/edit', methods=['POST'])
+def edit():
     """
-    Server-side: open the given notebook-relative path in VS Code on the server.
+    Server-side: open the given notebook-relative path in editor on the server.
     Expects form data 'rel_path' (the path relative to NOTEBOOK_PATH).
     Returns JSON.
     """
@@ -423,8 +423,10 @@ def open_in_vscode():
     if not target.exists():
         return jsonify({'error': 'file not found'}), 404
 
-    code_cmd = shutil.which('code') or 'code'
-    args = [code_cmd, '--goto', f'{str(target)}:{str(line_no)}']
+    #code --goto "{filepath}:{line_no}"'
+    args = list(EDITOR_COMMAND)
+    for i in range(len(args)):
+        args[i] = args[i].replace("{filepath}", str(target)).replace("{line_no}", str(line_no))
     try:
         subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception as exc:
@@ -434,6 +436,5 @@ def open_in_vscode():
 
 
 if __name__ == '__main__':
-    NOTEBOOK_NAME = sys.argv[1]
     app.run(debug=True, host='127.0.0.1', port=5000)
 
