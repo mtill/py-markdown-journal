@@ -20,16 +20,43 @@
             document.getElementById('tagForm').submit();
         }
 
+        // credits: https://gist.github.com/ethanny2/44d5ad69970596e96e0b48139b89154b
+        function detectDoubleTap(doubleTapMs) {
+            let timeout, lastTap = 0
+
+            return function detectDoubleTap(event) {
+                const currentTime = Date.now()
+                const tapLength = currentTime - lastTap
+                if (tapLength > 0 && tapLength < doubleTapMs) {
+                    event.preventDefault()
+                    const doubleTap = new CustomEvent("doubletap", {
+                        bubbles: true,
+                        detail: event
+                    })
+                    event.target.dispatchEvent(doubleTap)
+                } else {
+                    timeout = setTimeout(() => clearTimeout(timeout), doubleTapMs)
+                }
+                lastTap = currentTime
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function(){
             // initial highlight pass and start watching for later changes
             applyHighlights();
 
             // double-click content to enter edit mode
             document.querySelectorAll('.entry').forEach(el => {
-                el.addEventListener('dblclick', function(e){
+                //el.addEventListener('dblclick', function(e){
+                //    openInEditor(thetype="entry", entryId=el.getAttribute('data-entry-id'))
+                //});
+                el.addEventListener('doubletap', (event) => {
                     openInEditor(thetype="entry", entryId=el.getAttribute('data-entry-id'))
                 });
             });
+
+            // initialize the new event
+            document.addEventListener('pointerup', detectDoubleTap(500));
         });
 
 
@@ -52,6 +79,10 @@
 
     // toggle staging a tag removal (called by inline onclick)
     async function removeTagContent(btn, entryId, tag){
+        if (tag === "{{ NO_ADDITIONAL_TAGS}}") {
+            return;
+        }
+
         btn.classList.add('pending');
 
         try {
@@ -65,7 +96,9 @@
             } else {
                 btn.parentElement.removeChild(btn);
                 let count_display = document.getElementById("tag-count-" + tag);
-                count_display.textContent = parseInt(count_display.textContent) - 1;
+                if (count_display && Number.isInteger(count_display.textContent)) {
+                    count_display.textContent = parseInt(count_display.textContent) - 1;
+                }
             }
         } catch (err) {
             console.error(err);

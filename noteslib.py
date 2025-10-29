@@ -23,6 +23,7 @@ entryregexes = [[re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) ?(.*)'), "%Y
                 [re.compile(r'(\d{8}) ?(.*)'), "%Y%m%d"],
                 [re.compile(r'(\d{6}) ?(.*)'), "%y%m%d"]
                ]
+JOURNAL_FILE_REGEX = re.compile(r'(YYYY)-Q([1-4])\.md$')
 relativeImageOrLinkRegex = re.compile(r'(!?)\[([^\]]*)\]\(([^\)]*)\)')
 
 

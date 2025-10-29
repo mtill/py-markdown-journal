@@ -8,19 +8,19 @@ from datetime import datetime, timedelta
 from markdown_it import MarkdownIt
 import re
 import html
-from noteslib import parseEntries, writeFile, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR, TAG_REGEX
+from noteslib import parseEntries, writeFile, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR, TAG_REGEX, JOURNAL_FILE_REGEX
 from pathlib import Path
 import uuid
 import mimetypes
 from werkzeug.utils import secure_filename
 from flask import send_from_directory, jsonify
 import subprocess
-import shutil
+import json
 
 app = Flask(__name__)
 md = MarkdownIt()
 NOTEBOOK_NAME = os.getenv('NOTEBOOK_NAME', 'notes')
-EDITOR_COMMAND = os.getenv('EDITOR_COMMAND', 'code --goto {filepath}:{line_no}').split()
+EDITOR_COMMAND = json.loads(os.getenv('EDITOR_COMMAND', "[\"code\", \"--goto\", \"{filepath}:{line_no}\"]"))
 ENTRIES_PER_PAGE = 25
 HIDE_DOTFILES = True
 
@@ -29,27 +29,12 @@ NOTEBOOK_PATH = Path(os.environ.get('NOTES_PATH', '.')).resolve()
 MEDIA_FOLDER = NOTEBOOK_PATH / "media"
 JOURNAL_PATH = NOTEBOOK_PATH / "journal"
 
-JOURNAL_FILE_REGEX = re.compile(r'(YYYY)-Q([1-4])\.md$')
 JS_ENTRY_ID_FORMAT = "%Y%m%d_%H%M%S"
 NO_ADDITIONAL_TAGS = "[only selected tags]"
 
 
 def remove_tag(entryId, tag_to_remove):
-    # try several datetime formats
-    dt = None
-    fmts = ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d", JS_ENTRY_ID_FORMAT)
-    for fmt in fmts:
-        try:
-            dt = datetime.strptime(entryId, fmt)
-            break
-        except Exception:
-            continue
-    if dt is None:
-        try:
-            dt = datetime.fromisoformat(entryId)
-        except Exception:
-            print("remove_tag: could not parse entry_id:", entryId)
-            return False
+    dt = datetime.strptime(entryId, JS_ENTRY_ID_FORMAT)
 
     # determine quarter file
     quarter = (dt.month - 1) // 3 + 1
@@ -325,6 +310,7 @@ def index(mypath="/"):
             entries=paginated_entries,
             all_tags=available_tags,
             selected_tags=selected_tags,
+            NO_ADDITIONAL_TAGS=NO_ADDITIONAL_TAGS,
             tag_counts=tag_counts,
             page=page,
             total_pages=total_pages,
