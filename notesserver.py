@@ -20,7 +20,7 @@ import shutil
 
 
 app = Flask(__name__)
-md = MarkdownIt()
+md = MarkdownIt("gfm-like")
 NOTEBOOK_NAME = os.getenv('NOTEBOOK_NAME', 'notes')
 
 code_cmd = shutil.which('code') or 'code'
