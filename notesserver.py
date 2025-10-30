@@ -24,12 +24,11 @@ md = MarkdownIt("gfm-like")
 NOTEBOOK_NAME = os.getenv('NOTEBOOK_NAME', 'notes')
 
 code_cmd = shutil.which('code') or 'code'
-DEFAULT_CODE_CMD = [code_cmd, "--goto", "{filepath}:{line_no}"]
+EDITOR_COMMAND_LIST = [code_cmd, "--goto", "{filepath}:{line_no}"]
 EDITOR_COMMAND = os.getenv('EDITOR_COMMAND', None)
-if EDITOR_COMMAND is None:
-    EDITOR_COMMAND = DEFAULT_CODE_CMD
-else:
-    EDITOR_COMMAND = json.loads(EDITOR_COMMAND)
+if EDITOR_COMMAND is not None:
+    EDITOR_COMMAND_LIST = json.loads(EDITOR_COMMAND)
+
 
 ENTRIES_PER_PAGE = 25
 HIDE_DOTFILES = True
@@ -158,6 +157,9 @@ def index(mypath="/"):
             return "access denied."
 
         if p.is_dir():
+            if (p / ".hidden").exists():
+                return "access denied."
+
             show_journal = False
             folders = []
             files = []
@@ -421,7 +423,7 @@ def edit():
         return jsonify({'error': 'file not found'}), 404
 
     #code --goto "{filepath}:{line_no}"'
-    args = list(EDITOR_COMMAND)
+    args = list(EDITOR_COMMAND_LIST)
     for i in range(len(args)):
         args[i] = args[i].replace("{filepath}", str(target)).replace("{line_no}", str(line_no))
     try:
@@ -433,5 +435,5 @@ def edit():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    app.run(debug=False, host='127.0.0.1', port=5000)
 
