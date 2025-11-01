@@ -29,15 +29,11 @@ EDITOR_COMMAND = os.getenv('EDITOR_COMMAND', None)
 if EDITOR_COMMAND is not None:
     EDITOR_COMMAND_LIST = json.loads(EDITOR_COMMAND)
 
+NOTEBOOK_PATH = Path(os.environ.get('NOTES_PATH', '.')).resolve()
+JOURNAL_PATH = NOTEBOOK_PATH / "journal"
 
 ENTRIES_PER_PAGE = 25
 HIDE_DOTFILES = True
-
-# add media folder (inside notebook path)
-NOTEBOOK_PATH = Path(os.environ.get('NOTES_PATH', '.')).resolve()
-MEDIA_FOLDER = NOTEBOOK_PATH / "media"
-JOURNAL_PATH = NOTEBOOK_PATH / "journal"
-
 JS_ENTRY_ID_FORMAT = "%Y%m%d_%H%M%S"
 NO_ADDITIONAL_TAGS = "[only selected tags]"
 
@@ -365,28 +361,6 @@ def remove_tag_route():
 
     return jsonify({'error': 'failed to remove tag'}), 400
 
-
-@app.route('/upload_image', methods=['POST'])
-def upload_image():
-    MEDIA_FOLDER.mkdir(parents=True, exist_ok=True)
-    file = request.files.get('image')
-    if not file:
-        return jsonify({'error': 'no file'}), 400
-    if not (file.content_type and file.content_type.startswith('image')):
-        return jsonify({'error': 'not an image'}), 400
-
-    # determine extension
-    orig_name = secure_filename(file.filename or '')
-    ext = Path(orig_name).suffix
-    if not ext:
-        ext = mimetypes.guess_extension(file.content_type) or '.png'
-
-    filename = datetime.now().strftime('%Y%m%d%H%M%S') + '_' + uuid.uuid4().hex + ext
-    dest = MEDIA_FOLDER / filename
-    file.save(str(dest))
-
-    # return URL that the client can insert (served by /media/<filename>)
-    return jsonify({'url': f'/media/{filename}'})
 
 @app.route('/edit', methods=['POST'])
 def edit():
