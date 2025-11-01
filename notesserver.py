@@ -123,7 +123,7 @@ def parseMarkdown(p):
     title = "[" + NOTEBOOK_NAME + "] " + mypath_relative.as_posix()
     mypath_relative_parts = list(mypath_relative.parts)
     mypath_relative_parts[-1] = p.stem
-    mypath_tag = TAG_NAMESPACE_SEPARATOR.join(mypath_relative_parts)
+    mypath_tag = TAG_NAMESPACE_SEPARATOR.join(mypath_relative_parts).lower()
     if mypath_tag not in mypath_tags:
         mypath_tags.append(mypath_tag)
 
