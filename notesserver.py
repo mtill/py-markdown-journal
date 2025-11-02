@@ -10,7 +10,6 @@ import re
 import html
 from noteslib import parseEntries, writeFile, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR, TAG_REGEX, JOURNAL_FILE_REGEX
 from pathlib import Path
-from werkzeug.utils import secure_filename
 from flask import send_from_directory, jsonify
 import subprocess
 import json
