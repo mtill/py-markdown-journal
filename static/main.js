@@ -65,7 +65,7 @@ async function removeTagContent(btn, entryId, tag){
         } else {
             btn.parentElement.removeChild(btn);
             let count_display = document.getElementById("tag-count-" + tag);
-            if (count_display && Number.isInteger(count_display.textContent)) {
+            if (count_display && !isNaN(Number(count_display.textContent))) {
                 count_display.textContent = parseInt(count_display.textContent) - 1;
             }
         }
