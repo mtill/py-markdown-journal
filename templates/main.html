@@ -3,42 +3,50 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
+    <title>[{{ NOTEBOOK_NAME }}]{{ title }}</title>
     <script src="/static/main.js"></script>
     <link rel="stylesheet" href="/static/main.css">
 </head>
 <body>
     <div id="tag-selector">
-        <h3>Filter</h3>
+        {% if mypath_tag is none %}
+        <div class="mypath-pill">{{ title }}</div>
+        {% else %}
+        <div class="mypath-pill" title="single-click to copy tag to clipboard; double-click to copy date+tag to clipboard" onclick="copyMyPathTag('{{ mypath_tag }}', false)" ondblclick="copyMyPathTag('{{ mypath_tag }}', true)">{{ title }}</div>
+        {% endif %}
         <form id="tagForm" method="GET" action="/{{ mypath if mypath is not none }}#journal_entries">
 
+            <strong>From</strong>
             <div class="date-range">
-                <label>From</label>
                 <div class="date-inputs">
                     <input type="date" name="start" id="start_date" value="{{ start }}" onchange="this.form.submit()">
                 </div>
             </div>
 
             <!-- search input -->
+            <strong>Search</strong>
             <div style="margin-bottom:10px;">
-                <label>Search</label>
-                <input type="search" name="q" id="q" placeholder="Search (regular expression)" value="{{ q | e }}" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;" onchange="this.form.submit()">
+                <input type="search" name="q" id="q" placeholder="Search (regular expression)" value="{{ q | e }}" onchange="this.form.submit()">
                 {% if regex_error %}
                 <div style="color:#b00020; font-size:0.9em; margin-top:6px;">Invalid regular expression</div>
                 {% endif %}
             </div>
 
             <strong>Tags</strong>
-            <div class="tag-list">
-            {% for tag in all_tags %}
-                <label class="tag-checkbox">
-                    <input type="checkbox" name="tags" value="{{ tag }}"
+            {% if all_tags | length == 0 %}
+                <div>No tags available</div>
+            {% else %}
+                <div class="tag-list">
+                    {% for tag in all_tags %}
+                <label class="tag-checkbox" for="tag-checkbox-{{ tag }}">
+                    <input id="tag-checkbox-{{ tag }}" type="checkbox" name="tags" value="{{ tag }}"
                            {% if tag in selected_tags %}checked{% endif %}
                            onchange="submitFormPreservePage()">
                     {{ tag }}{% if tag not in selected_tags %} <span class="tag-count" id="tag-count-{{ tag }}">{{ tag_counts.get(tag, 0) }}</span>{% endif %}
                 </label><br>
-            {% endfor %}
+                {% endfor %}
             </div>
+            {% endif %}
         </form>
     </div>
 

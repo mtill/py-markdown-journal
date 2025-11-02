@@ -34,6 +34,7 @@ ENTRIES_PER_PAGE = 25
 HIDE_DOTFILES = True
 JS_ENTRY_ID_FORMAT = "%Y%m%d_%H%M%S"
 NO_ADDITIONAL_TAGS = "[only selected tags]"
+MYPATH_TAG_REGEX = re.compile("\\s+")
 
 
 def remove_tag(entryId: str, tag_to_remove: str):
@@ -108,6 +109,15 @@ def parseMarkdown(p):
     show_journal = True
     mypath_content = []
     mypath_tags = []
+
+    mypath_relative = p.relative_to(NOTEBOOK_PATH)
+    title = mypath_relative.as_posix()
+    mypath_relative_parts = list(mypath_relative.parts)
+    mypath_relative_parts[-1] = p.stem
+    mypath_relative_parts = map(lambda s: MYPATH_TAG_REGEX.sub("", s).lower(), mypath_relative_parts)
+    mypath_tag = TAG_NAMESPACE_SEPARATOR.join(mypath_relative_parts)
+    mypath_tags.append(mypath_tag)
+
     with open(p, "r", encoding="utf-8") as f:
         for line in f:
             mypath_content.append(line)
@@ -116,14 +126,6 @@ def parseMarkdown(p):
                 if line_tag not in mypath_tags:
                     mypath_tags.append(line_tag)
     mypath_content = md.render("".join(mypath_content))
-
-    mypath_relative = p.relative_to(NOTEBOOK_PATH)
-    title = "[" + NOTEBOOK_NAME + "] " + mypath_relative.as_posix()
-    mypath_relative_parts = list(mypath_relative.parts)
-    mypath_relative_parts[-1] = p.stem
-    mypath_tag = TAG_NAMESPACE_SEPARATOR.join(mypath_relative_parts).lower()
-    if mypath_tag not in mypath_tags:
-        mypath_tags.append(mypath_tag)
 
     return show_journal, mypath_content, mypath_tags, mypath_tag, title
 
@@ -309,8 +311,10 @@ def index(mypath="/"):
         return render_template(
             "main.html",
             mypath=mypath,
+            mypath_tag=mypath_tag,
             mypath_tags=mypath_tags,
             new_entry_tags=new_entry_tags,
+            NOTEBOOK_NAME=NOTEBOOK_NAME,
             title=title,
             mypath_content=mypath_content,
             JS_ENTRY_ID_FORMAT=JS_ENTRY_ID_FORMAT,

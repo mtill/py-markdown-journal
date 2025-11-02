@@ -12,6 +12,26 @@ function submitFormPreservePage() {
     document.getElementById('tagForm').submit();
 }
 
+async function setClipboard(text) {
+  const type = "text/plain";
+  const clipboardItemData = {
+    [type]: text,
+  };
+  const clipboardItem = new ClipboardItem(clipboardItemData);
+  await navigator.clipboard.write([clipboardItem]);
+}
+
+async function copyMyPathTag(mypath_tag, is_double_click) {
+    let text = "x" + mypath_tag;
+    if (is_double_click) {
+        const thedate = new Date();
+        let date_str = thedate.getFullYear().toString() + "-" + (thedate.getMonth() + 1).toString().padStart(2,'0') + "-" + thedate.getDate().toString().padStart(2,'0') + " " + thedate.getHours().toString().padStart(2,'0') + ":" + thedate.getMinutes().toString().padStart(2,'0') + ":" + thedate.getSeconds().toString().padStart(2,'0');
+        text = "### " + date_str + " " + text;
+    }
+    
+    await setClipboard(text);
+}
+
 // credits: https://gist.github.com/ethanny2/44d5ad69970596e96e0b48139b89154b
 function detectDoubleTap(doubleTapMs) {
     let timeout, lastTap = 0

@@ -39,17 +39,11 @@ img {
 
 #tag-selector h3 { margin: 0 0 6px 0; font-size: 1em; display: block; }
 
-#tag-selector label { font-size: 13px; margin: 4px 0; }
-
 #tag-selector input[type="search"],
 .date-inputs input[type="date"] {
     padding: 6px;
     font-size: 13px;
 }
-
-.tag-list { max-height: 180px; overflow:auto; font-size: 13px; margin-top:6px; }
-
-#tag-selector label { font-size: 13px; margin: 4px 0; }
 
 #tag-selector .tag-count { color: #666; font-size: 0.85em; margin-left:6px; }
 
@@ -120,13 +114,11 @@ h2 {
 .date-range {
     display: flex;
     flex-direction: column;
-    gap: 8px;
     margin-bottom: 12px;
 }
 
 .date-inputs {
     display: flex;
-    gap: 8px;
 }
 
 .date-inputs input[type="date"] {
@@ -134,6 +126,13 @@ h2 {
     border: 1px solid #ddd;
     border-radius: 4px;
     background: white;
+}
+
+#q {
+    width:100%;
+    padding:8px;
+    border:1px solid #ddd;
+    border-radius:4px;
 }
 
 .range-labels {
@@ -147,7 +146,6 @@ h2 {
 .tag-list {
     max-height: 300px;
     overflow: auto;
-    margin-top: 8px;
 }
 
 /* tag pill style */
@@ -171,6 +169,24 @@ h2 {
 
 /* visually mark staged tag removals */
 .tag-pill.pending { opacity: 0.5; text-decoration: line-through; filter: grayscale(40%); }
+
+.mypath-pill {
+    display: inline-block;
+    margin: 0 6px 6px 0;
+    padding: 4px 8px;
+    background: #91bdf3;
+    color: black;
+    font-size: 0.85em;
+    font-weight: bold;
+    border: 1px solid #dbe6ef;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mypath-pill:hover {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+}
 
 /* highlight entries that include the 'highlighted' tag */
 .entry.highlighted {
