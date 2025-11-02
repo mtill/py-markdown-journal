@@ -122,6 +122,8 @@ def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG):
     entries = []
     prefix = []
     originPath = thepath.parent
+    if untaggedtag is not None:
+        untaggedtag = untaggedtag.lower()
 
     with open(thepath, "r", encoding="utf-8") as f:
         lasttime = None
@@ -145,7 +147,7 @@ def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG):
                         isEntryHeadline = True
                         break
 
-            if isEntryHeadline:
+            if isEntryHeadline and thematch is not None and thedateformat is not None:
                 #thedate = datetime.datetime.min if thedateformat is None else datetime.datetime.strptime(thematch.group(1), thedateformat)
                 thedate = datetime.datetime.strptime(thematch.group(1), thedateformat)
 
@@ -161,7 +163,7 @@ def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG):
                 lastcontent = [line]
                 lasttags = {}
                 for l in TAG_REGEX.findall(line):
-                    lasttags[l] = True
+                    lasttags[l.lower()] = True
                 lastpos = pos + 1
             else:
 
@@ -170,7 +172,7 @@ def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG):
                 else:
                     lastcontent.append(line)
                     for l in TAG_REGEX.findall(line):
-                        lasttags[l] = True
+                        lasttags[l.lower()] = True
 
         if len(lastcontent) != 0:
             _stripcontent(thecontent=lastcontent)

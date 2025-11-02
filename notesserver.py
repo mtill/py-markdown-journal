@@ -10,8 +10,6 @@ import re
 import html
 from noteslib import parseEntries, writeFile, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR, TAG_REGEX, JOURNAL_FILE_REGEX
 from pathlib import Path
-import uuid
-import mimetypes
 from werkzeug.utils import secure_filename
 from flask import send_from_directory, jsonify
 import subprocess
@@ -38,7 +36,7 @@ JS_ENTRY_ID_FORMAT = "%Y%m%d_%H%M%S"
 NO_ADDITIONAL_TAGS = "[only selected tags]"
 
 
-def remove_tag(entryId, tag_to_remove):
+def remove_tag(entryId: str, tag_to_remove: str):
     dt = datetime.strptime(entryId, JS_ENTRY_ID_FORMAT)
 
     # determine quarter file
@@ -47,26 +45,25 @@ def remove_tag(entryId, tag_to_remove):
     journal_file = JOURNAL_PATH / quarter_filename
 
     if not journal_file.exists():
-        print("remove_tag: journal file not found:", journal_file)
-        return False
+        return False, "remove_tag: journal file not found: " + journal_file.as_posix()
 
     parsedEntries = parseEntries(thepath=journal_file, notebookpath=NOTEBOOK_PATH)
     for entry in parsedEntries["entries"]:
         if entry.get('date') == dt:
             newcontent = []
             for line in entry["content"]:
-                newcontent.append(re.sub("\\bx" + tag_to_remove + "\\b", '', line))
+                newcontent.append(re.sub("\\bx" + tag_to_remove + "\\b", '', line, flags=re.IGNORECASE))
 
             entry["content"] = newcontent
-            entry["tags"].remove(tag_to_remove)
+            if tag_to_remove in entry["tags"]:
+                entry["tags"].remove(tag_to_remove)
 
             writeFile(filepath=journal_file,
                       prefix=parsedEntries["prefix"],
                       entries=parsedEntries["entries"])
-            return True
+            return True, None
 
-    print("remove_tag: entry not found for id:", entryId)
-    return False
+    return False, "remove_tag: entry not found for id: " + entryId
 
 
 def get_entries(start_date):
@@ -115,6 +112,7 @@ def parseMarkdown(p):
         for line in f:
             mypath_content.append(line)
             for line_tag in TAG_REGEX.findall(line):
+                line_tag = line_tag.lower()
                 if line_tag not in mypath_tags:
                     mypath_tags.append(line_tag)
     mypath_content = md.render("".join(mypath_content))
@@ -290,7 +288,7 @@ def index(mypath="/"):
         # compute available_tags and tag counts from the currently filtered entries (keep selected tags visible)
         tag_counts = {}
         for entry in filtered_entries:
-            for tag in entry.get('tags', []):
+            for tag in entry['tags']:
                 tag_counts[tag] = tag_counts.get(tag, 0) + 1
         # ensure selected tags are present in counts (show zero if needed)
         for t in selected_tags:
@@ -355,11 +353,13 @@ def remove_tag_route():
     entryId = request.form.get('entryId') or request.args.get('entryId')
     tag_to_remove = request.form.get('remove_tag') or request.args.get('remove_tag')
 
-    result = remove_tag(entryId=entryId, tag_to_remove=tag_to_remove)
-    if result:
-        return jsonify({'ok': True})
+    msg = "invalid request"
+    if entryId is not None and tag_to_remove is not None:
+        is_success, msg = remove_tag(entryId=entryId, tag_to_remove=tag_to_remove)
+        if is_success:
+            return jsonify({'ok': True})
 
-    return jsonify({'error': 'failed to remove tag'}), 400
+    return jsonify({'error': msg}), 400
 
 
 @app.route('/edit', methods=['POST'])
