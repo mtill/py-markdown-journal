@@ -12,7 +12,7 @@
         {% if mypath_tag is none %}
         <div class="mypath-pill">{{ title }}</div>
         {% else %}
-        <div class="mypath-pill" title="single-click to copy tag to clipboard; double-click to copy date+tag to clipboard" onclick="copyMyPathTag('{{ mypath_tag }}', false)" ondblclick="copyMyPathTag('{{ mypath_tag }}', true)">{{ title }}</div>
+        <div class="mypath-pill" title="click to copy tag to clipboard" onclick="copyMyPathTag('{{ mypath_tag }}')">{{ title }}</div>
         {% endif %}
         <form id="tagForm" method="GET" action="/{{ mypath if mypath is not none }}#journal_entries">
 
@@ -34,17 +34,12 @@
 
             <strong>Tags</strong>
             {% if all_tags | length == 0 %}
-                <div>No tags available</div>
+            <div>No tags available</div>
             {% else %}
-                <div class="tag-list">
-                    {% for tag in all_tags %}
-                <label class="tag-checkbox" for="tag-checkbox-{{ tag }}">
-                    <input id="tag-checkbox-{{ tag }}" type="checkbox" name="tags" value="{{ tag }}"
-                           {% if tag in selected_tags %}checked{% endif %}
-                           onchange="submitFormPreservePage()">
-                    {{ tag }}{% if tag not in selected_tags %} <span class="tag-count" id="tag-count-{{ tag }}">{{ tag_counts.get(tag, 0) }}</span>{% endif %}
-                </label><br>
-                {% endfor %}
+            <div class="tag-list">
+            {% for tag in all_tags %}
+                <input id="tag-checkbox-{{ tag }}" type="checkbox" name="tags" value="{{ tag }}" {% if tag in selected_tags %}checked{% endif %} onchange="submitFormPreservePage()">{{ tag }}{% if tag not in selected_tags %} <span class="tag-count" id="tag-count-{{ tag }}">{{ tag_counts.get(tag, 0) }}</span>{% endif %}<br>
+            {% endfor %}
             </div>
             {% endif %}
         </form>
