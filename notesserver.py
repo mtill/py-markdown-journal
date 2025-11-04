@@ -3,17 +3,16 @@
 
 
 import os
-from flask import Flask, render_template, request, redirect
-from datetime import datetime, timedelta
-from markdown_it import MarkdownIt
 import re
 import html
-from noteslib import parseEntries, writeFile, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR, TAG_REGEX, JOURNAL_FILE_REGEX
 from pathlib import Path
-from flask import send_from_directory, jsonify
 import subprocess
 import json
 import shutil
+from noteslib import parseEntries, writeFile, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR, TAG_REGEX, JOURNAL_FILE_REGEX
+from datetime import datetime, timedelta
+from flask import Flask, render_template, request, send_from_directory, jsonify
+from markdown_it import MarkdownIt
 
 
 app = Flask(__name__)
@@ -93,15 +92,6 @@ def get_entries(start_date):
             result.append(entry)
 
     return result
-
-
-
-def add_new_entry(title, content):
-    now_date = datetime.now()
-    quarter = (now_date.month - 1) // 3 + 1
-    quarter_filename = f"{now_date.year}-Q{quarter}.md"
-    with open(JOURNAL_PATH / quarter_filename, "a") as f:
-        f.write(f"\n\n### {now_date.year}-{now_date.month}-{now_date.day} {now_date.hour}:{now_date.minute} {title}\n\n{content}\n\n")
 
 
 def parseMarkdown(p):
@@ -198,6 +188,10 @@ def index(mypath="/"):
                     if p.is_file():
                         show_journal, mypath_content, mypath_tags, mypath_tag, title = parseMarkdown(p=p)
                         mypath = mypath + MARKDOWN_SUFFIX
+
+                if not p.exists():
+                    mypath_content = "<h2>Not Found</h2><p>The requested path does not exist.</p>"
+
 
     if show_journal:
 
@@ -340,17 +334,6 @@ def index(mypath="/"):
         )
 
 
-# Add new route for creating entries
-@app.route('/new', methods=['POST'])
-def new_entry():
-    title = request.form.get('title', '').strip()
-    content = request.form.get('content', '').strip()
-    
-    if title and content:
-        add_new_entry(title, content)
-    
-    return redirect('/')
-
 @app.route('/remove_tag', methods=['POST'])
 def remove_tag_route():
     entryId = request.form.get('entryId') or request.args.get('entryId')
@@ -363,6 +346,32 @@ def remove_tag_route():
             return jsonify({'ok': True})
 
     return jsonify({'error': msg}), 400
+
+
+#@app.route("/_set_key", methods=['GET'])
+#def get_set_key_form():
+#    key = request.cookies.get('notes_encryption_key', '')
+#    return render_template("setkey.html", key=key, was_updated=False)
+
+
+#@app.route("/_set_key", methods=['POST'])
+#def set_key():
+#    """"
+#    clientl-side: set encryption key for notes. store on client via cookie.
+#    """
+#
+#    generate_random = request.form.get('generate_random', False)
+#
+#    key = request.form.get('key', '')
+#    if not key and not generate_random:
+#        return jsonify({'error': 'missing key'}), 400
+#
+#    if generate_random:
+#        key = Fernet.generate_key().decode('utf-8')
+#
+#    response = make_response(render_template("setkey.html", key=key, was_updated=True))
+#    response.set_cookie('notes_encryption_key', key, max_age=30*24*60*60)
+#    return response
 
 
 @app.route('/edit', methods=['POST'])
@@ -385,19 +394,11 @@ def edit():
     except Exception:
         return jsonify({'error': 'invalid path'}), 400
 
-    # Ensure target is inside NOTEBOOK_PATH
-    try:
-        if not target.is_relative_to(NOTEBOOK_PATH):
-            return jsonify({'error': 'access denied'}, 403)
-    except AttributeError:
-        # Python <3.9 fallback
-        try:
-            target.relative_to(NOTEBOOK_PATH)
-        except Exception:
-            return jsonify({'error': 'access denied'}, 403)
+    if not target.is_relative_to(NOTEBOOK_PATH):
+        return jsonify({'error': 'access denied'}, 403)
 
-    if not target.exists():
-        return jsonify({'error': 'file not found'}), 404
+    if not target.parent.exists():
+        target.parent.mkdir(parents=True, exist_ok=True)
 
     #code --goto "{filepath}:{line_no}"'
     args = list(EDITOR_COMMAND_LIST)
