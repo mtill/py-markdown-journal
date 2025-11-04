@@ -22,4 +22,5 @@ this software aims to provide a tool for organizing your knowledge base:
         NOTEBOOK_PATH
         NOTEBOOK_NAME
         EDITOR_COMMAND
+        EDITOR_GOTO_COMMAND
 
