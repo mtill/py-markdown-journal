@@ -190,7 +190,7 @@ def index(mypath="/"):
                         mypath = mypath + MARKDOWN_SUFFIX
 
                 if not p.exists():
-                    mypath_content = "<h2>Not Found</h2><p>The requested path does not exist.</p>"
+                    mypath_content = "<h2>Not Found</h2><p>The requested path does not exist: <b>/" + html.escape(p.relative_to(NOTEBOOK_PATH).as_posix()) + "</b></p>"
 
 
     if show_journal:
@@ -374,7 +374,7 @@ def remove_tag_route():
 #    return response
 
 
-@app.route('/edit', methods=['POST'])
+@app.route('/_edit', methods=['POST'])
 def edit():
     """
     Server-side: open the given notebook-relative path in editor on the server.

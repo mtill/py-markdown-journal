@@ -76,7 +76,7 @@ async function removeTagContent(btn, entryId, tag){
     }
 }
 
-// Opens entry in editor on the server via AJAX POST to /edit
+// Opens entry in editor on the server via AJAX POST to /_edit
 async function openInEditor(thetype, entryId){
     let rel;
     let line_no;
@@ -97,7 +97,7 @@ async function openInEditor(thetype, entryId){
         const fd = new FormData();
         fd.append('rel_path', rel);
         fd.append('line_no', line_no);
-        const resp = await fetch('/edit', { method: 'POST', body: fd });
+        const resp = await fetch('/_edit', { method: 'POST', body: fd });
         if (!resp.ok) {
             const txt = await resp.text();
             alert('Failed to open in editor on server: ' + resp.status + ' ' + txt);
