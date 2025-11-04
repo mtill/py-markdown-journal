@@ -74,8 +74,8 @@ async function removeTagContent(btn, entryId, tag){
 
 // Opens entry in editor on the server via AJAX POST to /_edit
 async function openInEditor(thetype, entryId){
-    let rel;
-    let line_no;
+    let rel = null;
+    let line_no = null;
 
     if (thetype == "entry") {
         const li = document.querySelector(`.entry[data-entry-id="${entryId}"]`);
@@ -86,13 +86,14 @@ async function openInEditor(thetype, entryId){
         if (!line_no) return alert('no line number available for this entry');
     } else {
         rel = entryId;
-        line_no = 1;
     }
 
     try {
         const fd = new FormData();
         fd.append('rel_path', rel);
-        fd.append('line_no', line_no);
+        if (line_no !== null) {
+            fd.append('line_no', line_no);
+        }
         const resp = await fetch('/_edit', { method: 'POST', body: fd });
         if (!resp.ok) {
             const txt = await resp.text();

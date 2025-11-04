@@ -20,10 +20,16 @@ md = MarkdownIt("gfm-like")
 NOTEBOOK_NAME = os.getenv('NOTEBOOK_NAME', 'notes')
 
 code_cmd = shutil.which('code') or 'code'
-EDITOR_COMMAND_LIST = [code_cmd, "--goto", "{filepath}:{line_no}"]
+EDITOR_COMMAND_LIST = [code_cmd, "{filepath}"]
 EDITOR_COMMAND = os.getenv('EDITOR_COMMAND', None)
 if EDITOR_COMMAND is not None:
     EDITOR_COMMAND_LIST = json.loads(EDITOR_COMMAND)
+
+EDITOR_GOTO_COMMAND_LIST = [code_cmd, "--goto", "{filepath}:{line_no}"]
+EDITOR_GOTO_COMMAND = os.getenv('EDITOR_GOTO_COMMAND', None)
+if EDITOR_GOTO_COMMAND is not None:
+    EDITOR_GOTO_COMMAND_LIST = json.loads(EDITOR_GOTO_COMMAND)
+
 
 NOTEBOOK_PATH = Path(os.environ.get('NOTES_PATH', '.')).resolve()
 JOURNAL_PATH = NOTEBOOK_PATH / "journal"
@@ -389,16 +395,14 @@ def edit():
     Expects form data 'rel_path' (the path relative to NOTEBOOK_PATH).
     Returns JSON.
     """
-    rel = request.form.get('rel_path') or (request.json and request.json.get('rel_path'))
+    rel = request.form.get('rel_path', None)
     if not rel:
         return jsonify({'error': 'missing path'}), 400
 
-    line_no = request.form.get('line_no') or (request.json and request.json.get('line_no'))
-    if not line_no:
-        return jsonify({'error': 'missing line number'}), 400
+    line_no = request.form.get('line_no', None)
 
     try:
-        target = (NOTEBOOK_PATH / Path(rel)).resolve()
+        target = (NOTEBOOK_PATH / rel).resolve()
     except Exception:
         return jsonify({'error': 'invalid path'}), 400
 
@@ -409,7 +413,7 @@ def edit():
         target.parent.mkdir(parents=True, exist_ok=True)
 
     #code --goto "{filepath}:{line_no}"'
-    args = list(EDITOR_COMMAND_LIST)
+    args = list(EDITOR_COMMAND_LIST) if line_no is None else list(EDITOR_GOTO_COMMAND_LIST)
     for i in range(len(args)):
         args[i] = args[i].replace("{filepath}", str(target)).replace("{line_no}", str(line_no))
     try:
