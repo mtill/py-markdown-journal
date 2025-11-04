@@ -52,7 +52,7 @@
 {% endif %}
 
 
-<h2 id="journal_entries" ondblclick="openInEditor(thetype='page', entryId='{{ latest_journal_page }}')">journal entries</h2>
+<h2 id="journal_entries" ondblclick="setClipboard('{{ new_entry_tags_str }}'); openInEditor(thetype='page', entryId='{{ latest_journal_page }}')">journal entries</h2>
 {% if mypath_tags is not none and mypath_tags | length > 0 %}
 <p style="font-weight: bold;">related tags: {{ mypath_tags | join(" | ") }}</p>
 {% endif %}
