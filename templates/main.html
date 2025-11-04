@@ -12,7 +12,7 @@
         {% if mypath_tag is none %}
         <div class="mypath-pill">{{ title }}</div>
         {% else %}
-        <div class="mypath-pill" title="click to copy tag to clipboard" onclick="copyMyPathTag('{{ mypath_tag }}')">{{ title }}</div>
+        <div class="mypath-pill" title="click to copy tag to clipboard" onclick="setClipboard('{{ new_entry_tags_str }}')">{{ title }}</div>
         {% endif %}
         <form id="tagForm" method="GET" action="/{{ mypath if mypath is not none }}#journal_entries">
 
@@ -52,9 +52,9 @@
 {% endif %}
 
 
-<h2 id="journal_entries">journal entries</h2>
+<h2 id="journal_entries" ondblclick="openInEditor(thetype='page', entryId='{{ latest_journal_page }}')">journal entries</h2>
 {% if mypath_tags is not none and mypath_tags | length > 0 %}
-<p style="font-weight: bold;">related tags: {{ mypath_tags | sort | join(" | ") }}</p>
+<p style="font-weight: bold;">related tags: {{ mypath_tags | join(" | ") }}</p>
 {% endif %}
 
     <!-- Replace the existing entry list in HTML_TEMPLATE -->

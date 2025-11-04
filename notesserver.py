@@ -9,7 +9,7 @@ from pathlib import Path
 import subprocess
 import json
 import shutil
-from noteslib import parseEntries, writeFile, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR, TAG_REGEX, JOURNAL_FILE_REGEX
+from noteslib import parseEntries, writeFile, MARKDOWN_SUFFIX, TAG_PREFIX, TAG_NAMESPACE_SEPARATOR, TAG_REGEX, JOURNAL_FILE_REGEX
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, send_from_directory, jsonify
 from markdown_it import MarkdownIt
@@ -193,6 +193,8 @@ def index(mypath="/"):
                     mypath_content = "<h2>Not Found</h2><p>The requested path does not exist: <b>/" + html.escape(p.relative_to(NOTEBOOK_PATH).as_posix()) + "</b></p>"
 
 
+    today_date = datetime.now().date()
+
     if show_journal:
 
         # Get pagination parameters
@@ -201,7 +203,6 @@ def index(mypath="/"):
         # Get start date string from query parameters (format: YYYY-MM-DD)
         start_str = request.args.get('start', '')
 
-        today_date = datetime.now().date()
 
         # default start = today - 8 weeks
         default_start_date = today_date - timedelta(weeks=8)
@@ -297,17 +298,24 @@ def index(mypath="/"):
         paginated_entries = filtered_entries[start:end]
         total_pages = (len(filtered_entries) + ENTRIES_PER_PAGE - 1) // ENTRIES_PER_PAGE if filtered_entries else 1
 
-        new_entry_tags = list(selected_tags)
+        new_entry_tags = []
         if mypath_tag is not None:
-            new_entry_tags.insert(0, mypath_tag)
+            new_entry_tags.append(mypath_tag)
+        for s_t in selected_tags:
+            if s_t != mypath_tag:
+                new_entry_tags.append(s_t)
+        new_entry_tags_str = " ".join([TAG_PREFIX + t for t in new_entry_tags])
+
+        latest_journal_page = (JOURNAL_PATH / (today_date.strftime("%Y-Q") + str((today_date.month - 1)//3 + 1) + MARKDOWN_SUFFIX)).as_posix()
 
         return render_template(
             "main.html",
             mypath=mypath,
             mypath_tag=mypath_tag,
             mypath_tags=mypath_tags,
-            new_entry_tags=new_entry_tags,
+            new_entry_tags_str=new_entry_tags_str,
             NOTEBOOK_NAME=NOTEBOOK_NAME,
+            latest_journal_page=latest_journal_page,
             title=title,
             mypath_content=mypath_content,
             JS_ENTRY_ID_FORMAT=JS_ENTRY_ID_FORMAT,
@@ -334,7 +342,7 @@ def index(mypath="/"):
         )
 
 
-@app.route('/remove_tag', methods=['POST'])
+@app.route('/_remove_tag', methods=['POST'])
 def remove_tag_route():
     entryId = request.form.get('entryId') or request.args.get('entryId')
     tag_to_remove = request.form.get('remove_tag') or request.args.get('remove_tag')

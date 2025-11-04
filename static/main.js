@@ -21,10 +21,6 @@ async function setClipboard(text) {
   await navigator.clipboard.write([clipboardItem]);
 }
 
-async function copyMyPathTag(mypath_tag) {
-    await setClipboard("x" + mypath_tag);
-}
-
 // credits: https://gist.github.com/ethanny2/44d5ad69970596e96e0b48139b89154b
 function detectDoubleTap(doubleTapMs) {
     let timeout, lastTap = 0
@@ -58,7 +54,7 @@ async function removeTagContent(btn, entryId, tag){
         const fd = new FormData();
         fd.append('entryId', entryId);
         fd.append('remove_tag', tag);
-        const resp = await fetch('/remove_tag', { method: 'POST', body: fd });
+        const resp = await fetch('/_remove_tag', { method: 'POST', body: fd });
         if (!resp.ok) {
             const txt = await resp.text();
             alert('Failed to remove tag: ' + resp.status + ' ' + txt);
