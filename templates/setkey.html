@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+ 
+ <html>
+  <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>set encryption key</title>
+  <style>
+  body {
+    font-family: sans-serif;
+    font-size: 1.4rem;
+    background: #f5f5f5;
+    line-height: 1.6;
+    margin: 2em;
+  }
+  form {
+    border: solid;
+    padding: 1em;
+  }
+  </style>
+  </head>
+  <body>
+    <h1>Set secret</h1>
+
+    <form action="/_set_key" method="POST">
+      <label for="key">Enter secret:</label><br>
+      <textarea id="key" name="key" rows="7" cols="50" required>{{ key }}</textarea><br>
+      <input type="submit" value="save">
+    </form>
+
+    {% if was_updated %}
+      <p style="color: green;">Secret was set successfully.</p>
+      <p><a href="/">go back to wiki</a></p>
+    {% endif %}
+  </body>
+ </html>

@@ -11,13 +11,12 @@ import json
 import shutil
 from noteslib import parseEntries, writeFile, MARKDOWN_SUFFIX, TAG_PREFIX, TAG_NAMESPACE_SEPARATOR, TAG_REGEX, JOURNAL_FILE_REGEX
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, send_from_directory, jsonify
+from flask import Flask, render_template, request, make_response, send_from_directory, jsonify
 from markdown_it import MarkdownIt
 
 
 app = Flask(__name__)
 md = MarkdownIt("gfm-like")
-NOTEBOOK_NAME = os.getenv('NOTEBOOK_NAME', 'notes')
 
 code_cmd = shutil.which('code') or 'code'
 EDITOR_COMMAND_LIST = [code_cmd, "{filepath}"]
@@ -33,12 +32,18 @@ if EDITOR_GOTO_COMMAND is not None:
 
 NOTEBOOK_PATH = Path(os.environ.get('NOTES_PATH', '.')).resolve()
 JOURNAL_PATH = NOTEBOOK_PATH / "journal"
+NOTEBOOK_NAME = os.getenv('NOTEBOOK_NAME', NOTEBOOK_PATH.name)
+NOTES_SECRET = os.getenv('NOTES_SECRET', '')
 
 ENTRIES_PER_PAGE = 25
 HIDE_DOTFILES = True
 JS_ENTRY_ID_FORMAT = "%Y%m%d_%H%M%S"
 NO_ADDITIONAL_TAGS = "[only selected tags]"
 MYPATH_TAG_REGEX = re.compile("\\s+")
+SECRET_COOKIE_NAME = 'notes_secret'
+
+def check_secret():
+    return NOTES_SECRET is None or len(NOTES_SECRET) == 0 or NOTES_SECRET == request.cookies.get(SECRET_COOKIE_NAME, '')
 
 
 def remove_tag(entryId: str, tag_to_remove: str):
@@ -128,6 +133,10 @@ def parseMarkdown(p):
 @app.route('/')
 @app.route('/<path:mypath>')
 def index(mypath="/"):
+
+    if not check_secret():
+        return "access denied: invalid secret."
+
     if mypath.startswith("/"):
         mypath = "." + mypath
 
@@ -350,6 +359,9 @@ def index(mypath="/"):
 
 @app.route('/_remove_tag', methods=['POST'])
 def remove_tag_route():
+    if not check_secret():
+        return "access denied: invalid secret."
+
     entryId = request.form.get('entryId') or request.args.get('entryId')
     tag_to_remove = request.form.get('remove_tag') or request.args.get('remove_tag')
 
@@ -362,30 +374,21 @@ def remove_tag_route():
     return jsonify({'error': msg}), 400
 
 
-#@app.route("/_set_key", methods=['GET'])
-#def get_set_key_form():
-#    key = request.cookies.get('notes_encryption_key', '')
-#    return render_template("setkey.html", key=key, was_updated=False)
+@app.route("/_set_key", methods=['GET'])
+def get_set_key_form():
+    #key = request.cookies.get(SECRET_COOKIE_NAME, '')
+    return render_template("setkey.html", key='', was_updated=False)
 
 
-#@app.route("/_set_key", methods=['POST'])
-#def set_key():
-#    """"
-#    clientl-side: set encryption key for notes. store on client via cookie.
-#    """
-#
-#    generate_random = request.form.get('generate_random', False)
-#
-#    key = request.form.get('key', '')
-#    if not key and not generate_random:
-#        return jsonify({'error': 'missing key'}), 400
-#
-#    if generate_random:
-#        key = Fernet.generate_key().decode('utf-8')
-#
-#    response = make_response(render_template("setkey.html", key=key, was_updated=True))
-#    response.set_cookie('notes_encryption_key', key, max_age=30*24*60*60)
-#    return response
+@app.route("/_set_key", methods=['POST'])
+def set_key():
+    key = request.form.get('key', '')
+    if not key:
+        return jsonify({'error': 'missing key'}), 400
+
+    response = make_response(render_template("setkey.html", key=key, was_updated=True))
+    response.set_cookie(SECRET_COOKIE_NAME, key, max_age=30*24*60*60)
+    return response
 
 
 @app.route('/_edit', methods=['POST'])
@@ -395,6 +398,10 @@ def edit():
     Expects form data 'rel_path' (the path relative to NOTEBOOK_PATH).
     Returns JSON.
     """
+
+    if not check_secret():
+        return "access denied: invalid secret."
+
     rel = request.form.get('rel_path', None)
     if not rel:
         return jsonify({'error': 'missing path'}), 400

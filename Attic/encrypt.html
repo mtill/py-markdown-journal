@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name=viewport content="width=device-width, initial-scale=1">
+<script>
+
+const encrypted_prefix = "ENC:";
+
+function doEncrypt(text, key) {
+  let fieldSize = 4;
+  let encryptedText = "";
+  while (key.length < text.length) {
+       key += key;
+  }
+  for(var i = 0; i < text.length; i++) {
+      let value1 = text[i].charCodeAt(0);
+      let value2 = key[i].charCodeAt(0);
+
+      let xorValueAsHexString = (value1 ^ value2).toString("16")
+      encryptedText += "0".repeat(fieldSize-xorValueAsHexString.length) + xorValueAsHexString;
+  }
+
+  return encryptedText;
+}
+
+function doDecrypt(input, key) {
+  let fieldSize = 4;
+  let result = "";
+  while (key.length < input.length / fieldSize) {
+    key += key;
+  }
+
+  for (var i = 0; i < input.length; i += fieldSize) {
+    let hexValueString = input.substring(i, i+fieldSize);
+    let value1 = parseInt(hexValueString, 16);
+    let value2 = key[i/fieldSize].charCodeAt(0);
+
+    let xorValue = value1 ^ value2;
+    result += String.fromCharCode(xorValue);
+  }
+
+  return result;
+}
+
+function doWork() {
+  let thepwd = document.getElementById('thepwd').value;
+  if (thepwd.length == 0) {
+    window.alert("no password.");
+    return "";
+  }
+
+  let thetext = document.getElementById('thetext');
+  let isEncrypted = thetext.value.startsWith(encrypted_prefix);
+  let result = "";
+  if (isEncrypted) {
+      result = doDecrypt(thetext.value.substring(encrypted_prefix.length), thepwd);
+    } else {
+      result = encrypted_prefix + doEncrypt(thetext.value, thepwd);
+    }
+
+    thetext.value = result;
+    navigator.clipboard.writeText(result);
+    return result;
+}
+
+// when fully loaded, focus on the text area
+document.addEventListener("DOMContentLoaded", (event) => {
+  let i = document.getElementById("thepwd");
+  i.addEventListener("keypress", function(event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    doWork();
+  }
+ });
+});
+
+</script>
+
+</head>
+<body>
+
+<div style="width:100vw; display:flex; flex-direction:column; height:90vh;">
+  <textarea id="thetext" rows="20" cols="100" style="width:100%; flex:1;"></textarea>
+  <div>
+    <input type="password" placeholder="password" id="thepwd" size="10" style="padding:4px">
+    <span style="font-size:30pt;cursor:pointer;" onclick="doWork()">🔒</span>
+  </div>
+</div>
+
+</body>
