@@ -33,17 +33,17 @@ if EDITOR_GOTO_COMMAND is not None:
 NOTEBOOK_PATH = Path(os.environ.get('NOTES_PATH', '.')).resolve()
 JOURNAL_PATH = NOTEBOOK_PATH / "journal"
 NOTEBOOK_NAME = os.getenv('NOTEBOOK_NAME', NOTEBOOK_PATH.name)
-NOTES_SECRET = os.getenv('NOTES_SECRET', '')
+BASIC_SECRET = os.getenv('BASIC_SECRET', '')
 
 ENTRIES_PER_PAGE = 25
 HIDE_DOTFILES = True
 JS_ENTRY_ID_FORMAT = "%Y%m%d_%H%M%S"
 NO_ADDITIONAL_TAGS = "[only selected tags]"
 MYPATH_TAG_REGEX = re.compile("\\s+")
-SECRET_COOKIE_NAME = 'notes_secret'
+SECRET_COOKIE_NAME = 'basic_secret'
 
 def check_secret():
-    return NOTES_SECRET is None or len(NOTES_SECRET) == 0 or NOTES_SECRET == request.cookies.get(SECRET_COOKIE_NAME, '')
+    return BASIC_SECRET is None or len(BASIC_SECRET) == 0 or BASIC_SECRET == request.cookies.get(SECRET_COOKIE_NAME, '')
 
 
 def remove_tag(entryId: str, tag_to_remove: str):
@@ -135,7 +135,7 @@ def parseMarkdown(p):
 def index(mypath="/"):
 
     if not check_secret():
-        return "access denied: invalid secret."
+        return "access denied: invalid secret. Please go to <a href=\"/_set_key\">/_set_key</a> to set the secret."
 
     if mypath.startswith("/"):
         mypath = "." + mypath
@@ -360,7 +360,7 @@ def index(mypath="/"):
 @app.route('/_remove_tag', methods=['POST'])
 def remove_tag_route():
     if not check_secret():
-        return "access denied: invalid secret."
+        return "access denied: invalid secret. Please go to <a href=\"/_set_key\">/_set_key</a> to set the secret."
 
     entryId = request.form.get('entryId') or request.args.get('entryId')
     tag_to_remove = request.form.get('remove_tag') or request.args.get('remove_tag')
@@ -400,7 +400,7 @@ def edit():
     """
 
     if not check_secret():
-        return "access denied: invalid secret."
+        return "access denied: invalid secret. Please go to <a href=\"/_set_key\">/_set_key</a> to set the secret."
 
     rel = request.form.get('rel_path', None)
     if not rel:
