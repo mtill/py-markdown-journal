@@ -35,7 +35,6 @@ JOURNAL_PATH = NOTEBOOK_PATH / "journal"
 NOTEBOOK_NAME = os.getenv('NOTEBOOK_NAME', NOTEBOOK_PATH.name)
 BASIC_SECRET = os.getenv('BASIC_SECRET', '')
 
-ENTRIES_PER_PAGE = 25
 HIDE_DOTFILES = True
 JS_ENTRY_ID_FORMAT = "%Y%m%d_%H%M%S"
 NO_ADDITIONAL_TAGS = "[only selected tags]"
@@ -206,9 +205,6 @@ def index(mypath="/"):
 
     today_date = datetime.now().date()
 
-    # Get pagination parameters
-    page = request.args.get('page', 1, type=int)
-    
     # Get start date string from query parameters (format: YYYY-MM-DD)
     start_str = request.args.get('start', '')
 
@@ -301,12 +297,6 @@ def index(mypath="/"):
     available_tags = sorted(set(tag_counts.keys()) | set(selected_tags))
 
 
-    # Implement pagination
-    start = (page - 1) * ENTRIES_PER_PAGE
-    end = start + ENTRIES_PER_PAGE
-    paginated_entries = filtered_entries[start:end]
-    total_pages = (len(filtered_entries) + ENTRIES_PER_PAGE - 1) // ENTRIES_PER_PAGE if filtered_entries else 1
-
     new_entry_tags = []
     if mypath_tag is not None:
         new_entry_tags.append(mypath_tag)
@@ -330,14 +320,10 @@ def index(mypath="/"):
         title=title,
         mypath_content=mypath_content,
         JS_ENTRY_ID_FORMAT=JS_ENTRY_ID_FORMAT,
-        entries=paginated_entries,
+        entries=filtered_entries,
         all_tags=available_tags,
         selected_tags=selected_tags,
         tag_counts=tag_counts,
-        page=page,
-        total_pages=total_pages,
-        has_prev=page > 1,
-        has_next=page < total_pages,
         start=start_date.strftime('%Y-%m-%d'),
         q=q,
         regex_error=regex_error

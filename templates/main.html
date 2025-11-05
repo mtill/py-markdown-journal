@@ -85,22 +85,6 @@
         {% endfor %}
     </ul>
 
-    <div class="pagination">
-        {% if has_prev %}
-            <a href="?page={{ page - 1 }}{% for tag in selected_tags %}&tags={{ tag }}{% endfor %}{% if start %}&start={{ start }}{% endif %}&q={{ q | urlencode }}">Previous</a>
-        {% else %}
-            <span class="disabled">Previous</span>
-        {% endif %}
-        
-        <span class="current">Page {{ page }} of {{ total_pages }}</span>
-        
-        {% if has_next %}
-            <a href="?page={{ page + 1 }}{% for tag in selected_tags %}&tags={{ tag }}{% endfor %}{% if start %}&start={{ start }}{% endif %}&q={{ q | urlencode }}">Next</a>
-        {% else %}
-            <span class="disabled">Next</span>
-        {% endif %}
-    </div>
-
 </body>
 </html>
 
