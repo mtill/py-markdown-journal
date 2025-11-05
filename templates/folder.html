@@ -3,7 +3,7 @@
  <html>
   <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ title }}</title>
+  <title>[{{ NOTEBOOK_NAME }}] {{ title }}</title>
   <style>
   body {
     font-family: sans-serif;
@@ -12,9 +12,49 @@
     line-height: 1.6;
     margin: 2em;
   }
+  .copylink {
+    cursor: pointer;
+    font-size: 0.8em;
+    margin-left: 0.3em;
+  }
   </style>
+  <script>
+    async function setClipboard(text) {
+      const type = "text/plain";
+      const clipboardItemData = {
+        [type]: text,
+      };
+      const clipboardItem = new ClipboardItem(clipboardItemData);
+      await navigator.clipboard.write([clipboardItem]);
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+        document.querySelectorAll('.copylink').forEach(el => {
+            el.addEventListener('click', (event) => {
+                const abspath = event.target.getAttribute('data-abspath');
+                setClipboard(abspath);
+            });
+        });
+    });
+
+  </script>
   </head>
   <body>
-    {{ content | safe }}
+    <table>
+      <tr><th>Name</th><th>Last Modified</th></tr>
+      {% for entry in entries %}
+        {% if entry.is_folder %}
+          <tr>
+            <td>📁 <a href="{{ entry.name }}/">{{ entry.name }}/</a>{% if entry.absolute_path %} <span class="copylink" data-abspath="{{ entry.absolute_path }}">🔗</span>{% endif %}</td>
+            <td></td>
+          </tr>
+        {% else %}
+          <tr>
+            <td>📄 <a href="{{ entry.name }}">{{ entry.name }}</a>{% if entry.absolute_path %} <span class="copylink" data-abspath="{{ entry.absolute_path }}">🔗</span>{% endif %}</td>
+            <td>{{ entry.mtime }}</td>
+          </tr>
+        {% endif %}
+      {% endfor %}
+    </table>
   </body>
  </html>

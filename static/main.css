@@ -104,6 +104,7 @@ h2 {
     background: #f8f9fa;
     padding: 4px 8px;
     border-radius: 4px;
+    cursor: pointer;
 }
 
 .entry h3 {
@@ -158,7 +159,7 @@ h2 {
     border-radius: 999px;
     font-size: 0.85em;
     border: 1px solid #dbe6ef;
-    cursor: pointer;
+    cursor: crosshair;
     transition: all 0.2s;
 }
 
@@ -170,7 +171,11 @@ h2 {
 /* visually mark staged tag removals */
 .tag-pill.pending { opacity: 0.5; text-decoration: line-through; filter: grayscale(40%); }
 
-.mypath-pill {
+#tagForm {
+    border: 1px dashed #3d3d3d;
+}
+
+.pill {
     display: inline-block;
     margin: 0 6px 6px 0;
     padding: 4px 8px;
@@ -179,13 +184,10 @@ h2 {
     font-size: 0.85em;
     font-weight: bold;
     border: 1px solid #dbe6ef;
-    cursor: pointer;
-    transition: all 0.2s;
 }
 
-.mypath-pill:hover {
-    background: #e2e8f0;
-    border-color: #cbd5e1;
+.clickable {
+    cursor: pointer;
 }
 
 /* highlight entries that include the 'highlighted' tag */
@@ -202,6 +204,6 @@ h2 {
         width: calc(100% - 40px);
     }
     .entry h3 { margin-right: 0; }
-    .entry-date { position: static; display: inline-block; margin-bottom: 8px; }
+    .entry-date { position: static; display: inline-block; margin-bottom: 8px; cursor: pointer; }
 }
 

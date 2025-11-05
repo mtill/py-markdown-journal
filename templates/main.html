@@ -9,11 +9,7 @@
 </head>
 <body>
     <div id="tag-selector">
-        {% if new_entry_tags_str is none %}
-        <div class="mypath-pill">{{ title }}</div>
-        {% else %}
-        <div class="mypath-pill" title="click to copy tag to clipboard" onclick="setClipboard('{{ new_entry_tags_str }}')">{{ title }}</div>
-        {% endif %}
+        <div class="pill clickable" title="click to copy reference to this wiki page" onclick="setClipboard('[{{ title }}]({{ title }})')">🔗 {{ title }}</div>
         <form id="tagForm" method="GET" action="/{{ mypath if mypath is not none }}#journal_entries">
 
             <strong>From</strong>
@@ -32,7 +28,12 @@
                 {% endif %}
             </div>
 
+            {% if new_entry_tags_str is none %}
             <strong>Tags</strong>
+            {% else %}
+            <strong class="clickable" title="click to copy page tag + selected tags to clipboard: {{ new_entry_tags_str }}" onclick="setClipboard('{{ new_entry_tags_str }}')">🏷 Tags</strong>
+            {% endif %}
+
             {% if all_tags | length == 0 %}
             <div>No tags available</div>
             {% else %}
@@ -51,17 +52,20 @@
 </div>
 {% endif %}
 
+{% if new_entry_tags_str is none %}
+<h2 id="journal_entries" title="double-click to open in editor" ondblclick="openInEditor(thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries</h2>
+{% else %}
+<h2 id="journal_entries" title="single-click: copy page tag+selected tags to clipboard: {{ new_entry_tags_str }}; double-click to open in editor; also copies page tag + selected tags to clipboard" onclick="setClipboard('{{ new_entry_tags_str }}');" ondblclick="setClipboard('{{ new_entry_tags_str }}'); openInEditor(thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries</h2>
+{% endif %}
 
-<h2 id="journal_entries" ondblclick="setClipboard('{{ new_entry_tags_str }}'); openInEditor(thetype='page', entryId='{{ latest_journal_page }}')">journal entries</h2>
 {% if related_tags is not none and related_tags | length > 0 %}
 <p style="font-weight: bold;">related tags: {{ related_tags | join(" | ") }}</p>
 {% endif %}
 
-    <!-- Replace the existing entry list in HTML_TEMPLATE -->
     <ul>
         {% for entry in entries %}
         <li class="entry" data-entry-id="{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}" data-tags="{{ ' '.join(entry.tags) }}" data-rel-path="{{ entry.rel_path }}" data-line-no="{{ entry.pos }}">
-             <div class="entry-date">{{ entry.date.strftime('%Y-%m-%d') }}</div>
+             <div class="entry-date" title="click to copy reference to this entry" onclick="setClipboard('[journal entry {{ entry.date.strftime('%Y-%m-%d %H:%M')}}]({{ entry.location }})')">🔗 {{ entry.date.strftime('%Y-%m-%d %H:%M') }}</div>
              <div class="entry-content">
                  <p>{{ entry.content | safe }}</p>
                  {% if not (entry.tags|length == 1 and entry.tags|first == "untagged") %}
