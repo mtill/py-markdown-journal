@@ -9,7 +9,7 @@
 </head>
 <body>
     <div id="tag-selector">
-        {% if mypath_tag is none %}
+        {% if new_entry_tags_str is none %}
         <div class="mypath-pill">{{ title }}</div>
         {% else %}
         <div class="mypath-pill" title="click to copy tag to clipboard" onclick="setClipboard('{{ new_entry_tags_str }}')">{{ title }}</div>
@@ -53,8 +53,8 @@
 
 
 <h2 id="journal_entries" ondblclick="setClipboard('{{ new_entry_tags_str }}'); openInEditor(thetype='page', entryId='{{ latest_journal_page }}')">journal entries</h2>
-{% if mypath_tags is not none and mypath_tags | length > 0 %}
-<p style="font-weight: bold;">related tags: {{ mypath_tags | join(" | ") }}</p>
+{% if related_tags is not none and related_tags | length > 0 %}
+<p style="font-weight: bold;">related tags: {{ related_tags | join(" | ") }}</p>
 {% endif %}
 
     <!-- Replace the existing entry list in HTML_TEMPLATE -->

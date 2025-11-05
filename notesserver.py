@@ -108,7 +108,7 @@ def get_entries(start_date):
 def parseMarkdown(p):
     show_journal = True
     mypath_content = []
-    mypath_tags = []
+    related_tags = []
 
     mypath_relative = p.relative_to(NOTEBOOK_PATH)
     title = mypath_relative.as_posix()
@@ -116,18 +116,18 @@ def parseMarkdown(p):
     mypath_relative_parts[-1] = p.stem
     mypath_relative_parts = map(lambda s: MYPATH_TAG_REGEX.sub("", s).lower(), mypath_relative_parts)
     mypath_tag = TAG_NAMESPACE_SEPARATOR.join(mypath_relative_parts)
-    mypath_tags.append(mypath_tag)
+    related_tags.append(mypath_tag)
 
     with open(p, "r", encoding="utf-8") as f:
         for line in f:
             mypath_content.append(line)
             for line_tag in TAG_REGEX.findall(line):
                 line_tag = line_tag.lower()
-                if line_tag not in mypath_tags:
-                    mypath_tags.append(line_tag)
+                if line_tag not in related_tags:
+                    related_tags.append(line_tag)
     mypath_content = md.render("".join(mypath_content))
 
-    return show_journal, mypath_content, mypath_tags, mypath_tag, title
+    return show_journal, mypath_content, related_tags, mypath_tag, title
 
 
 @app.route('/')
@@ -146,7 +146,7 @@ def index(mypath="/"):
     # Get selected tags from query parameters
     selected_tags = request.args.getlist('tags')
 
-    mypath_tags = None
+    related_tags = None
     mypath_tag = None
 
     mypath_content = None
@@ -190,7 +190,7 @@ def index(mypath="/"):
             if p.is_file():
 
                 if p.suffix == MARKDOWN_SUFFIX:
-                    show_journal, mypath_content, mypath_tags, mypath_tag, title = parseMarkdown(p=p)
+                    show_journal, mypath_content, related_tags, mypath_tag, title = parseMarkdown(p=p)
 
                 else:
 
@@ -201,7 +201,7 @@ def index(mypath="/"):
                 if p.suffix != MARKDOWN_SUFFIX:
                     p = p.parent / (p.name + MARKDOWN_SUFFIX)
                     if p.is_file():
-                        show_journal, mypath_content, mypath_tags, mypath_tag, title = parseMarkdown(p=p)
+                        show_journal, mypath_content, related_tags, mypath_tag, title = parseMarkdown(p=p)
                         mypath = mypath + MARKDOWN_SUFFIX
 
                 if not p.exists():
@@ -233,11 +233,11 @@ def index(mypath="/"):
 
         date_filtered = get_entries(start_date=start_date)
 
-        # at least one tag from mypath_tags needs to be present
+        # at least one tag from related_tags needs to be present
         date_filtered_tmp = []
-        if mypath_tags is not None:
+        if related_tags is not None:
             for entry in date_filtered:
-                for mypath_tag_search in mypath_tags:
+                for mypath_tag_search in related_tags:
                     if mypath_tag_search in entry["tags"]:
                         date_filtered_tmp.append(entry)
                         break
@@ -319,15 +319,17 @@ def index(mypath="/"):
         for s_t in selected_tags:
             if s_t != mypath_tag:
                 new_entry_tags.append(s_t)
-        new_entry_tags_str = " ".join([TAG_PREFIX + t for t in new_entry_tags])
+
+        new_entry_tags_str = None
+        if len(new_entry_tags) > 0:
+            new_entry_tags_str = " ".join([TAG_PREFIX + t for t in new_entry_tags])
 
         latest_journal_page = (JOURNAL_PATH / (today_date.strftime("%Y-Q") + str((today_date.month - 1)//3 + 1) + MARKDOWN_SUFFIX)).as_posix()
 
         return render_template(
             "main.html",
             mypath=mypath,
-            mypath_tag=mypath_tag,
-            mypath_tags=mypath_tags,
+            related_tags=related_tags,
             new_entry_tags_str=new_entry_tags_str,
             NOTEBOOK_NAME=NOTEBOOK_NAME,
             latest_journal_page=latest_journal_page,
@@ -337,7 +339,6 @@ def index(mypath="/"):
             entries=paginated_entries,
             all_tags=available_tags,
             selected_tags=selected_tags,
-            NO_ADDITIONAL_TAGS=NO_ADDITIONAL_TAGS,
             tag_counts=tag_counts,
             page=page,
             total_pages=total_pages,
