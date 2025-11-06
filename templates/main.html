@@ -73,8 +73,8 @@
                    {% for tag in entry.tags %}
                      <button type="button" 
                              class="tag-pill" 
-                             ondblclick="removeTagContent(this, '{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}', '{{ tag }}')"
-                             title="double-click to remove tag '{{ tag }}' from entry">
+                             onclick="removeTagContent(this, '{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}', '{{ tag }}')"
+                             title="click to remove tag '{{ tag }}' from entry">
                          {{ tag }}
                      </button>
                      {% endfor %}
