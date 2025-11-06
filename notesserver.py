@@ -294,7 +294,7 @@ def index(mypath="/"):
     # ensure selected tags are present in counts (show zero if needed)
     for t in selected_tags:
         tag_counts.setdefault(t, 0)
-    available_tags = sorted(set(tag_counts.keys() | selected_tags), key=lambda a: tag_counts.get(a, 0), reverse=True)   # by using sets (and not lists), duplicates will be removed
+    available_tags = sorted(set(tag_counts.keys() | selected_tags))   # by using sets (and not lists), duplicates will be removed
 
 
     new_entry_tags = []

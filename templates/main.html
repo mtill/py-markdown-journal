@@ -39,7 +39,7 @@
             {% else %}
             <div class="tag-list">
             {% for tag in all_tags %}
-                <input id="tag-checkbox-{{ tag }}" type="checkbox" name="tags" value="{{ tag }}" {% if tag in selected_tags %}checked{% endif %} onchange="submitFormPreservePage()">{{ tag }}{% if tag not in selected_tags %} <span class="tag-count" id="tag-count-{{ tag }}">{{ tag_counts.get(tag, 0) }}</span>{% endif %}<br>
+                <input id="tag-checkbox-{{ tag }}" type="checkbox" name="tags" value="{{ tag }}" {% if tag in selected_tags %}checked{% endif %} onchange="submitFormPreservePage()"><span style="font-size:{{ 0.7+(tag_counts.get(tag, 0)/(tag_counts.values()|max))*0.7 }}rem;">{{ tag }}</span>{% if tag not in selected_tags %} <span class="tag-count" id="tag-count-{{ tag }}">{{ tag_counts.get(tag, 0) }}</span>{% endif %}<br>
             {% endfor %}
             </div>
             {% endif %}

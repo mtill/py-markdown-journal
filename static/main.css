@@ -30,8 +30,6 @@ img {
     padding: 8px 10px;
     border-radius: 6px;
     box-shadow: 0 1px 6px rgba(0,0,0,0.08);
-    width: 220px;            /* compact fixed width */
-    max-width: 36vw;
     font-size: 13px;         /* smaller text */
     line-height: 1.25;
     z-index: 1000;
