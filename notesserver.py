@@ -197,9 +197,9 @@ def index(mypath="/"):
 
                 if p.suffix != MARKDOWN_SUFFIX:
                     p = p.parent / (p.name + MARKDOWN_SUFFIX)
+                    mypath = mypath + MARKDOWN_SUFFIX
                     if p.is_file():
                         mypath_content, related_tags, mypath_tag, title = parseMarkdown(p=p)
-                        mypath = mypath + MARKDOWN_SUFFIX
 
                 if not p.exists():
                     mypath_content = "<h2>Not Found</h2><p>The requested path does not exist: <b>/" + html.escape(p.relative_to(NOTEBOOK_PATH).as_posix()) + "</b></p>"
@@ -227,26 +227,19 @@ def index(mypath="/"):
 
     # at least one tag from related_tags needs to be present
     date_filtered_tmp = []
-    mypath_subtag_str = None if mypath_tag is None else mypath_tag + TAG_NAMESPACE_SEPARATOR
-
     if related_tags is not None:
         for entry in date_filtered:
-            add_this = False
+            added_this = False
 
-            if INCLUDE_SUBTAGS and mypath_subtag_str is not None:
+            for related_tag in related_tags:
                 for t in entry["tags"]:
-                    if t.startswith(mypath_subtag_str):
-                        add_this = True
+                    if related_tag == t or (INCLUDE_SUBTAGS and t.startswith(related_tag + TAG_NAMESPACE_SEPARATOR)):
+                        date_filtered_tmp.append(entry)
+                        added_this = True
                         break
 
-            if not add_this:
-                for mypath_tag_search in related_tags:
-                    if mypath_tag_search in entry["tags"]:
-                        add_this = True
-                        break
-
-            if add_this:
-                date_filtered_tmp.append(entry)
+                if added_this:
+                    break
 
         date_filtered = date_filtered_tmp
 
