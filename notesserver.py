@@ -40,6 +40,8 @@ JS_ENTRY_ID_FORMAT = "%Y%m%d_%H%M%S"
 NO_ADDITIONAL_TAGS = "[only selected tags]"
 MYPATH_TAG_REGEX = re.compile("\\s+")
 SECRET_COOKIE_NAME = 'basic_secret'
+INCLUDE_SUBTAGS = True
+
 
 def check_secret():
     return BASIC_SECRET is None or len(BASIC_SECRET) == 0 or BASIC_SECRET == request.cookies.get(SECRET_COOKIE_NAME, '')
@@ -225,12 +227,27 @@ def index(mypath="/"):
 
     # at least one tag from related_tags needs to be present
     date_filtered_tmp = []
+    mypath_subtag_str = None if mypath_tag is None else mypath_tag + TAG_NAMESPACE_SEPARATOR
+
     if related_tags is not None:
         for entry in date_filtered:
-            for mypath_tag_search in related_tags:
-                if mypath_tag_search in entry["tags"]:
-                    date_filtered_tmp.append(entry)
-                    break
+            add_this = False
+
+            if INCLUDE_SUBTAGS and mypath_subtag_str is not None:
+                for t in entry["tags"]:
+                    if t.startswith(mypath_subtag_str):
+                        add_this = True
+                        break
+
+            if not add_this:
+                for mypath_tag_search in related_tags:
+                    if mypath_tag_search in entry["tags"]:
+                        add_this = True
+                        break
+
+            if add_this:
+                date_filtered_tmp.append(entry)
+
         date_filtered = date_filtered_tmp
 
     # Then apply tag filtering (entry must have all selected tags)
