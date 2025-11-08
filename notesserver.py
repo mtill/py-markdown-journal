@@ -94,7 +94,7 @@ def get_entries(start_date, related_tags, selected_tags, q):
                 continue
 
         result = parseEntries(thepath=journal_file, notebookpath=NOTEBOOK_PATH)["entries"]
-        result_tmp
+        result_tmp = []
         for entry in result:
             if entry["date"] >= start_date:
                 result_tmp.append(entry)
