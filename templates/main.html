@@ -38,8 +38,10 @@
             <div>No tags available</div>
             {% else %}
             <div class="tag-list">
+            {% set tag_max_value = tag_counts.values()|max %}
             {% for tag in all_tags %}
-                <input id="tag-checkbox-{{ tag }}" type="checkbox" name="tags" value="{{ tag }}" {% if tag in selected_tags %}checked{% endif %} onchange="submitFormPreservePage()"><span style="font-size:{{ 0.7+(tag_counts.get(tag, 0)/(tag_counts.values()|max))*0.7 }}rem;">{{ tag }}</span>{% if tag not in selected_tags %} <span class="tag-count" id="tag-count-{{ tag }}">{{ tag_counts.get(tag, 0) }}</span>{% endif %}<br>
+                {% set tag_weight = 0 if tag_max_value == 0 else tag_counts.get(tag, 0)/tag_max_value %}
+                <input id="tag-checkbox-{{ tag }}" type="checkbox" name="tags" value="{{ tag }}" {% if tag in selected_tags %}checked{% endif %} onchange="submitFormPreservePage()"><span style="font-size:{{ 0.7+tag_weight*0.7 }}rem;">{{ tag }}</span>{% if tag not in selected_tags %} <span class="tag-count" id="tag-count-{{ tag }}">{{ tag_counts.get(tag, 0) }}</span>{% endif %}<br>
             {% endfor %}
             </div>
             {% endif %}

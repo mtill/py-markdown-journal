@@ -77,7 +77,7 @@ def remove_tag(entryId: str, tag_to_remove: str):
     return False, "remove_tag: entry not found for id: " + entryId
 
 
-def get_entries(start_date):
+def get_entries(start_date, related_tags, selected_tags, q):
     # month to quarter: (i-1)//3+1
     # check if ealiest date of the quarter of that file is before start_date:
     # quarter = (start_date.month - 1) // 3 + 1
@@ -103,7 +103,67 @@ def get_entries(start_date):
                 continue
             result.append(entry)
 
-    return result
+    # at least one tag from related_tags needs to be present
+    result_tmp = []
+    if related_tags is not None:
+        for entry in result:
+            added_this = False
+
+            for related_tag in related_tags:
+                for t in entry["tags"]:
+                    if related_tag == t or (INCLUDE_SUBTAGS and t.startswith(related_tag + TAG_NAMESPACE_SEPARATOR)):
+                        result_tmp.append(entry)
+                        added_this = True
+                        break
+
+                if added_this:
+                    break
+
+        result = result_tmp
+
+    # Then apply tag filtering (entry must have all selected tags)
+    if selected_tags:
+        selected_tags_search = list(selected_tags)
+        no_additional_selected = False
+        if NO_ADDITIONAL_TAGS in selected_tags_search:
+            selected_tags_search.remove(NO_ADDITIONAL_TAGS)
+            no_additional_selected = True
+
+        result_tmp = []
+        for entry in result:
+
+            if all(tag in entry["tags"] for tag in selected_tags_search):
+                has_no_additional_tags = False
+                if len(entry["tags"]) == len(selected_tags_search):
+                    entry["tags"].append(NO_ADDITIONAL_TAGS)
+                    has_no_additional_tags = True
+
+                if not no_additional_selected or has_no_additional_tags:
+                    result_tmp.append(entry)
+        result = result_tmp
+
+    regex_error = False
+    regex = None
+    if q:
+        try:
+            regex = re.compile(q, re.IGNORECASE)
+        except re.error:
+            regex_error = True
+            result = []
+
+    # apply regex filter if compiled; if invalid regex produce no matches and flag error
+    if regex and not regex_error:
+        def matches_regex(entry):
+            for t in entry.get('content', []):
+                if regex.search(t):
+                    return True
+            for t in entry.get('tags', []):
+                if regex.search(t):
+                    return True
+            return False
+        result = [e for e in result if matches_regex(e)]
+
+    return result, regex_error
 
 
 def parseMarkdown(p):
@@ -185,12 +245,9 @@ def index(mypath="/"):
         else:
 
             if p.is_file():
-
                 if p.suffix == MARKDOWN_SUFFIX:
                     mypath_content, related_tags, mypath_tag, title = parseMarkdown(p=p)
-
                 else:
-
                     return send_from_directory(directory=NOTEBOOK_PATH, path=p.relative_to(NOTEBOOK_PATH).as_posix())
 
             else:
@@ -206,10 +263,7 @@ def index(mypath="/"):
 
 
     today_date = datetime.now().date()
-
-    # Get start date string from query parameters (format: YYYY-MM-DD)
     start_str = request.args.get('start', '')
-
 
     # default start = today - 8 weeks
     default_start_date = today_date - timedelta(weeks=8)
@@ -223,76 +277,10 @@ def index(mypath="/"):
         except Exception:
             start_date = default_start_date
 
-    date_filtered = get_entries(start_date=start_date)
-
-    # at least one tag from related_tags needs to be present
-    date_filtered_tmp = []
-    if related_tags is not None:
-        for entry in date_filtered:
-            added_this = False
-
-            for related_tag in related_tags:
-                for t in entry["tags"]:
-                    if related_tag == t or (INCLUDE_SUBTAGS and t.startswith(related_tag + TAG_NAMESPACE_SEPARATOR)):
-                        date_filtered_tmp.append(entry)
-                        added_this = True
-                        break
-
-                if added_this:
-                    break
-
-        date_filtered = date_filtered_tmp
-
-    # Then apply tag filtering (entry must have all selected tags)
-    if selected_tags:
-        selected_tags_search = list(selected_tags)
-        no_additional_selected = False
-        if NO_ADDITIONAL_TAGS in selected_tags_search:
-            selected_tags_search.remove(NO_ADDITIONAL_TAGS)
-            no_additional_selected = True
-
-        filtered_entries = []
-        for entry in date_filtered:
-
-            if all(tag in entry["tags"] for tag in selected_tags_search):
-                has_no_additional_tags = False
-                if len(entry["tags"]) == len(selected_tags_search):
-                    entry["tags"].append(NO_ADDITIONAL_TAGS)
-                    has_no_additional_tags = True
-
-                if not no_additional_selected or has_no_additional_tags:
-                    filtered_entries.append(entry)
-
-    else:
-        filtered_entries = date_filtered
-
     # regex search param
     q = request.args.get('q', '').strip()
 
-    regex_error = False
-    regex = None
-    if q:
-        try:
-            regex = re.compile(q, re.IGNORECASE)
-        except re.error:
-            regex_error = True
-
-    # apply regex filter if compiled; if invalid regex produce no matches and flag error
-    if regex and not regex_error:
-        def matches_regex(entry):
-            if regex.search(entry.get('title', '')):
-                return True
-            for t in entry.get('content', []):
-                if regex.search(t):
-                    return True
-            for t in entry.get('tags', []):
-                if regex.search(t):
-                    return True
-            return False
-        filtered_entries = [e for e in filtered_entries if matches_regex(e)]
-    elif regex_error:
-        filtered_entries = []
-
+    filtered_entries, regex_error = get_entries(start_date=start_date, related_tags=related_tags, selected_tags=selected_tags, q=q)
     for e in filtered_entries:
         e["content"] = md.render("\n".join(e["content"]))
 
@@ -305,7 +293,6 @@ def index(mypath="/"):
     for t in selected_tags:
         tag_counts.setdefault(t, 0)
     available_tags = sorted(set(tag_counts.keys() | selected_tags))   # by using sets (and not lists), duplicates will be removed
-
 
     new_entry_tags = []
     if mypath_tag is not None:
