@@ -258,7 +258,7 @@ def index(mypath="/"):
                     mypath_content = "<h2>Not Found</h2><p>The requested path does not exist: <b>/" + html.escape(p.relative_to(NOTEBOOK_PATH).as_posix()) + "</b></p>"
 
 
-    today_date = datetime.now().date()
+    today_date = datetime.now()
     start_str = request.args.get('start', '')
 
     # default start = today - 8 weeks
@@ -268,7 +268,7 @@ def index(mypath="/"):
     start_date = default_start_date
     if start_str:
         try:
-            parsed = datetime.strptime(start_str, '%Y-%m-%d').date()
+            parsed = datetime.strptime(start_str, '%Y-%m-%d')
             start_date = parsed
         except Exception:
             start_date = default_start_date
