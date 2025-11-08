@@ -93,12 +93,11 @@ def get_entries(start_date, related_tags, selected_tags, q):
             if journal_file_date < start_date:
                 continue
 
-        result = parseEntries(thepath=journal_file, notebookpath=NOTEBOOK_PATH)["entries"]
-        result_tmp = []
-        for entry in result:
+        parsed_entries = parseEntries(thepath=journal_file, notebookpath=NOTEBOOK_PATH)["entries"]
+        for entry in parsed_entries:
             if entry["date"] >= start_date:
-                result_tmp.append(entry)
-        result = result_tmp
+                result.append(entry)
+        parsed_entries = None
 
     # at least one tag from related_tags needs to be present
     result_tmp = []
