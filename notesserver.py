@@ -85,7 +85,6 @@ def get_entries(start_date, related_tags, selected_tags, q):
 
     result = []
     for journal_file in JOURNAL_PATH.glob("**/*.md"):
-
         m = JOURNAL_FILE_REGEX.match(journal_file.name)
         if m is not None:
             year = int(m.group(1))
@@ -94,14 +93,12 @@ def get_entries(start_date, related_tags, selected_tags, q):
             if journal_file_date < start_date:
                 continue
 
-        results = parseEntries(thepath=journal_file, notebookpath=NOTEBOOK_PATH)["entries"]
-        for entry in results:
-            dt = entry.get('date')
-            if not isinstance(dt, datetime):
-                continue
-            if dt.date() < start_date:
-                continue
-            result.append(entry)
+        result = parseEntries(thepath=journal_file, notebookpath=NOTEBOOK_PATH)["entries"]
+        result_tmp
+        for entry in result:
+            if entry["date"] >= start_date:
+                result_tmp.append(entry)
+        result = result_tmp
 
     # at least one tag from related_tags needs to be present
     result_tmp = []
@@ -131,7 +128,6 @@ def get_entries(start_date, related_tags, selected_tags, q):
 
         result_tmp = []
         for entry in result:
-
             if all(tag in entry["tags"] for tag in selected_tags_search):
                 has_no_additional_tags = False
                 if len(entry["tags"]) == len(selected_tags_search):
