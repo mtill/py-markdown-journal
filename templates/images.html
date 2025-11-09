@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[{{ NOTEBOOK_NAME }}] Media uploads</title>
+    <script src="/static/main.js"></script>
+    <script src="/static/images.js"></script>
+    <link rel="stylesheet" href="/static/main.css">
+    <style>
+        body { font-family: sans-serif; padding: 16px; }
+        .uploader { margin-bottom: 16px; }
+        .recent { margin-top: 20px; }
+        .recent li { cursor: pointer; padding: 6px; border-bottom: 1px solid #eee; display: flex; align-items: center; }
+        .recent li:hover { background:#f6f6f6; }
+        .notice { color: green; }
+        .thumb { max-width: 120px; max-height: 80px; object-fit: cover; margin-right: 8px; border: 1px solid #ddd; }
+        .img-link { display:inline-flex; align-items:center; gap:8px; text-decoration:none; color:inherit; }
+    </style>
+</head>
+<body>
+    <h1>Media uploads</h1>
+
+    <div class="uploader">
+        <label>Upload from disk: <input id="fileInput" type="file" accept="image/*,application/pdf"></label>
+        <span id="status" class="notice"></span>
+    </div>
+
+    <p>Click a file name to copy its link to your clipboard.</p>
+
+    <ul id="recentList" class="recent">
+        {% for f in files %}
+        <li>
+            <a class="thumb-link" href="{{ f.url }}" target="_blank">
+                {% if f.name.lower().endswith('.pdf') %}
+                <img class="thumb" src="/static/pdf-icon.svg" alt="PDF" style="max-width:48px; border:none;">
+                {% else %}
+                <img class="thumb" src="{{ f.url }}" loading="lazy" alt="{{ f.name }}">
+                {% endif %}
+            </a>
+            <span class="copy-name" data-url="{{ f.url }}" onclick="copyURLToClipboard(this)" title="Copy link">🔗 {{ f.name }}</span>
+            &nbsp;— <small>{{ f.mtime }} ({{ f.size }} bytes)</small>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <script>
+        // initialize handlers in images.js when DOM is ready
+        document.addEventListener('DOMContentLoaded', function(){
+            if (window.initImagesPage) window.initImagesPage();
+        });
+    </script>
+</body>
+</html>

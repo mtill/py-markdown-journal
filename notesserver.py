@@ -9,6 +9,7 @@ from pathlib import Path
 import subprocess
 import json
 import shutil
+from werkzeug.utils import secure_filename
 from noteslib import parseEntries, writeFile, MARKDOWN_SUFFIX, TAG_PREFIX, TAG_NAMESPACE_SEPARATOR, TAG_REGEX, JOURNAL_FILE_REGEX
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, make_response, send_from_directory, jsonify
@@ -32,6 +33,7 @@ if EDITOR_GOTO_COMMAND is not None:
 
 NOTEBOOK_PATH = Path(os.environ.get('NOTES_PATH', '.')).resolve()
 JOURNAL_PATH = NOTEBOOK_PATH / "journal"
+MEDIA_PATH = NOTEBOOK_PATH / "media"
 NOTEBOOK_NAME = os.getenv('NOTEBOOK_NAME', NOTEBOOK_PATH.name)
 BASIC_SECRET = os.getenv('BASIC_SECRET', '')
 
@@ -41,6 +43,7 @@ NO_ADDITIONAL_TAGS = "[only selected tags]"
 MYPATH_TAG_REGEX = re.compile("\\s+")
 SECRET_COOKIE_NAME = 'basic_secret'
 INCLUDE_SUBTAGS = True
+ACCESS_DENIED_MESSAGE_DICT = {"error": "access denied: invalid secret. Please go to <a href=\"/_set_key\">/_set_key</a> to set the secret."}
 
 
 def check_secret():
@@ -190,7 +193,7 @@ def parseMarkdown(p):
 def index(mypath="/"):
 
     if not check_secret():
-        return "access denied: invalid secret. Please go to <a href=\"/_set_key\">/_set_key</a> to set the secret."
+        return jsonify(ACCESS_DENIED_MESSAGE_DICT), 403
 
     if mypath.startswith("/"):
         mypath = "." + mypath
@@ -325,7 +328,7 @@ def index(mypath="/"):
 @app.route('/_remove_tag', methods=['POST'])
 def remove_tag_route():
     if not check_secret():
-        return "access denied: invalid secret. Please go to <a href=\"/_set_key\">/_set_key</a> to set the secret."
+        return jsonify(ACCESS_DENIED_MESSAGE_DICT), 403
 
     entryId = request.form.get('entryId') or request.args.get('entryId')
     tag_to_remove = request.form.get('remove_tag') or request.args.get('remove_tag')
@@ -365,7 +368,7 @@ def edit():
     """
 
     if not check_secret():
-        return "access denied: invalid secret. Please go to <a href=\"/_set_key\">/_set_key</a> to set the secret."
+        return jsonify(ACCESS_DENIED_MESSAGE_DICT), 403
 
     rel = request.form.get('rel_path', None)
     if not rel:
@@ -394,6 +397,84 @@ def edit():
         return jsonify({'error': 'failed to launch', 'detail': str(exc)}), 500
 
     return jsonify({'ok': True})
+
+
+@app.route('/_media')
+def media_page():
+    """Page to upload media and list recent uploads."""
+    if not check_secret():
+        return jsonify(ACCESS_DENIED_MESSAGE_DICT), 403
+
+    today = datetime.now()
+    quarter_foldername = f"{today.year}-Q{((today.month - 1) // 3) + 1}"
+    media_dir = MEDIA_PATH / quarter_foldername
+    media_dir.mkdir(parents=True, exist_ok=True)
+
+    files = []
+    for f in media_dir.iterdir():
+        if f.is_file():
+            files.append({
+                'name': f.name,
+                'mtime': datetime.fromtimestamp(f.stat().st_mtime).strftime('%Y-%m-%d %H:%M:%S'),
+                'size': f.stat().st_size,
+                'url': "/" + f.relative_to(NOTEBOOK_PATH).as_posix()
+            })
+
+    # sort by mtime desc and limit
+    files.sort(key=lambda x: x['mtime'], reverse=True)
+    files = files[:50]
+
+    return render_template('images.html', NOTEBOOK_NAME=NOTEBOOK_NAME, files=files)
+
+
+@app.route('/_upload_media', methods=['POST'])
+def upload_media():
+    """Accept uploaded image or PDF (file input or clipboard blob) and save to /media/ with a unique name."""
+    if not check_secret():
+        return jsonify(ACCESS_DENIED_MESSAGE_DICT), 403
+
+    today = datetime.now()
+    quarter_foldername = f"{today.year}-Q{((today.month - 1) // 3) + 1}"
+    media_dir = MEDIA_PATH / quarter_foldername
+    media_dir.mkdir(parents=True, exist_ok=True)
+
+    uploaded_files = request.files.getlist('file')
+    if not uploaded_files or len(uploaded_files) == 0:
+        return jsonify({'error': 'no file uploaded'}), 400
+
+    uploads = []
+    for uploaded_file in uploaded_files:
+        filename = uploaded_file.filename
+
+        # secure the filename and generate unique name
+        filename = filename or ''
+        filename = secure_filename(filename)
+        ext = os.path.splitext(filename)[1]
+        # Try to infer extension from content type if missing
+        if not ext and uploaded_file.content_type:
+            mapping = {
+                'image/png': '.png',
+                'image/jpeg': '.jpg',
+                'image/jpg': '.jpg',
+                'image/gif': '.gif',
+                'image/webp': '.webp',
+                'application/pdf': '.pdf'
+            }
+            ext = mapping.get(uploaded_file.content_type.split(';')[0].strip().lower(), '')
+
+        unique_name = datetime.now().strftime('%Y%m%d-%H%M%S') + ext
+        target_path = media_dir / unique_name
+
+        try:
+            uploaded_file.save(str(target_path))
+            uploads.append({
+                'url': "/" + target_path.relative_to(NOTEBOOK_PATH).as_posix(),
+                'name': unique_name
+            })
+        except Exception as exc:
+            return jsonify({'error': 'failed to save', 'detail': str(exc)}), 500
+
+    return jsonify({'ok': True, 'uploads': uploads})
 
 
 if __name__ == '__main__':
