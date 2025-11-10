@@ -6,8 +6,12 @@
     <title>[{{ NOTEBOOK_NAME }}] {{ title }}</title>
     <script src="/static/main.js"></script>
     <link rel="stylesheet" href="/static/main.css">
+    <link rel="stylesheet" href="/static/quicklaunchbar.css">
 </head>
 <body>
+
+    {% include "quicklaunchbar.html" ignore missing without context %}
+
     <div id="tag-selector">
         <div class="pill clickable" title="click to copy reference to this wiki page" onclick="setClipboard('[{{ title }}]({{ title }})')">🔗 {{ title }}</div>
         <form id="tagForm" method="GET" action="/{{ mypath if mypath is not none }}#journal_entries">
@@ -55,14 +59,15 @@
 {% endif %}
 
 {% if new_entry_tags_str is none %}
-<h2 id="journal_entries" title="double-click to open in editor" ondblclick="openInEditor(thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries</h2>
+<h2 id="journal_entries" title="double-click to open in editor" ondblclick="openInEditor(thetype='page', entryId='{{ latest_journal_page }}')">🏷 related journal entries
 {% else %}
-<h2 id="journal_entries" title="single-click: copy page tag+selected tags to clipboard: {{ new_entry_tags_str }}; double-click to open in editor; also copies page tag + selected tags to clipboard" onclick="setClipboard('{{ new_entry_tags_str }}');" ondblclick="setClipboard('{{ new_entry_tags_str }}'); openInEditor(thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries</h2>
+<h2 id="journal_entries" title="single-click: copy page tag+selected tags to clipboard: {{ new_entry_tags_str }}; double-click to open in editor; also copies page tag + selected tags to clipboard" onclick="setClipboard('{{ new_entry_tags_str }}');" ondblclick="setClipboard('{{ new_entry_tags_str }}'); openInEditor(thetype='page', entryId='{{ latest_journal_page }}')">🏷 related journal entries
 {% endif %}
 
 {% if related_tags is not none and related_tags | length > 0 %}
-<p style="font-weight: bold;">related tags: {{ related_tags | join(" | ") }}</p>
+<span style="margin-left: 2em; font-weight: bold;font-size: small">related tags: {{ related_tags | join(" | ") }}</span>
 {% endif %}
+</h2>
 
     <ul>
         {% for entry in entries %}

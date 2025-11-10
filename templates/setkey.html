@@ -17,9 +17,12 @@
     padding: 1em;
   }
   </style>
+  <link rel="stylesheet" href="/static/quicklaunchbar.css">
   </head>
   <body>
     <h1>Set secret</h1>
+
+    {% include "quicklaunchbar.html" ignore missing without context %}
 
     <form action="/_set_key" method="POST">
       <label for="key">Enter secret:</label><br>

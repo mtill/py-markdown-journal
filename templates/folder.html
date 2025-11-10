@@ -3,7 +3,7 @@
  <html>
   <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>[{{ NOTEBOOK_NAME }}] {{ title }}</title>
+  <title>[{{ NOTEBOOK_NAME }}] {{ abs_path }}</title>
   <style>
   body {
     font-family: sans-serif;
@@ -12,12 +12,14 @@
     line-height: 1.6;
     margin: 2em;
   }
-  .copylink {
+  .copylink, .deletelink {
     cursor: pointer;
     font-size: 0.8em;
     margin-left: 0.3em;
   }
+  .notice { color: rgb(0, 35, 151); }
   </style>
+  <link rel="stylesheet" href="/static/quicklaunchbar.css">
   <script>
     async function setClipboard(text) {
       const type = "text/plain";
@@ -26,6 +28,17 @@
       };
       const clipboardItem = new ClipboardItem(clipboardItemData);
       await navigator.clipboard.write([clipboardItem]);
+    }
+
+    function deleteFile(fileUrl) {
+        if (!confirm('Are you sure you want to delete this file?\n' + fileUrl)) {
+            return;
+        }
+
+        const deleteForm = document.getElementById('deleteForm');
+        const thepathInput = document.getElementById('thepath');
+        thepathInput.value = fileUrl;
+        deleteForm.submit();
     }
 
     document.addEventListener('DOMContentLoaded', function(){
@@ -40,21 +53,44 @@
   </script>
   </head>
   <body>
+
+    <h1>Index of {{ abs_path }}</h1>
+
+    {% include "quicklaunchbar.html" ignore missing without context %}
+
+    <div id="status" class="notice">{{ delete_msg }}</span>
+
     <table>
-      <tr><th>Name</th><th>Last Modified</th></tr>
+      <tr><th>Name</th><th>Last Modified</th><th></th><th></th></tr>
       {% for entry in entries %}
         {% if entry.is_folder %}
           <tr>
-            <td>📁 <a href="{{ entry.name }}/">{{ entry.name }}/</a>{% if entry.absolute_path %} <span class="copylink" data-abspath="{{ entry.absolute_path }}">🔗</span>{% endif %}</td>
+            <td>📁 <a href="{{ entry.name }}/">{{ entry.name }}/</a></td>
             <td></td>
+            <td></td>
+            <td>{% if entry.absolute_path %} <span class="copylink" data-abspath="{{ entry.absolute_path }}">🔗</span>{% endif %}</td>
           </tr>
         {% else %}
           <tr>
-            <td>📄 <a href="{{ entry.name }}">{{ entry.name }}</a>{% if entry.absolute_path %} <span class="copylink" data-abspath="{{ entry.absolute_path }}">🔗</span>{% endif %}</td>
+            <td>📄 <a href="{{ entry.name }}">{{ entry.name }}</a>{% if entry.absolute_path %}</td>
             <td>{{ entry.mtime }}</td>
+            <td>
+              {% if entry.absolute_path %}
+                <span class="deletelink" onclick="deleteFile('{{ entry.absolute_path }}')" title="Delete file">🗑️</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="copylink" data-abspath="{{ entry.absolute_path }}">🔗</span>{% endif %}
+            </td>
           </tr>
         {% endif %}
       {% endfor %}
     </table>
+
+    <form action="/_delete" method="post" id="deleteForm" style="display:none;">
+        <input type="hidden" name="thepath" id="thepath" value="">
+        <input type="hidden" name="redirect_to" value="{{ abs_path }}">
+    </form>
+
   </body>
  </html>

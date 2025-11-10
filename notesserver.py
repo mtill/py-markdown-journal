@@ -12,7 +12,7 @@ import shutil
 from werkzeug.utils import secure_filename
 from noteslib import parseEntries, writeFile, MARKDOWN_SUFFIX, TAG_PREFIX, TAG_NAMESPACE_SEPARATOR, TAG_REGEX, JOURNAL_FILE_REGEX
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, make_response, send_from_directory, jsonify
+from flask import Flask, redirect, render_template, request, make_response, send_from_directory, jsonify
 from markdown_it import MarkdownIt
 
 
@@ -190,7 +190,7 @@ def parseMarkdown(p):
 
 @app.route('/')
 @app.route('/<path:mypath>')
-def index(mypath="/"):
+def index(mypath="/", methods=['GET']):
 
     if not check_secret():
         return jsonify(ACCESS_DENIED_MESSAGE_DICT), 403
@@ -238,7 +238,8 @@ def index(mypath="/"):
             for the_file in files:
                 entries.append({"name": the_file.name, "is_folder": False, "absolute_path": "/" + the_file.relative_to(NOTEBOOK_PATH).as_posix(), "mtime": datetime.fromtimestamp(the_file.stat().st_mtime).strftime("%d.%m.%Y %H:%M")})
 
-            return render_template("folder.html", NOTEBOOK_NAME=NOTEBOOK_NAME, title="/" + p.relative_to(NOTEBOOK_PATH).as_posix(), entries=entries)
+            delete_msg = request.args.get('delete_msg', '')
+            return render_template("folder.html", NOTEBOOK_NAME=NOTEBOOK_NAME, abs_path="/" + p.relative_to(NOTEBOOK_PATH).as_posix(), entries=entries, delete_msg=delete_msg)
 
         else:
 
@@ -399,6 +400,33 @@ def edit():
     return jsonify({'ok': True})
 
 
+@app.route('/_delete', methods=['POST'])
+def delete():
+    """Delete a file specified by form data 'thepath'."""
+    if not check_secret():
+        return jsonify(ACCESS_DENIED_MESSAGE_DICT), 403
+
+    delete_msg = ""
+    p = request.form.get('thepath', None)
+    redirect_to = request.form.get("redirect_to", "/_media")
+    if p is not None:
+        if p.startswith("/"):
+            p = p[1:]
+        file_to_delete = Path(NOTEBOOK_PATH / p).resolve()
+        if file_to_delete.is_relative_to(NOTEBOOK_PATH):
+            if file_to_delete.exists() and file_to_delete.is_file():
+                try:
+                    file_to_delete.unlink()
+                except Exception as e:
+                    delete_msg = f"Error deleting file: {str(e)}"
+            else:
+                delete_msg = "File not found: " + file_to_delete.as_posix()
+        else:
+            delete_msg = f'access denied (not in {NOTEBOOK_PATH.as_posix()})'
+
+    return redirect(redirect_to + (f"?delete_msg={delete_msg}" if delete_msg else ""))
+
+
 @app.route('/_media')
 def media_page():
     """Page to upload media and list recent uploads."""
@@ -409,6 +437,9 @@ def media_page():
     quarter_foldername = f"{today.year}-Q{((today.month - 1) // 3) + 1}"
     media_dir = MEDIA_PATH / quarter_foldername
     media_dir.mkdir(parents=True, exist_ok=True)
+    media_rel_dir_str = "/" + media_dir.relative_to(NOTEBOOK_PATH).as_posix()
+
+    delete_msg = request.args.get('delete_msg', '')
 
     files = []
     for f in media_dir.iterdir():
@@ -422,14 +453,14 @@ def media_page():
 
     # sort by mtime desc and limit
     files.sort(key=lambda x: x['mtime'], reverse=True)
-    files = files[:50]
+    files = files[:10]
 
-    return render_template('images.html', NOTEBOOK_NAME=NOTEBOOK_NAME, files=files)
+    return render_template('media.html', NOTEBOOK_NAME=NOTEBOOK_NAME, files=files, delete_msg=delete_msg, media_rel_dir_str=media_rel_dir_str)
 
 
 @app.route('/_upload_media', methods=['POST'])
 def upload_media():
-    """Accept uploaded image or PDF (file input or clipboard blob) and save to /media/ with a unique name."""
+    """Accept uploaded files (any type) and save to /media/ with a unique name."""
     if not check_secret():
         return jsonify(ACCESS_DENIED_MESSAGE_DICT), 403
 
@@ -444,26 +475,20 @@ def upload_media():
 
     uploads = []
     for uploaded_file in uploaded_files:
-        filename = uploaded_file.filename
-
-        # secure the filename and generate unique name
-        filename = filename or ''
-        filename = secure_filename(filename)
-        ext = os.path.splitext(filename)[1]
-        # Try to infer extension from content type if missing
-        if not ext and uploaded_file.content_type:
-            mapping = {
-                'image/png': '.png',
-                'image/jpeg': '.jpg',
-                'image/jpg': '.jpg',
-                'image/gif': '.gif',
-                'image/webp': '.webp',
-                'application/pdf': '.pdf'
-            }
-            ext = mapping.get(uploaded_file.content_type.split(';')[0].strip().lower(), '')
-
-        unique_name = datetime.now().strftime('%Y%m%d-%H%M%S') + ext
+        orig_filename = uploaded_file.filename or ''
+        safe_name = secure_filename(orig_filename) or ''
+        # preserve extension from the original filename if present
+        ext = os.path.splitext(safe_name)[1]
+        # generate unique base name (timestamp + random counter if needed)
+        base = datetime.now().strftime('%Y%m%d-%H%M%S')
+        unique_name = base + ext
         target_path = media_dir / unique_name
+        # ensure uniqueness if a collision occurs
+        counter = 1
+        while target_path.exists():
+            unique_name = f"{base}-{counter}{ext}"
+            target_path = media_dir / unique_name
+            counter += 1
 
         try:
             uploaded_file.save(str(target_path))
@@ -475,6 +500,7 @@ def upload_media():
             return jsonify({'error': 'failed to save', 'detail': str(exc)}), 500
 
     return jsonify({'ok': True, 'uploads': uploads})
+
 
 
 if __name__ == '__main__':

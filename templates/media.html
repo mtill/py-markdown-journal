@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[{{ NOTEBOOK_NAME }}] Media uploads</title>
+    <script src="/static/media.js"></script>
+    <link rel="stylesheet" href="/static/main.css">
+    <style>
+        body { font-family: sans-serif; padding: 16px; }
+        .uploader { margin-bottom: 16px; }
+        .recent { margin-top: 20px; }
+        .recent li { padding: 6px; border-bottom: 1px solid #eee; display: flex; align-items: center; }
+        .recent li:hover { background:#f6f6f6; }
+        .notice { color: rgb(0, 35, 151); }
+        .thumb { max-width: 120px; max-height: 80px; object-fit: cover; margin-right: 8px; border: 1px solid #ddd; }
+        .thumb-file { display: inline-block; width: 120px; height: 80px; line-height: 80px; text-align: center; border: 1px solid #ddd; background: #f0f0f0; color: #888; font-size: 48px; margin-right: 8px; }
+        .img-link { display:inline-flex; align-items:center; gap:8px; text-decoration:none; color:inherit; }
+        .deletelink { cursor: pointer; margin-left: 8px; text-decoration: none; }
+        .copy-name { cursor: pointer; }
+    </style>
+    <link rel="stylesheet" href="/static/quicklaunchbar.css">
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            initMediaPage();
+        });
+    </script>
+</head>
+<body>
+    <h1>Media manager</h1>
+
+    <div class="uploader">
+        <label>Upload from disk: <input id="fileInput" type="file" accept="image/*,application/pdf"></label>
+        <span id="status" class="notice">{{ delete_msg }}</span>
+    </div>
+
+    
+    <h2>Recently uploaded files in {{ media_rel_dir_str }}</h2>
+    <p>Click a file name to copy its link to your clipboard.</p>
+    <ul id="recentList" class="recent">
+        {% for f in files %}
+        <li>
+            <a class="thumb-link" href="{{ f.url }}" target="_blank">
+                {% if f.name.lower().endswith((".png", ".jpeg", ".jpg", ".gif", ".webp", ".bmp", ".svg")) %}
+                <img class="thumb" src="{{ f.url }}" loading="lazy" alt="{{ f.name }}">
+                {% else %}
+                <span class="thumb-file">📄</span>
+                {% endif %}
+            </a>
+            <span class="copy-name" data-url="{{ f.url }}" onclick="copyURLToClipboard(this)" title="Copy link">🔗 {{ f.name }}</span>
+            &nbsp;— <small>{{ f.mtime }} ({{ f.size }} bytes)</small>
+            <span class="deletelink" onclick="deleteFile('{{ f.url }}')" title="Delete file">🗑️</span>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <form action="/_delete" method="post" id="deleteForm" style="display:none;">
+        <input type="hidden" name="thepath" id="thepath" value="">
+    </form>
+
+</body>
+</html>
