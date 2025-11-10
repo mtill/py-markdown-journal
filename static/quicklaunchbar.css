@@ -12,3 +12,11 @@
 #quicklaunchbar a {
     margin-left: 0.3em;
 }
+@media (max-width: 700px) {
+    #quicklaunchbar {
+        left: auto;
+	right: 0px;
+	opacity: 1.0;
+    }
+}
+
