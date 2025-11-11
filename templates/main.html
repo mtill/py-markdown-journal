@@ -56,12 +56,11 @@
         </form>
 
         <div id="toc">
-        {% if headings | length > 0 %}
         <strong>ToC</strong>
         {% for level, text in headings %}
             <div class="toc-level-{{ level }}"><a href="#heading-{{ loop.index0 }}">{{ text }}</a></div>
         {% endfor %}
-        {% endif %}
+        <div class="toc-level-2"><a href="#journal_entries">related journal entries</a></div>
         </div>
     </div>
 
