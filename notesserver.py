@@ -44,6 +44,7 @@ MYPATH_TAG_REGEX = re.compile("\\s+")
 SECRET_COOKIE_NAME = 'basic_secret'
 INCLUDE_SUBTAGS = True
 ACCESS_DENIED_MESSAGE_DICT = {"error": "access denied: invalid secret. Please go to <a href=\"/_set_key\">/_set_key</a> to set the secret."}
+HEADING_REGEX = re.compile(r'^(#{1,6})\s+(.*)$')
 
 
 def check_secret():
@@ -167,6 +168,8 @@ def get_entries(start_date, related_tags, selected_tags, q):
 def parseMarkdown(p):
     mypath_content = []
     related_tags = []
+    headings = []
+    heading_counter = 0
 
     mypath_relative = p.relative_to(NOTEBOOK_PATH)
     title = "/" + mypath_relative.as_posix()
@@ -178,6 +181,14 @@ def parseMarkdown(p):
 
     with open(p, "r", encoding="utf-8") as f:
         for line in f:
+            heading_match = HEADING_REGEX.match(line)
+            if heading_match:
+                heading_level = len(heading_match.group(1))
+                heading_text = heading_match.group(2).strip()
+                headings.append((heading_level, heading_text))
+                line = f'<h{heading_level} id="heading-{heading_counter}">{heading_text}</h{heading_level}>\n'
+                heading_counter += 1
+
             mypath_content.append(line)
             for line_tag in TAG_REGEX.findall(line):
                 line_tag = line_tag.lower()
@@ -185,7 +196,7 @@ def parseMarkdown(p):
                     related_tags.append(line_tag)
     mypath_content = md.render("".join(mypath_content))
 
-    return mypath_content, related_tags, mypath_tag, title
+    return mypath_content, related_tags, mypath_tag, title, headings
 
 
 @app.route('/')
@@ -205,6 +216,7 @@ def index(mypath="/", methods=['GET']):
 
     related_tags = None
     mypath_tag = None
+    headings = []
 
     mypath_content = None
     if mypath != "_journal":
@@ -245,7 +257,7 @@ def index(mypath="/", methods=['GET']):
 
             if p.is_file():
                 if p.suffix == MARKDOWN_SUFFIX:
-                    mypath_content, related_tags, mypath_tag, title = parseMarkdown(p=p)
+                    mypath_content, related_tags, mypath_tag, title, headings = parseMarkdown(p=p)
                 else:
                     return send_from_directory(directory=NOTEBOOK_PATH, path=p.relative_to(NOTEBOOK_PATH).as_posix())
 
@@ -255,7 +267,7 @@ def index(mypath="/", methods=['GET']):
                     p = p.parent / (p.name + MARKDOWN_SUFFIX)
                     mypath = mypath + MARKDOWN_SUFFIX
                     if p.is_file():
-                        mypath_content, related_tags, mypath_tag, title = parseMarkdown(p=p)
+                        mypath_content, related_tags, mypath_tag, title, headings = parseMarkdown(p=p)
 
                 if not p.exists():
                     mypath_content = "<h2>Not Found</h2><p>The requested path does not exist: <b>/" + html.escape(p.relative_to(NOTEBOOK_PATH).as_posix()) + "</b></p>"
@@ -315,6 +327,7 @@ def index(mypath="/", methods=['GET']):
         latest_journal_page=latest_journal_page,
         title=title,
         mypath_content=mypath_content,
+        headings=headings,
         JS_ENTRY_ID_FORMAT=JS_ENTRY_ID_FORMAT,
         entries=filtered_entries,
         all_tags=available_tags,

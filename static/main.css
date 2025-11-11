@@ -56,6 +56,54 @@ h2 {
     border-radius: 5px;
     background-color: #cacaca;
 }
+h3 {
+    padding: 3px;
+    padding-left: 20px;
+    margin-top: 40px;
+    border-radius: 5px;
+    background-color: #cacaca;
+}
+h4 {
+    padding: 1px;
+    padding-left: 20px;
+    margin-top: 40px;
+    border-radius: 5px;
+    background-color: #cacaca;
+}
+h5 {
+    padding: 0px;
+    padding-left: 20px;
+    margin-top: 40px;
+    border-radius: 5px;
+    background-color: #cacaca;
+}
+h6 {
+    padding: 0px;
+    font-weight: normal;
+    padding-left: 20px;
+    margin-top: 40px;
+    border-radius: 5px;
+    background-color: #cacaca;
+}
+
+.toc-level-2 {
+    padding-left: 0.0em;
+}
+.toc-level-2 {
+    padding-left: 0.5em;
+}
+.toc-level-3 {
+    padding-left: 1.0em;
+}
+.toc-level-4 {
+    padding-left: 1.5em;
+}
+.toc-level-5 {
+    padding-left: 2.0em;
+}
+.toc-level-6 {
+    padding-left: 2.5em;
+}
 
 .entry-date {
     position: absolute;

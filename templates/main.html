@@ -50,6 +50,15 @@
             </div>
             {% endif %}
         </form>
+
+        <p id="toc">
+        {% if headings | length > 0 %}
+        <strong>Headings</strong>
+        {% for level, text in headings %}
+            <div class="toc-level-{{ level }}"><a href="#heading-{{ loop.index0 }}">{{ text }}</a></div>
+        {% endfor %}
+        {% endif %}
+        </p>
     </div>
 
 {% if mypath_content is not none %}
