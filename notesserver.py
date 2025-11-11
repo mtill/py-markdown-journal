@@ -181,19 +181,21 @@ def parseMarkdown(p):
 
     with open(p, "r", encoding="utf-8") as f:
         for line in f:
+            for line_tag in TAG_REGEX.findall(line):
+                line_tag = line_tag.lower()
+                if line_tag not in related_tags:
+                    related_tags.append(line_tag)
+
             heading_match = HEADING_REGEX.match(line)
             if heading_match:
                 heading_level = len(heading_match.group(1))
                 heading_text = heading_match.group(2).strip()
                 headings.append((heading_level, heading_text))
-                line = f'<h{heading_level} id="heading-{heading_counter}">{heading_text}</h{heading_level}>\n'
+                line = f'<h{heading_level} id="heading-{heading_counter}">{heading_text}</h{heading_level}>\n\n'
                 heading_counter += 1
 
             mypath_content.append(line)
-            for line_tag in TAG_REGEX.findall(line):
-                line_tag = line_tag.lower()
-                if line_tag not in related_tags:
-                    related_tags.append(line_tag)
+
     mypath_content = md.render("".join(mypath_content))
 
     return mypath_content, related_tags, mypath_tag, title, headings
