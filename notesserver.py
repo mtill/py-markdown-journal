@@ -46,6 +46,12 @@ INCLUDE_SUBTAGS = True
 ACCESS_DENIED_MESSAGE_DICT = {"error": "access denied: invalid secret. Please go to <a href=\"/_set_key\">/_set_key</a> to set the secret."}
 HEADING_REGEX = re.compile(r'^(#{1,6})\s+(.*)$')
 
+QUICKLAUNCH_PATH = NOTEBOOK_PATH / ".quicklaunch.html"
+QUICKLAUNCH_HTML = None
+if QUICKLAUNCH_PATH.is_file():
+    with open(QUICKLAUNCH_PATH, "r", encoding="utf-8") as f:
+        QUICKLAUNCH_HTML = f.read()
+
 
 def check_secret():
     return BASIC_SECRET is None or len(BASIC_SECRET) == 0 or BASIC_SECRET == request.cookies.get(SECRET_COOKIE_NAME, '')
@@ -253,7 +259,12 @@ def index(mypath="/", methods=['GET']):
                 entries.append({"name": the_file.name, "is_folder": False, "absolute_path": "/" + the_file.relative_to(NOTEBOOK_PATH).as_posix(), "mtime": datetime.fromtimestamp(the_file.stat().st_mtime).strftime("%d.%m.%Y %H:%M")})
 
             delete_msg = request.args.get('delete_msg', '')
-            return render_template("folder.html", NOTEBOOK_NAME=NOTEBOOK_NAME, abs_path="/" + p.relative_to(NOTEBOOK_PATH).as_posix(), entries=entries, delete_msg=delete_msg)
+            return render_template("folder.html",
+                                   NOTEBOOK_NAME=NOTEBOOK_NAME,
+                                   abs_path="/" + p.relative_to(NOTEBOOK_PATH).as_posix(),
+                                   entries=entries,
+                                   delete_msg=delete_msg,
+                                   QUICKLAUNCH_HTML=QUICKLAUNCH_HTML)
 
         else:
 
@@ -337,7 +348,8 @@ def index(mypath="/", methods=['GET']):
         tag_counts=tag_counts,
         start=start_date.strftime('%Y-%m-%d'),
         q=q,
-        regex_error=regex_error
+        regex_error=regex_error,
+        QUICKLAUNCH_HTML=QUICKLAUNCH_HTML
     )
 
 
@@ -361,7 +373,7 @@ def remove_tag_route():
 @app.route("/_set_key", methods=['GET'])
 def get_set_key_form():
     #key = request.cookies.get(SECRET_COOKIE_NAME, '')
-    return render_template("setkey.html", key='', was_updated=False)
+    return render_template("setkey.html", key='', was_updated=False, QUICKLAUNCH_HTML=QUICKLAUNCH_HTML)
 
 
 @app.route("/_set_key", methods=['POST'])
@@ -370,7 +382,7 @@ def set_key():
     if not key:
         return jsonify({'error': 'missing key'}), 400
 
-    response = make_response(render_template("setkey.html", key=key, was_updated=True))
+    response = make_response(render_template("setkey.html", key=key, was_updated=True, QUICKLAUNCH_HTML=QUICKLAUNCH_HTML))
     response.set_cookie(SECRET_COOKIE_NAME, key, max_age=30*24*60*60)
     return response
 

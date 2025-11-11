@@ -19,7 +19,7 @@
   }
   .notice { color: rgb(0, 35, 151); }
   </style>
-  <link rel="stylesheet" href="/static/quicklaunchbar.css">
+  <link rel="stylesheet" href="/static/quicklaunch.css">
   <script>
     async function setClipboard(text) {
       const type = "text/plain";
@@ -56,7 +56,11 @@
 
     <h1>Index of {{ abs_path }}</h1>
 
-    {% include "quicklaunchbar.html" ignore missing without context %}
+    {% if QUICKLAUNCH_HTML %}
+    {{ QUICKLAUNCH_HTML | safe }}
+    {% else %}
+    {% include "quicklaunch.html" ignore missing without context %}
+    {% endif %}
 
     <div id="status" class="notice">{{ delete_msg }}</span>
 

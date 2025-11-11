@@ -6,11 +6,15 @@
     <title>[{{ NOTEBOOK_NAME }}] {{ title }}</title>
     <script src="/static/main.js"></script>
     <link rel="stylesheet" href="/static/main.css">
-    <link rel="stylesheet" href="/static/quicklaunchbar.css">
+    <link rel="stylesheet" href="/static/quicklaunch.css">
 </head>
 <body>
 
-    {% include "quicklaunchbar.html" ignore missing without context %}
+    {% if QUICKLAUNCH_HTML %}
+    {{ QUICKLAUNCH_HTML | safe }}
+    {% else %}
+    {% include "quicklaunch.html" ignore missing without context %}
+    {% endif %}
 
     <div id="tag-selector">
         <div class="pill clickable" title="click to copy reference to this wiki page" onclick="setClipboard('[{{ title }}]({{ title }})')">🔗 {{ title }}</div>

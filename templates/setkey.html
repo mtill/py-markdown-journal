@@ -17,12 +17,16 @@
     padding: 1em;
   }
   </style>
-  <link rel="stylesheet" href="/static/quicklaunchbar.css">
+  <link rel="stylesheet" href="/static/quicklaunch.css">
   </head>
   <body>
     <h1>Set secret</h1>
 
-    {% include "quicklaunchbar.html" ignore missing without context %}
+    {% if QUICKLAUNCH_HTML %}
+    {{ QUICKLAUNCH_HTML | safe }}
+    {% else %}
+    {% include "quicklaunch.html" ignore missing without context %}
+    {% endif %}
 
     <form action="/_set_key" method="POST">
       <label for="key">Enter secret:</label><br>
