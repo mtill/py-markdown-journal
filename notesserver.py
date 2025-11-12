@@ -199,24 +199,28 @@ def parseMarkdown(p):
     mypath_tag = TAG_NAMESPACE_SEPARATOR.join(mypath_relative_parts)
     related_tags.append(mypath_tag)
 
-    with open(p, "r", encoding="utf-8") as f:
-        for line in f:
-            for line_tag in TAG_REGEX.findall(line):
-                line_tag = line_tag.lower()
-                if line_tag not in related_tags:
-                    related_tags.append(line_tag)
+    if p.is_file():
+        with open(p, "r", encoding="utf-8") as f:
+            for line in f:
+                for line_tag in TAG_REGEX.findall(line):
+                    line_tag = line_tag.lower()
+                    if line_tag not in related_tags:
+                        related_tags.append(line_tag)
 
-            heading_match = HEADING_REGEX.match(line)
-            if heading_match:
-                heading_level = len(heading_match.group(1))
-                heading_text = heading_match.group(2).strip()
-                headings.append((heading_level, heading_text))
-                line = f'<h{heading_level} id="heading-{heading_counter}">{heading_text}</h{heading_level}>\n\n'
-                heading_counter += 1
+                heading_match = HEADING_REGEX.match(line)
+                if heading_match:
+                    heading_level = len(heading_match.group(1))
+                    heading_text = heading_match.group(2).strip()
+                    headings.append((heading_level, heading_text))
+                    line = f'<h{heading_level} id="heading-{heading_counter}">{heading_text}</h{heading_level}>\n\n'
+                    heading_counter += 1
 
-            mypath_content.append(line)
+                mypath_content.append(line)
 
-    mypath_content = md.render("".join(mypath_content))
+        mypath_content = md.render("".join(mypath_content))
+
+    else:
+        mypath_content = "<h2>Not Found</h2><p>The requested path does not exist: <b>/" + html.escape(p.relative_to(NOTEBOOK_PATH).as_posix()) + "</b></p>"
 
     return mypath_content, related_tags, mypath_tag, title, headings
 
@@ -293,11 +297,8 @@ def index(mypath="/", methods=['GET']):
                 if len(p.suffix) == 0 and p.suffix != MARKDOWN_SUFFIX:
                     p = p.parent / (p.name + MARKDOWN_SUFFIX)
                     mypath = mypath + MARKDOWN_SUFFIX
-                    if p.is_file():
-                        mypath_content, related_tags, mypath_tag, title, headings = parseMarkdown(p=p)
 
-                if not p.exists():
-                    mypath_content = "<h2>Not Found</h2><p>The requested path does not exist: <b>/" + html.escape(p.relative_to(NOTEBOOK_PATH).as_posix()) + "</b></p>"
+                mypath_content, related_tags, mypath_tag, title, headings = parseMarkdown(p=p)
 
 
     today_date = datetime.now()
