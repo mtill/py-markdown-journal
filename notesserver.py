@@ -87,11 +87,8 @@ def remove_tag(entryId: str, tag_to_remove: str):
     return False, "remove_tag: entry not found for id: " + entryId
 
 
-def get_entries(start_date, related_tags, selected_tags, q):
+def get_entries(start_date, stop_date, related_tags, selected_tags, q):
     # month to quarter: (i-1)//3+1
-    # check if ealiest date of the quarter of that file is before start_date:
-    # quarter = (start_date.month - 1) // 3 + 1
-    # 1-3 4-6 7-9 10-12
 
     result = []
     for journal_file in JOURNAL_PATH.glob("**/*.md"):
@@ -99,13 +96,25 @@ def get_entries(start_date, related_tags, selected_tags, q):
         if m is not None:
             year = int(m.group(1))
             quarter = int(m.group(2))
-            journal_file_date = datetime(year=year, month=((quarter*3)+1), day=1) - timedelta(microseconds=-1)
-            if journal_file_date < start_date:
+            quarter_month = ((quarter - 1) * 3) + 1
+            journal_file_earliest_date = datetime(year=year, month=quarter_month, day=1)
+
+            next_quarter = quarter + 1
+            next_quarter_year = year
+            if next_quarter > 4:
+                next_quarter = 1
+                next_quarter_year += 1
+            next_quarter_month = ((next_quarter - 1) * 3) + 1
+            journal_file_latest_date = datetime(year=next_quarter_year, month=next_quarter_month, day=1) - timedelta(microseconds=1)
+
+            if journal_file_earliest_date < start_date or journal_file_latest_date > stop_date:
                 continue
+        #else:
+        #    print("journal file name did not match regex, not sure what's in --> parsing that file:", journal_file.name)
 
         parsed_entries = parseEntries(thepath=journal_file, notebookpath=NOTEBOOK_PATH)["entries"]
         for entry in parsed_entries:
-            if entry["date"] >= start_date:
+            if entry["date"] >= start_date and entry["date"] <= stop_date:
                 result.append(entry)
         parsed_entries = None
 
@@ -288,23 +297,31 @@ def index(mypath="/", methods=['GET']):
 
     today_date = datetime.now()
     start_str = request.args.get('start', '')
+    stop_str = request.args.get('stop', '')
 
     # default start = today - 8 weeks
     default_start_date = today_date - timedelta(weeks=8)
 
     # If user provided a start date, try to parse it; otherwise use default
     start_date = default_start_date
+    stop_date = today_date
     if start_str:
         try:
             parsed = datetime.strptime(start_str, '%Y-%m-%d')
             start_date = parsed
         except Exception:
             start_date = default_start_date
+    if stop_str:
+        try:
+            parsed = datetime.strptime(stop_str, '%Y-%m-%d') + timedelta(days=1) - timedelta(microseconds=1)
+            stop_date = parsed
+        except Exception:
+            stop_date = today_date
 
     # regex search param
     q = request.args.get('q', '').strip()
 
-    filtered_entries, regex_error = get_entries(start_date=start_date, related_tags=related_tags, selected_tags=selected_tags, q=q)
+    filtered_entries, regex_error = get_entries(start_date=start_date, stop_date=stop_date, related_tags=related_tags, selected_tags=selected_tags, q=q)
     for e in filtered_entries:
         e["content"] = md.render("\n".join(e["content"]))
 
@@ -347,6 +364,7 @@ def index(mypath="/", methods=['GET']):
         selected_tags=selected_tags,
         tag_counts=tag_counts,
         start=start_date.strftime('%Y-%m-%d'),
+        stop=stop_date.strftime('%Y-%m-%d'),
         q=q,
         regex_error=regex_error,
         QUICKLAUNCH_HTML=QUICKLAUNCH_HTML
