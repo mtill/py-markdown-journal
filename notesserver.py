@@ -362,7 +362,7 @@ def index(mypath="/", methods=['GET']):
         mypath_content=mypath_content,
         headings=headings,
         JS_ENTRY_ID_FORMAT=JS_ENTRY_ID_FORMAT,
-        entries=filtered_entries,
+        entries=sorted(filtered_entries, key=lambda x: x['date'], reverse=True),
         all_tags=available_tags,
         selected_tags=selected_tags,
         tag_counts=tag_counts,
