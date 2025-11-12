@@ -20,7 +20,7 @@
         <div class="pill clickable" title="click to copy reference to this wiki page" onclick="setClipboard('[{{ title }}]({{ title }})')">🔗 {{ title }}</div>
         <form id="tagForm" method="GET" action="/{{ mypath if mypath is not none }}#journal_entries">
 
-            <strong>From</strong>
+            <strong>From - To</strong>
             <div class="date-range">
                 <div class="date-inputs">
                     <input type="date" name="start" id="start_date" value="{{ start }}" onchange="this.form.submit()">
