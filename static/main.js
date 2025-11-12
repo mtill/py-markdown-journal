@@ -43,17 +43,15 @@ function detectDoubleTap(doubleTapMs) {
 }
 
 
-async function removeTagContent(btn, rel_path, entryId, tag){
+async function removeTag(btn, rel_path, entryId, tag){
     if (tag === "{{ NO_ADDITIONAL_TAGS}}") {
         return;
     }
 
-    btn.classList.add('pending');
     if (!confirm('Are you sure you want to remove tag "' + tag + '"?\n')) {
-        btn.classList.remove('pending');
         return;
     }
-
+    
     try {
         const fd = new FormData();
         fd.append('rel_path', rel_path);
@@ -64,17 +62,17 @@ async function removeTagContent(btn, rel_path, entryId, tag){
             const txt = await resp.text();
             alert('Failed to remove tag: ' + resp.status + ' ' + txt);
         } else {
-            //btn.parentElement.removeChild(btn);
+            //btn.parentElement.removeChild(btn.parentElement);
             let count_display = document.getElementById("tag-count-" + tag);
             if (count_display && !isNaN(Number(count_display.textContent))) {
                 count_display.textContent = parseInt(count_display.textContent) - 1;
             }
         }
+        btn.parentElement.classList.add('removed');
+        btn.parentElement.removeChild(btn);
     } catch (err) {
         console.error(err);
         alert('Error removing tag. See console.');
-    } finally {
-        btn.classList.remove('pending');
     }
 }
 

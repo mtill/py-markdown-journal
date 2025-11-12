@@ -428,6 +428,8 @@ def edit():
 
     line_no = request.form.get('line_no', None)
 
+    if rel.startswith("/"):
+        rel = rel[1:]
     try:
         target = (NOTEBOOK_PATH / rel).resolve()
     except Exception:
