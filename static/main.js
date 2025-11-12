@@ -42,13 +42,16 @@ function detectDoubleTap(doubleTapMs) {
     }
 }
 
-// toggle staging a tag removal (called by inline onclick)
+
 async function removeTagContent(btn, entryId, tag){
     if (tag === "{{ NO_ADDITIONAL_TAGS}}") {
         return;
     }
 
     btn.classList.add('pending');
+    if (!confirm('Are you sure you want to remove tag "' + tag + '"?\n')) {
+        return;
+    }
 
     try {
         const fd = new FormData();
@@ -69,6 +72,7 @@ async function removeTagContent(btn, entryId, tag){
         console.error(err);
         alert('Error removing tag. See console.');
     } finally {
+        btn.classList.remove('pending');
     }
 }
 

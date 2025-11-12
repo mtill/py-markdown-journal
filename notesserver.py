@@ -285,7 +285,7 @@ def index(mypath="/", methods=['GET']):
 
             else:
 
-                if p.suffix != MARKDOWN_SUFFIX:
+                if len(p.suffix) == 0 and p.suffix != MARKDOWN_SUFFIX:
                     p = p.parent / (p.name + MARKDOWN_SUFFIX)
                     mypath = mypath + MARKDOWN_SUFFIX
                     if p.is_file():

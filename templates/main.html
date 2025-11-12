@@ -50,7 +50,7 @@
             {% set tag_max_value = tag_counts.values()|max %}
             {% for tag in all_tags %}
                 {% set tag_weight = 0 if tag_max_value == 0 else tag_counts.get(tag, 0)/tag_max_value %}
-                <input id="tag-checkbox-{{ tag }}" type="checkbox" name="tags" value="{{ tag }}" {% if tag in selected_tags %}checked{% endif %} onchange="submitFormPreservePage()"><span style="font-size:{{ 0.7+tag_weight*0.7 }}rem;">{{ tag }}</span>{% if tag not in selected_tags %} <span class="tag-count" id="tag-count-{{ tag }}">{{ tag_counts.get(tag, 0) }}</span>{% endif %}<br>
+                <input id="tag-checkbox-{{ tag }}" type="checkbox" name="tags" value="{{ tag }}" {% if tag in selected_tags %}checked{% endif %} onchange="submitFormPreservePage()"><label for="tag-checkbox-{{ tag }}" style="font-size:{{ 0.7+tag_weight*0.7 }}rem;">{{ tag }}</label>{% if tag not in selected_tags %} <span class="tag-count" id="tag-count-{{ tag }}">{{ tag_counts.get(tag, 0) }}</span>{% endif %}<br>
             {% endfor %}
             </div>
             {% endif %}
@@ -61,7 +61,7 @@
         {% for level, text in headings %}
             <div class="toc-level-{{ level }}"><a href="#heading-{{ loop.index0 }}">{{ text }}</a></div>
         {% endfor %}
-        <div class="toc-level-2"><a href="#journal_entries">related journal entries</a></div>
+        <div class="toc-level-2"><a href="#journal_entries">{% if new_entry_tags_str is not none %}related {% endif %}journal entries</a></div>
         </div>
     </div>
 
@@ -72,7 +72,7 @@
 {% endif %}
 
 {% if new_entry_tags_str is none %}
-<h2 id="journal_entries" title="double-click to open in editor" ondblclick="openInEditor(thetype='page', entryId='{{ latest_journal_page }}')">🏷 related journal entries
+<h2 id="journal_entries" title="double-click to open in editor" ondblclick="openInEditor(thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries
 {% else %}
 <h2 id="journal_entries" title="single-click: copy page tag+selected tags to clipboard: {{ new_entry_tags_str }}; double-click to open in editor; also copies page tag + selected tags to clipboard" onclick="setClipboard('{{ new_entry_tags_str }}');" ondblclick="setClipboard('{{ new_entry_tags_str }}'); openInEditor(thetype='page', entryId='{{ latest_journal_page }}')">🏷 related journal entries
 {% endif %}
@@ -91,12 +91,9 @@
                  {% if not (entry.tags|length == 1 and entry.tags|first == "untagged") %}
                    <p>Tags:
                    {% for tag in entry.tags %}
-                     <button type="button" 
-                             class="tag-pill" 
-                             onclick="removeTagContent(this, '{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}', '{{ tag }}')"
-                             title="click to remove tag '{{ tag }}' from entry">
-                         {{ tag }}
-                     </button>
+                     <span class="tag-pill"><a class="removetaglink" href="/{{ tag }}.md">{{ tag }}</a>
+                     <span class="tag-remove" onclick="removeTagContent(this.parentElement, '{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}', '{{ tag }}')" title="click to remove tag '{{ tag }}' from entry">🗑️</span>
+                     </span>
                      {% endfor %}
                    </p>
                  {% endif %}

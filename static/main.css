@@ -174,13 +174,22 @@ h6 {
     border-radius: 999px;
     font-size: 0.85em;
     border: 1px solid #dbe6ef;
-    cursor: crosshair;
     transition: all 0.2s;
 }
 
-.tag-pill:hover {
+.removetaglink {
+    text-decoration: none;
+    color: inherit;
+    margin-right: 6px;
+}
+
+.removetaglink:hover {
     background: #e2e8f0;
     border-color: #cbd5e1;
+}
+
+.tag-remove:hover {
+    cursor: crosshair;
 }
 
 /* visually mark staged tag removals */
