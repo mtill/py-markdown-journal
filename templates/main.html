@@ -61,7 +61,7 @@
         {% for level, text in headings %}
             <div class="toc-level-{{ level }}"><a href="#heading-{{ loop.index0 }}">{{ text }}</a></div>
         {% endfor %}
-        <div class="toc-level-2"><a href="#journal_entries">{% if new_entry_tags_str is not none %}related {% endif %}journal entries</a></div>
+        <div class="toc-level-2"><a href="#journal_entries">journal entries</a></div>
         </div>
     </div>
 
@@ -74,7 +74,7 @@
 {% if new_entry_tags_str is none %}
 <h2 id="journal_entries" title="double-click to open in editor" ondblclick="openInEditor(thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries
 {% else %}
-<h2 id="journal_entries" title="single-click: copy page tag+selected tags to clipboard: {{ new_entry_tags_str }}; double-click to open in editor; also copies page tag + selected tags to clipboard" onclick="setClipboard('{{ new_entry_tags_str }}');" ondblclick="setClipboard('{{ new_entry_tags_str }}'); openInEditor(thetype='page', entryId='{{ latest_journal_page }}')">🏷 related journal entries
+<h2 id="journal_entries" title="single-click: copy page tag+selected tags to clipboard: {{ new_entry_tags_str }}; double-click to also open in editor" onclick="setClipboard('{{ new_entry_tags_str }}');" ondblclick="setClipboard('{{ new_entry_tags_str }}'); openInEditor(thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries
 {% endif %}
 
 {% if related_tags is not none and related_tags | length > 0 %}
@@ -91,9 +91,13 @@
                  {% if not (entry.tags|length == 1 and entry.tags|first == "untagged") %}
                    <p>Tags:
                    {% for tag in entry.tags %}
+                    {% if tag == NO_ADDITIONAL_TAGS %}
+                     <span class="tag-pill">{{ tag }}</span>
+                    {% else %}
                      <span class="tag-pill"><a class="removetaglink" href="/{{ tag }}.md">{{ tag }}</a>
-			     <span class="tag-remove" onclick="removeTag(this, '/{{ entry.rel_path.as_posix() }}', '{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}', '{{ tag }}')" title="click to remove tag '{{ tag }}' from entry">🗑️</span>
+			          <span class="tag-remove" onclick="removeTag(this, '/{{ entry.rel_path.as_posix() }}', '{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}', '{{ tag }}')" title="click to remove tag '{{ tag }}' from entry">🗑️</span>
                      </span>
+                    {% endif %}
                      {% endfor %}
                    </p>
                  {% endif %}

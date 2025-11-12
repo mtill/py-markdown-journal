@@ -214,6 +214,10 @@ h6 {
     cursor: pointer;
 }
 
+#journal_entries {
+    cursor: pointer;
+}
+
 /* highlight entries that include the 'highlighted' tag */
 .entry.highlighted {
     border-left: 10px solid #ffd54f;

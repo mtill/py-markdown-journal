@@ -376,6 +376,7 @@ def index(mypath="/", methods=['GET']):
         stop=stop_date.strftime('%Y-%m-%d'),
         q=q,
         regex_error=regex_error,
+        NO_ADDITIONAL_TAGS=NO_ADDITIONAL_TAGS,
         QUICKLAUNCH_HTML=QUICKLAUNCH_HTML
     )
 
