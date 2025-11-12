@@ -294,11 +294,14 @@ def index(mypath="/", methods=['GET']):
 
             else:
 
-                if len(p.suffix) == 0 and p.suffix != MARKDOWN_SUFFIX:
+                if len(p.suffix) == 0:
                     p = p.parent / (p.name + MARKDOWN_SUFFIX)
                     mypath = mypath + MARKDOWN_SUFFIX
-
-                mypath_content, related_tags, mypath_tag, title, headings = parseMarkdown(p=p)
+                    mypath_content, related_tags, mypath_tag, title, headings = parseMarkdown(p=p)
+                elif p.suffix == MARKDOWN_SUFFIX:
+                    mypath_content, related_tags, mypath_tag, title, headings = parseMarkdown(p=p)
+                else:
+                    return jsonify({'error': 'file not found: ' + p.as_posix()}), 400
 
 
     today_date = datetime.now()
