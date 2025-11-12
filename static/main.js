@@ -12,6 +12,18 @@ function submitFormPreservePage() {
     document.getElementById('tagForm').submit();
 }
 
+function toggleControls() {
+    const controls = document.getElementById('controls');
+    const theToggle = document.getElementById('controlstoggle');
+    if (controls.style.display === 'none') {
+        controls.style.display = 'block';
+        theToggle.innerText = 'hide';
+    } else {
+        controls.style.display = 'none';
+        theToggle.innerText = 'show';
+    }
+}
+
 async function setClipboard(text) {
   const type = "text/plain";
   const clipboardItemData = {

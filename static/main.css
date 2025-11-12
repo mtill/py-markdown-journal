@@ -39,6 +39,13 @@ img {
     z-index: 1000;
 }
 
+#controlstoggle {
+    float: right;
+    cursor: pointer;
+    font-weight: bold;
+    color: #999;
+}
+
 #tag-selector h3 { margin: 0 0 6px 0; font-size: 1em; display: block; }
 
 #tag-selector input[type="search"],
@@ -212,6 +219,11 @@ h6 {
 
 .clickable {
     cursor: pointer;
+}
+
+#tag-selector {
+    resize: both;
+    overflow:auto;
 }
 
 #journal_entries {

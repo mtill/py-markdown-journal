@@ -17,9 +17,10 @@
     {% endif %}
 
     <div id="tag-selector">
-        <div class="pill clickable" title="click to copy reference to this wiki page" onclick="setClipboard('[{{ title }}]({{ title }})')">🔗 {{ title }}</div>
+      <div class="pill clickable" title="click to copy reference to this wiki page" onclick="setClipboard('[{{ title }}]({{ title }})')">🔗 {{ title }}</div>
+      <span id="controlstoggle" onclick="toggleControls()">hide</span>
+      <span id="controls">
         <form id="tagForm" method="GET" action="/{{ mypath if mypath is not none }}#journal_entries">
-
             <strong>From - To</strong>
             <div class="date-range">
                 <div class="date-inputs">
@@ -63,6 +64,7 @@
         {% endfor %}
         <div class="toc-level-2"><a href="#journal_entries">journal entries</a></div>
         </div>
+        </span>
     </div>
 
 {% if mypath_content is not none %}
