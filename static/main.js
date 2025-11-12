@@ -50,6 +50,7 @@ async function removeTagContent(btn, entryId, tag){
 
     btn.classList.add('pending');
     if (!confirm('Are you sure you want to remove tag "' + tag + '"?\n')) {
+        btn.classList.remove('pending');
         return;
     }
 

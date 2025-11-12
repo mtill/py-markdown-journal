@@ -87,7 +87,7 @@
         <li class="entry" data-entry-id="{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}" data-tags="{{ ' '.join(entry.tags) }}" data-rel-path="{{ entry.rel_path }}" data-line-no="{{ entry.pos }}">
              <div class="entry-date" title="click to copy reference to this entry" onclick="setClipboard('[journal entry {{ entry.date.strftime('%Y-%m-%d %H:%M')}}]({{ entry.location }})')">🔗 {{ entry.date.strftime('%Y-%m-%d %H:%M') }}</div>
              <div class="entry-content">
-                 <p>{{ entry.content | safe }}</p>
+                 {{ entry.content | safe }}
                  {% if not (entry.tags|length == 1 and entry.tags|first == "untagged") %}
                    <p>Tags:
                    {% for tag in entry.tags %}
