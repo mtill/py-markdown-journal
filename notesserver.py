@@ -90,6 +90,7 @@ def remove_tag(entryId: str, tag_to_remove: str):
 def get_entries(start_date, stop_date, related_tags, selected_tags, q):
     # month to quarter: (i-1)//3+1
 
+    relevant_files = []
     result = []
     for journal_file in JOURNAL_PATH.glob("**/*.md"):
         m = JOURNAL_FILE_REGEX.match(journal_file.name)
@@ -107,11 +108,13 @@ def get_entries(start_date, stop_date, related_tags, selected_tags, q):
             next_quarter_month = ((next_quarter - 1) * 3) + 1
             journal_file_latest_date = datetime(year=next_quarter_year, month=next_quarter_month, day=1) - timedelta(microseconds=1)
 
-            if journal_file_earliest_date < start_date or journal_file_latest_date > stop_date:
-                continue
-        #else:
-        #    print("journal file name did not match regex, not sure what's in --> parsing that file:", journal_file.name)
+            if not (start_date > journal_file_latest_date or stop_date < journal_file_earliest_date):
+                relevant_files.append(journal_file)
 
+        else:   # journal file name did not match regex, not sure what's in --> parsing that file:", journal_file.name)
+            relevant_files.append(journal_file)
+
+    for journal_file in relevant_files:
         parsed_entries = parseEntries(thepath=journal_file, notebookpath=NOTEBOOK_PATH)["entries"]
         for entry in parsed_entries:
             if entry["date"] >= start_date and entry["date"] <= stop_date:
