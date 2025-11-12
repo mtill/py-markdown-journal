@@ -57,13 +57,15 @@ def check_secret():
     return BASIC_SECRET is None or len(BASIC_SECRET) == 0 or BASIC_SECRET == request.cookies.get(SECRET_COOKIE_NAME, '')
 
 
-def remove_tag(entryId: str, tag_to_remove: str):
+def remove_tag(rel_path: str, entryId: str, tag_to_remove: str):
     dt = datetime.strptime(entryId, JS_ENTRY_ID_FORMAT)
 
-    # determine quarter file
-    quarter = (dt.month - 1) // 3 + 1
-    quarter_filename = f"{dt.year}-Q{quarter}.md"
-    journal_file = JOURNAL_PATH / quarter_filename
+    if rel_path.startswith("/"):
+        rel_path = rel_path[1:]
+
+    journal_file = NOTEBOOK_PATH / rel_path
+    if not journal_file.relative_to(NOTEBOOK_PATH):
+        return False, "access denied."
 
     if not journal_file.exists():
         return False, "remove_tag: journal file not found: " + journal_file.as_posix()
@@ -379,12 +381,13 @@ def remove_tag_route():
     if not check_secret():
         return jsonify(ACCESS_DENIED_MESSAGE_DICT), 403
 
+    rel_path = request.form.get('rel_path') or request.args.get('rel_path')
     entryId = request.form.get('entryId') or request.args.get('entryId')
     tag_to_remove = request.form.get('remove_tag') or request.args.get('remove_tag')
 
     msg = "invalid request"
     if entryId is not None and tag_to_remove is not None:
-        is_success, msg = remove_tag(entryId=entryId, tag_to_remove=tag_to_remove)
+        is_success, msg = remove_tag(rel_path=rel_path, entryId=entryId, tag_to_remove=tag_to_remove)
         if is_success:
             return jsonify({'ok': True})
 

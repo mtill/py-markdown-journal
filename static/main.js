@@ -43,7 +43,7 @@ function detectDoubleTap(doubleTapMs) {
 }
 
 
-async function removeTagContent(btn, entryId, tag){
+async function removeTagContent(btn, rel_path, entryId, tag){
     if (tag === "{{ NO_ADDITIONAL_TAGS}}") {
         return;
     }
@@ -56,6 +56,7 @@ async function removeTagContent(btn, entryId, tag){
 
     try {
         const fd = new FormData();
+        fd.append('rel_path', rel_path);
         fd.append('entryId', entryId);
         fd.append('remove_tag', tag);
         const resp = await fetch('/_remove_tag', { method: 'POST', body: fd });
@@ -63,7 +64,7 @@ async function removeTagContent(btn, entryId, tag){
             const txt = await resp.text();
             alert('Failed to remove tag: ' + resp.status + ' ' + txt);
         } else {
-            btn.parentElement.removeChild(btn);
+            //btn.parentElement.removeChild(btn);
             let count_display = document.getElementById("tag-count-" + tag);
             if (count_display && !isNaN(Number(count_display.textContent))) {
                 count_display.textContent = parseInt(count_display.textContent) - 1;

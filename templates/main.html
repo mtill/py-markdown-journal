@@ -92,7 +92,7 @@
                    <p>Tags:
                    {% for tag in entry.tags %}
                      <span class="tag-pill"><a class="removetaglink" href="/{{ tag }}.md">{{ tag }}</a>
-                     <span class="tag-remove" onclick="removeTagContent(this.parentElement, '{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}', '{{ tag }}')" title="click to remove tag '{{ tag }}' from entry">🗑️</span>
+			     <span class="tag-remove" onclick="removeTagContent(this.parentElement, '/{{ entry.rel_path }}', '{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}', '{{ tag }}')" title="click to remove tag '{{ tag }}' from entry">🗑️</span>
                      </span>
                      {% endfor %}
                    </p>
