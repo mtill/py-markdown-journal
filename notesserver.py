@@ -142,7 +142,7 @@ def get_entries(start_date, stop_date, related_tags, selected_tags, q):
         result = result_tmp
 
     # Then apply tag filtering (entry must have all selected tags)
-    if selected_tags:
+    if selected_tags is not None and len(selected_tags) != 0:
         selected_tags_search = list(selected_tags)
         no_additional_selected = False
         if NO_ADDITIONAL_TAGS in selected_tags_search:
@@ -163,24 +163,24 @@ def get_entries(start_date, stop_date, related_tags, selected_tags, q):
 
     regex_error = False
     regex = None
-    if q:
+    if q is not None and len(q) != 0:
         try:
             regex = re.compile(q, re.IGNORECASE)
         except re.error:
             regex_error = True
             result = []
 
-    # apply regex filter if compiled; if invalid regex produce no matches and flag error
-    if regex and not regex_error:
-        def matches_regex(entry):
-            for t in entry.get('content', []):
-                if regex.search(t):
-                    return True
-            for t in entry.get('tags', []):
-                if regex.search(t):
-                    return True
-            return False
-        result = [e for e in result if matches_regex(e)]
+        # apply regex filter if compiled; if invalid regex produce no matches and flag error
+        if not regex_error:
+            def matches_regex(entry):
+                for t in entry.get('content', []):
+                    if regex.search(t):
+                        return True
+                for t in entry.get('tags', []):
+                    if regex.search(t):
+                        return True
+                return False
+            result = [e for e in result if matches_regex(e)]
 
     return result, regex_error
 
@@ -225,10 +225,9 @@ def parseMarkdown(p):
     return mypath_content, related_tags, mypath_tag, title, headings
 
 
-@app.route('/')
-@app.route('/<path:mypath>')
-def index(mypath="/", methods=['GET']):
-
+@app.route('/', methods=['GET'])
+@app.route('/<path:mypath>', methods=['GET'])
+def index(mypath="/"):
     if not check_secret():
         return jsonify(ACCESS_DENIED_MESSAGE_DICT), 403
 
@@ -239,6 +238,8 @@ def index(mypath="/", methods=['GET']):
 
     # Get selected tags from query parameters
     selected_tags = request.args.getlist('tags')
+    if selected_tags is None:
+        selected_tags = []
 
     related_tags = None
     mypath_tag = None
@@ -305,8 +306,8 @@ def index(mypath="/", methods=['GET']):
 
 
     today_date = datetime.now()
-    start_str = request.args.get('start', '')
-    stop_str = request.args.get('stop', '')
+    start_str = request.args.get('start', None)
+    stop_str = request.args.get('stop', None)
 
     # default start = today - 8 weeks
     default_start_date = today_date - timedelta(weeks=8)
@@ -314,13 +315,13 @@ def index(mypath="/", methods=['GET']):
     # If user provided a start date, try to parse it; otherwise use default
     start_date = default_start_date
     stop_date = today_date
-    if start_str:
+    if start_str is not None and len(start_str) != 0:
         try:
             parsed = datetime.strptime(start_str, '%Y-%m-%d')
             start_date = parsed
         except Exception:
             start_date = default_start_date
-    if stop_str:
+    if stop_str is not None and len(stop_str) != 0:
         try:
             parsed = datetime.strptime(stop_str, '%Y-%m-%d') + timedelta(days=1) - timedelta(microseconds=1)
             stop_date = parsed
@@ -328,7 +329,8 @@ def index(mypath="/", methods=['GET']):
             stop_date = today_date
 
     # regex search param
-    q = request.args.get('q', '').strip()
+    q = request.args.get('q', None)
+    q = '' if q is None else q.strip()
 
     filtered_entries, regex_error = get_entries(start_date=start_date, stop_date=stop_date, related_tags=related_tags, selected_tags=selected_tags, q=q)
     for e in filtered_entries:
@@ -391,7 +393,7 @@ def remove_tag_route():
     tag_to_remove = request.form.get('remove_tag') or request.args.get('remove_tag')
 
     msg = "invalid request"
-    if entryId is not None and tag_to_remove is not None:
+    if rel_path is not None and entryId is not None and tag_to_remove is not None:
         is_success, msg = remove_tag(rel_path=rel_path, entryId=entryId, tag_to_remove=tag_to_remove)
         if is_success:
             return jsonify({'ok': True})

@@ -184,13 +184,13 @@ h6 {
     transition: all 0.2s;
 }
 
-.removetaglink {
+.taglink {
     text-decoration: none;
     color: inherit;
     margin-right: 6px;
 }
 
-.removetaglink:hover {
+.taglink:hover {
     background: #e2e8f0;
     border-color: #cbd5e1;
 }

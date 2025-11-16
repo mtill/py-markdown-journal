@@ -8,8 +8,16 @@ function applyHighlights(){
 }
 
 // simple helper used by tag checkbox onchange to submit the form
-function submitFormPreservePage() {
-    document.getElementById('tagForm').submit();
+function submitFormPreservePage(entryId) {
+    const theform = document.getElementById('tagForm');
+    const theurl = new URL(theform.action);
+    if (entryId === null) {
+      theurl.hash = "journal_entries";
+    } else {
+      theurl.hash = entryId;
+    }
+    theform.action = theurl.toString();
+    theform.submit();
 }
 
 function toggleControls() {
@@ -94,7 +102,7 @@ async function openInEditor(thetype, entryId){
     let line_no = null;
 
     if (thetype == "entry") {
-        const li = document.querySelector(`.entry[data-entry-id="${entryId}"]`);
+        const li = document.querySelector(`.entry[id="${entryId}"]`);
         if (!li) return alert('entry not found');
         rel = li.getAttribute('data-rel-path');
         if (!rel) return alert('no path available for this entry');
@@ -131,10 +139,10 @@ document.addEventListener('DOMContentLoaded', function(){
     // double-click content to enter edit mode
     document.querySelectorAll('.entry').forEach(el => {
         //el.addEventListener('dblclick', function(e){
-        //    openInEditor(thetype="entry", entryId=el.getAttribute('data-entry-id'))
+        //    openInEditor(thetype="entry", entryId=el.getAttribute('id'))
         //});
         el.addEventListener('doubletap', (event) => {
-            openInEditor(thetype="entry", entryId=el.getAttribute('data-entry-id'))
+            openInEditor(thetype="entry", entryId=el.getAttribute('id'))
         });
     });
 

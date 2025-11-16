@@ -20,7 +20,7 @@
       <div class="pill clickable" title="click to copy reference to this wiki page" onclick="setClipboard('[{{ title }}]({{ title }})')">🔗 {{ title }}</div>
       <span id="controlstoggle" onclick="toggleControls()">hide</span>
       <span id="controls">
-        <form id="tagForm" method="GET" action="/{{ mypath if mypath is not none }}#journal_entries">
+        <form id="tagForm" method="GET" action="/{{ mypath if mypath is not none }}">
             <strong>From - To</strong>
             <div class="date-range">
                 <div class="date-inputs">
@@ -51,7 +51,7 @@
             {% set tag_max_value = tag_counts.values()|max %}
             {% for tag in all_tags %}
                 {% set tag_weight = 0 if tag_max_value == 0 else tag_counts.get(tag, 0)/tag_max_value %}
-                <input id="tag-checkbox-{{ tag }}" type="checkbox" name="tags" value="{{ tag }}" {% if tag in selected_tags %}checked{% endif %} onchange="submitFormPreservePage()"><label for="tag-checkbox-{{ tag }}" style="font-size:{{ 0.7+tag_weight*0.7 }}rem;">{{ tag }}</label>{% if tag not in selected_tags %} <span class="tag-count" id="tag-count-{{ tag }}">{{ tag_counts.get(tag, 0) }}</span>{% endif %}<br>
+                <input id="tag-checkbox-{{ tag }}" type="checkbox" name="tags" value="{{ tag }}" {% if tag in selected_tags %}checked{% endif %} onchange="submitFormPreservePage(null)"><label for="tag-checkbox-{{ tag }}" style="font-size:{{ 0.7+tag_weight*0.7 }}rem;">{{ tag }}</label>{% if tag not in selected_tags %} <span class="tag-count" id="tag-count-{{ tag }}">{{ tag_counts.get(tag, 0) }}</span>{% endif %}<br>
             {% endfor %}
             </div>
             {% endif %}
@@ -86,23 +86,21 @@
 
     <ul>
         {% for entry in entries %}
-        <li class="entry" data-entry-id="{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}" data-tags="{{ ' '.join(entry.tags) }}" data-rel-path="/{{ entry.rel_path.as_posix() }}" data-line-no="{{ entry.pos }}">
+        <li class="entry" id="{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}" data-tags="{{ ' '.join(entry.tags) }}" data-rel-path="/{{ entry.rel_path.as_posix() }}" data-line-no="{{ entry.pos }}">
              <div class="entry-date" title="click to copy reference to this entry" onclick="setClipboard('[journal entry {{ entry.date.strftime('%Y-%m-%d %H:%M')}}]({{ entry.location }})')">🔗 {{ entry.date.strftime('%Y-%m-%d %H:%M') }}</div>
              <div class="entry-content">
                  {{ entry.content | safe }}
-                 {% if not (entry.tags|length == 1 and entry.tags|first == "untagged") %}
-                   <p>Tags:
-                   {% for tag in entry.tags %}
-                    {% if tag == NO_ADDITIONAL_TAGS %}
-                     <span class="tag-pill">{{ tag }}</span>
-                    {% else %}
-                     <span class="tag-pill"><a class="removetaglink" href="/{{ tag }}.md">{{ tag }}</a>
-			          <span class="tag-remove" onclick="removeTag(this, '/{{ entry.rel_path.as_posix() }}', '{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}', '{{ tag }}')" title="click to remove tag '{{ tag }}' from entry">🗑️</span>
-                     </span>
-                    {% endif %}
-                     {% endfor %}
-                   </p>
-                 {% endif %}
+                <p>Tags:
+                {% for tag in entry.tags %}
+                {% if tag == NO_ADDITIONAL_TAGS or tag == "untagged" %}
+                    <span class="tag-pill">{{ tag }}</span>
+                {% else %}
+                    <span class="tag-pill"><a class="taglink" href="/{{ tag }}.md">{{ tag }}</a>
+                    <span class="tag-remove" onclick="removeTag(this, '/{{ entry.rel_path.as_posix() }}', '{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}', '{{ tag }}')" title="click to remove tag '{{ tag }}' from entry">🗑️</span>
+                    </span>
+                {% endif %}
+                {% endfor %}
+                </p>
                 </div>
         </li>
         {% endfor %}
