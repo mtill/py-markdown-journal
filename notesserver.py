@@ -125,7 +125,7 @@ def get_entries(start_date, stop_date, related_tags, selected_tags, q):
 
     # at least one tag from related_tags needs to be present
     result_tmp = []
-    if related_tags is not None:
+    if related_tags is not None and len(related_tags) != 0:
         for entry in result:
             added_this = False
 
