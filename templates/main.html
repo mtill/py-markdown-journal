@@ -20,7 +20,7 @@
       <div class="pill clickable" title="click to copy reference to this wiki page" onclick="setClipboard('[{{ title }}]({{ title }})')">🔗 {{ title }}</div>
       <span id="controlstoggle" onclick="toggleControls()">hide</span>
       <span id="controls">
-        <form id="tagForm" method="GET" action="/{{ mypath if mypath is not none }}">
+        <form id="tagForm" method="GET" action="/{{ mypath if mypath is not none }}#journal_entries">
             <strong>From - To</strong>
             <div class="date-range">
                 <div class="date-inputs">
