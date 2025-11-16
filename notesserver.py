@@ -187,7 +187,7 @@ def get_entries(start_date, stop_date, related_tags, selected_tags, q):
 
 def parseMarkdown(p):
     mypath_content = []
-    related_tags = []
+    related_tags = {}
     headings = []
     heading_counter = 0
 
@@ -197,15 +197,14 @@ def parseMarkdown(p):
     mypath_relative_parts[-1] = p.stem
     mypath_relative_parts = map(lambda s: MYPATH_TAG_REGEX.sub("", s).lower(), mypath_relative_parts)
     mypath_tag = TAG_NAMESPACE_SEPARATOR.join(mypath_relative_parts)
-    related_tags.append(mypath_tag)
+    related_tags[mypath_tag] = True
 
     if p.is_file():
         with open(p, "r", encoding="utf-8") as f:
             for line in f:
                 for line_tag in TAG_REGEX.findall(line):
                     line_tag = line_tag.lower()
-                    if line_tag not in related_tags:
-                        related_tags.append(line_tag)
+                    related_tags[line_tag] = True
 
                 heading_match = HEADING_REGEX.match(line)
                 if heading_match:
@@ -222,7 +221,7 @@ def parseMarkdown(p):
     else:
         mypath_content = "<h2>Not Found</h2><p>The requested path does not exist: <b>/" + html.escape(p.relative_to(NOTEBOOK_PATH).as_posix()) + "</b></p>"
 
-    return mypath_content, related_tags, mypath_tag, title, headings
+    return mypath_content, related_tags.keys(), mypath_tag, title, headings
 
 
 @app.route('/', methods=['GET'])
@@ -346,6 +345,16 @@ def index(mypath="/"):
         tag_counts.setdefault(t, 0)
     available_tags = sorted(set(tag_counts.keys() | selected_tags))   # by using sets (and not lists), duplicates will be removed
 
+    tagWikiPages = {}
+    for a in available_tags:
+        apathstr = a.replace(TAG_NAMESPACE_SEPARATOR, "/")
+        apath = Path(NOTEBOOK_PATH / apathstr)
+        if apath.is_file():
+            tagWikiPages[a] = ("/" + apath.relative_to(NOTEBOOK_PATH).as_posix(), True)
+        else:
+            apath = Path(NOTEBOOK_PATH / (apathstr + MARKDOWN_SUFFIX))
+            tagWikiPages[a] = ("/" + apath.relative_to(NOTEBOOK_PATH).as_posix(), apath.is_file())
+
     new_entry_tags = []
     if mypath_tag is not None:
         new_entry_tags.append(mypath_tag)
@@ -372,6 +381,7 @@ def index(mypath="/"):
         JS_ENTRY_ID_FORMAT=JS_ENTRY_ID_FORMAT,
         entries=sorted(filtered_entries, key=lambda x: x['date'], reverse=True),
         all_tags=available_tags,
+        tagWikiPages=tagWikiPages,
         selected_tags=selected_tags,
         tag_counts=tag_counts,
         start=start_date.strftime('%Y-%m-%d'),

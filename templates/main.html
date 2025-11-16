@@ -95,7 +95,9 @@
                 {% if tag == NO_ADDITIONAL_TAGS or tag == "untagged" %}
                     <span class="tag-pill">{{ tag }}</span>
                 {% else %}
-                    <span class="tag-pill"><a class="taglink" href="/{{ tag }}.md">{{ tag }}</a>
+                    {% set tag_wiki_page_entry = tagWikiPages[tag] %}
+                    {% set tag_wiki_page_prefix = "🗏 " if tag_wiki_page_entry[1] else "" %}
+                    <span class="tag-pill"><a class="taglink" href="{{ tag_wiki_page_entry[0] }}">{{ tag_wiki_page_prefix }}{{ tag }}</a>
                     <span class="tag-remove" onclick="removeTag(this, '/{{ entry.rel_path.as_posix() }}', '{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}', '{{ tag }}')" title="click to remove tag '{{ tag }}' from entry">🗑️</span>
                     </span>
                 {% endif %}
