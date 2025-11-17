@@ -70,12 +70,15 @@ def remove_tag(rel_path: str, entryId: str, tag_to_remove: str):
     if not journal_file.exists():
         return False, "remove_tag: journal file not found: " + journal_file.as_posix()
 
+    tag_removal_regex = re.compile("\\b" + TAG_PREFIX + re.escape(tag_to_remove) + "\\b", re.IGNORECASE)
+
     parsedEntries = parseEntries(thepath=journal_file, notebookpath=NOTEBOOK_PATH)
     for entry in parsedEntries["entries"]:
         if entry.get('date') == dt:
             newcontent = []
             for line in entry["content"]:
-                newcontent.append(re.sub("\\bx" + tag_to_remove + "\\b", '', line, flags=re.IGNORECASE))
+                newcontent.append(tag_removal_regex.sub('', line))
+                #newcontent.append(re.sub("\\b" + TAG_PREFIX + tag_to_remove + "\\b", '', line, flags=re.IGNORECASE))
 
             entry["content"] = newcontent
             if tag_to_remove in entry["tags"]:
@@ -87,6 +90,10 @@ def remove_tag(rel_path: str, entryId: str, tag_to_remove: str):
             return True, None
 
     return False, "remove_tag: entry not found for id: " + entryId
+
+
+def _emphasize_tag_in_line(line):
+    return TAG_REGEX.sub(lambda m: m.group(1) + "<em>" + TAG_PREFIX + m.group(2) + "</em>", line)
 
 
 def get_entries(start_date, stop_date, related_tags, selected_tags, q):
@@ -203,7 +210,7 @@ def parseMarkdown(p):
         with open(p, "r", encoding="utf-8") as f:
             for line in f:
                 for line_tag in TAG_REGEX.findall(line):
-                    line_tag = line_tag.lower()
+                    line_tag = line_tag[1].lower()
                     related_tags[line_tag] = True
 
                 heading_match = HEADING_REGEX.match(line)
@@ -214,7 +221,7 @@ def parseMarkdown(p):
                     line = f'<h{heading_level} id="heading-{heading_counter}">{heading_text}</h{heading_level}>\n\n'
                     heading_counter += 1
 
-                mypath_content.append(line)
+                mypath_content.append(_emphasize_tag_in_line(line=line))
 
         mypath_content = md.render("".join(mypath_content))
 
@@ -333,7 +340,10 @@ def index(mypath="/"):
 
     filtered_entries, regex_error = get_entries(start_date=start_date, stop_date=stop_date, related_tags=related_tags, selected_tags=selected_tags, q=q)
     for e in filtered_entries:
-        e["content"] = md.render("\n".join(e["content"]))
+        econtent = []
+        for line in e["content"]:
+            econtent.append(_emphasize_tag_in_line(line=line))
+        e["content"] = md.render("\n".join(econtent))
 
     # compute available_tags and tag counts from the currently filtered entries (keep selected tags visible)
     tag_counts = {}
@@ -366,7 +376,7 @@ def index(mypath="/"):
     if len(new_entry_tags) > 0:
         new_entry_tags_str = " ".join([TAG_PREFIX + t for t in new_entry_tags])
 
-    latest_journal_page = (JOURNAL_PATH / (today_date.strftime("%Y-Q") + str((today_date.month - 1)//3 + 1) + MARKDOWN_SUFFIX)).as_posix()
+    latest_journal_page = "/" + ((JOURNAL_PATH / (today_date.strftime("%Y-Q") + str((today_date.month - 1)//3 + 1) + MARKDOWN_SUFFIX)).relative_to(NOTEBOOK_PATH).as_posix())
 
     return render_template(
         "main.html",

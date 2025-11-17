@@ -16,7 +16,7 @@ MARKDOWN_SUFFIX = ".md"
 TAG_NAMESPACE_SEPARATOR = "_"
 ENTRY_PREFIX = "### "
 TAG_PREFIX = r"x"
-TAG_REGEX = re.compile(r'(?:^|\s+)' + TAG_PREFIX + r'(\w+)\b')
+TAG_REGEX = re.compile(r'((?:^|\s+))' + TAG_PREFIX + r'(\w+)\b')
 entryregexes = [[re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) ?(.*)'), "%Y-%m-%d %H:%M:%S"],
                 [re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}) ?(.*)'), "%Y-%m-%d %H:%M"],
                 [re.compile(r'(\d{4}-\d{2}-\d{2}) ?(.*)'), "%Y-%m-%d"],
@@ -163,7 +163,7 @@ def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG):
                 lastcontent = [line]
                 lasttags = {}
                 for l in TAG_REGEX.findall(line):
-                    lasttags[l.lower()] = True
+                    lasttags[l[1].lower()] = True
                 lastpos = pos + 1
             else:
 
@@ -172,7 +172,7 @@ def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG):
                 else:
                     lastcontent.append(line)
                     for l in TAG_REGEX.findall(line):
-                        lasttags[l.lower()] = True
+                        lasttags[l[1].lower()] = True
 
         if len(lastcontent) != 0:
             _stripcontent(thecontent=lastcontent)
