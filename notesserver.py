@@ -52,6 +52,7 @@ if QUICKLAUNCH_PATH.is_file():
     with open(QUICKLAUNCH_PATH, "r", encoding="utf-8") as f:
         QUICKLAUNCH_HTML = f.read()
 
+INDEX_PAGE_NAME = "index.md"   # set to None to disable index page special handling
 
 def check_secret():
     return BASIC_SECRET is None or len(BASIC_SECRET) == 0 or BASIC_SECRET == request.cookies.get(SECRET_COOKIE_NAME, '')
@@ -209,6 +210,7 @@ def _find_tag_wiki_page(tag):
 
 def parseMarkdown(p):
     mypath_content = []
+    mypath_tag = None
     related_tags = {}
     headings = []
     heading_counter = 0
@@ -216,10 +218,14 @@ def parseMarkdown(p):
     mypath_relative = p.relative_to(NOTEBOOK_PATH)
     title = "/" + mypath_relative.as_posix()
     mypath_relative_parts = list(mypath_relative.parts)
-    mypath_relative_parts[-1] = p.stem
-    mypath_relative_parts = map(lambda s: MYPATH_TAG_REGEX.sub("", s).lower(), mypath_relative_parts)
-    mypath_tag = TAG_NAMESPACE_SEPARATOR.join(mypath_relative_parts)
-    related_tags[mypath_tag] = True
+    if INDEX_PAGE_NAME is not None and p.name == INDEX_PAGE_NAME:
+        mypath_relative_parts.pop()
+    else:
+        mypath_relative_parts[-1] = p.stem
+    if len(mypath_relative_parts) != 0:
+        mypath_relative_parts = map(lambda s: MYPATH_TAG_REGEX.sub("", s).lower(), mypath_relative_parts)
+        mypath_tag = TAG_NAMESPACE_SEPARATOR.join(mypath_relative_parts)
+        related_tags[mypath_tag] = True
 
     if p.is_file():
         with open(p, "r", encoding="utf-8") as f:
@@ -373,7 +379,6 @@ def index(mypath="/"):
     tagWikiPages = {}
     for a in available_tags:
         tagWikiPages[a] = _find_tag_wiki_page(tag=a)
-        print(tagWikiPages[a])
 
     new_entry_tags = []
     if mypath_tag is not None:
