@@ -192,6 +192,21 @@ def get_entries(start_date, stop_date, related_tags, selected_tags, q):
     return result, regex_error
 
 
+def _find_tag_wiki_page(tag):
+    tag_path_str = tag.replace(TAG_NAMESPACE_SEPARATOR, "/")
+    tag_path = NOTEBOOK_PATH / (tag_path_str + MARKDOWN_SUFFIX)
+
+    if tag_path.is_file():
+        return ("/" + tag_path.relative_to(NOTEBOOK_PATH).as_posix(), True)
+
+    if tag_path.parent.is_dir():
+        for i in tag_path.parent.iterdir():
+            if i.is_file() and i.name.lower() == tag_path.name.lower():
+                return ("/" + i.relative_to(NOTEBOOK_PATH).as_posix(), True)
+
+    return ("/" + tag_path.relative_to(NOTEBOOK_PATH).as_posix(), False)
+
+
 def parseMarkdown(p):
     mypath_content = []
     related_tags = {}
@@ -357,13 +372,8 @@ def index(mypath="/"):
 
     tagWikiPages = {}
     for a in available_tags:
-        apathstr = a.replace(TAG_NAMESPACE_SEPARATOR, "/")
-        apath = Path(NOTEBOOK_PATH / apathstr)
-        if apath.is_file():
-            tagWikiPages[a] = ("/" + apath.relative_to(NOTEBOOK_PATH).as_posix(), True)
-        else:
-            apath = Path(NOTEBOOK_PATH / (apathstr + MARKDOWN_SUFFIX))
-            tagWikiPages[a] = ("/" + apath.relative_to(NOTEBOOK_PATH).as_posix(), apath.is_file())
+        tagWikiPages[a] = _find_tag_wiki_page(tag=a)
+        print(tagWikiPages[a])
 
     new_entry_tags = []
     if mypath_tag is not None:
