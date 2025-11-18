@@ -37,6 +37,7 @@ MEDIA_PATH = NOTEBOOK_PATH / "media"
 NOTEBOOK_NAME = os.getenv('NOTEBOOK_NAME', NOTEBOOK_PATH.name)
 BASIC_SECRET = os.getenv('BASIC_SECRET', '')
 
+DEFAULT_JOURNAL_TIMEWINDOW_IN_WEEKS = int(os.getenv('DEFAULT_JOURNAL_TIMEWINDOW_IN_WEEKS', '4'))
 HIDE_DOTFILES = True
 JS_ENTRY_ID_FORMAT = "%Y%m%d_%H%M%S"
 NO_ADDITIONAL_TAGS = "[only selected tags]"
@@ -336,8 +337,8 @@ def index(mypath="/"):
     start_str = request.args.get('start', None)
     stop_str = request.args.get('stop', None)
 
-    # default start = today - 8 weeks
-    default_start_date = today_date - timedelta(weeks=8)
+    # default start = today - DEFAULT_JOURNAL_TIMEWINDOW_IN_WEEKS weeks
+    default_start_date = today_date - timedelta(weeks=DEFAULT_JOURNAL_TIMEWINDOW_IN_WEEKS)
 
     # If user provided a start date, try to parse it; otherwise use default
     start_date = default_start_date
