@@ -374,7 +374,7 @@ def index(mypath="/"):
     # ensure selected tags are present in counts (show zero if needed)
     for t in selected_tags:
         tag_counts.setdefault(t, 0)
-    available_tags = sorted(set(tag_counts.keys() | selected_tags))   # by using sets (and not lists), duplicates will be removed
+    available_tags = set(tag_counts.keys() | selected_tags)   # by using sets (and not lists), duplicates will be removed
 
     tagWikiPages = {}
     for a in available_tags:
@@ -404,7 +404,7 @@ def index(mypath="/"):
         mypath_content=mypath_content,
         headings=headings,
         JS_ENTRY_ID_FORMAT=JS_ENTRY_ID_FORMAT,
-        entries=sorted(filtered_entries, key=lambda x: x['date'], reverse=True),
+        entries=filtered_entries,
         all_tags=available_tags,
         tagWikiPages=tagWikiPages,
         selected_tags=selected_tags,

@@ -49,7 +49,7 @@
             {% else %}
             <div class="tag-list">
             {% set tag_max_value = tag_counts.values()|max %}
-            {% for tag in all_tags %}
+            {% for tag in all_tags | sort %}
                 {% set tag_weight = 0 if tag_max_value == 0 else tag_counts.get(tag, 0)/tag_max_value %}
                 <input id="tag-checkbox-{{ tag }}" type="checkbox" name="tags" value="{{ tag }}" {% if tag in selected_tags %}checked{% endif %} onchange="submitFormPreservePage(null)"><label for="tag-checkbox-{{ tag }}" style="font-size:{{ 0.7+tag_weight*0.7 }}rem;">{{ tag }}</label>{% if tag not in selected_tags %} <span class="tag-count" id="tag-count-{{ tag }}">{{ tag_counts.get(tag, 0) }}</span>{% endif %}<br>
             {% endfor %}
@@ -85,13 +85,13 @@
 </h2>
 
     <ul>
-        {% for entry in entries %}
+        {% for entry in entries | sort(attribute='date', reverse=true) %}
         <li class="entry" id="{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}" data-tags="{{ ' '.join(entry.tags) }}" data-rel-path="/{{ entry.rel_path.as_posix() }}" data-line-no="{{ entry.pos }}">
              <div class="entry-date" title="click to copy reference to this entry" onclick="setClipboard('[journal entry {{ entry.date.strftime('%Y-%m-%d %H:%M')}}]({{ entry.location }})')">🔗 {{ entry.date.strftime('%Y-%m-%d %H:%M') }}</div>
              <div class="entry-content">
                  {{ entry.content | safe }}
                 <p>Tags:
-                {% for tag in entry.tags %}
+                {% for tag in entry.tags | sort %}
                 {% if tag == NO_ADDITIONAL_TAGS or tag == "untagged" %}
                     <span class="tag-pill">{{ tag }}</span>
                 {% else %}
