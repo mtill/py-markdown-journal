@@ -120,7 +120,7 @@ h6 {
     position: absolute;
     top: 20px;
     right: 20px;
-    color: #95a5a6;
+    color: #1a232b;
     font-size: 0.85em;
     font-family: monospace;
     background: #f8f9fa;
@@ -130,7 +130,7 @@ h6 {
 }
 
 .entry h3 {
-    margin-right: 160px;
+    margin-right: 12em;
     margin-top: 0;
 }
 
@@ -177,7 +177,7 @@ h6 {
     margin: 0 6px 6px 0;
     padding: 4px 8px;
     background: #eef2f7;
-    color: #23303b;
+    color: #1a232b;
     border-radius: 999px;
     font-size: 0.85em;
     border: 1px solid #dbe6ef;
