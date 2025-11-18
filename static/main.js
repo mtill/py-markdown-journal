@@ -1,9 +1,12 @@
 // highlight entries that have the 'highlighted' tag
 function applyHighlights(){
     document.querySelectorAll('.entry').forEach(el => {
-        const tags = (el.dataset.tags || '').toLowerCase().split(/\s+/).filter(Boolean);
+        const tags = (el.dataset.tags || '').split(/\s+/).filter(Boolean);
         if (tags.includes('highlighted')) el.classList.add('highlighted');
         else el.classList.remove('highlighted');
+
+        if (tags.includes('inbox')) el.classList.add('in_inbox');
+        else el.classList.remove('in_inbox');
     });
 }
 

@@ -230,9 +230,13 @@ h6 {
     cursor: pointer;
 }
 
-/* highlight entries that include the 'highlighted' tag */
 .entry.highlighted {
-    border-left: 10px solid #ffd54f;
+    border-left: 10px solid #ffc443;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+}
+
+.entry.in_inbox {
+    border-right: 10px solid #9eff4f;
     box-shadow: 0 6px 18px rgba(0,0,0,0.12);
 }
 
