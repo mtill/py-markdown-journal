@@ -19,7 +19,7 @@
     <div id="tag-selector">
       <div class="pill clickable" title="click to copy reference to this wiki page" onclick="setClipboard('[{{ title }}]({{ title }})')">🔗 {{ title }}</div>
       <span id="controlstoggle" onclick="toggleControls()">hide</span>
-      <span id="controls">
+      <div id="controls">
         <form id="tagForm" method="GET" action="/{{ mypath if mypath is not none }}#journal_entries">
             <strong>From - To</strong>
             <div class="date-range">
@@ -64,7 +64,7 @@
         {% endfor %}
         <div class="toc-level-2"><a href="#journal_entries">journal entries</a></div>
         </div>
-        </span>
+    </div>
     </div>
 
 {% if mypath_content is not none %}
@@ -84,8 +84,18 @@
 {% endif %}
 </h2>
 
+    {% set current_week_ns = namespace(current_week=none) %}
+    {% for entry in entries | sort(attribute='date', reverse=true) %}
+        {% set entry_week = entry.date.isocalendar()[1] %}
+        {% if current_week_ns.current_week != entry_week %}
+        {% if current_week_ns.current_week is not none %}
+    </ul>
+    {% endif %}
+
+    <hr class="hr-text" data-content="CW{{ entry_week }}">
     <ul>
-        {% for entry in entries | sort(attribute='date', reverse=true) %}
+    {% set current_week_ns.current_week = entry_week %}
+    {% endif %}
         <li class="entry" id="{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}" data-tags="{{ ' '.join(entry.tags) }}" data-rel-path="/{{ entry.rel_path.as_posix() }}" data-line-no="{{ entry.pos }}">
              <div class="entry-date" title="click to copy reference to this entry" onclick="setClipboard('[journal entry {{ entry.date.strftime('%Y-%m-%d %H:%M')}}]({{ entry.location }})')">🔗 {{ entry.date.strftime('%A, %Y-%m-%d %H:%M') }}</div>
              <div class="entry-content">
@@ -106,7 +116,9 @@
                 </div>
         </li>
         {% endfor %}
+    {% if current_week_ns.current_week is not none %}
     </ul>
+    {% endif %}
 
 </body>
 </html>

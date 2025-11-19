@@ -118,7 +118,7 @@ def prettyTable(table, rightAlign=False):
     return result
 
 
-def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG):
+def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG, remove_date_from_entry_headlines=False):
     entries = []
     prefix = []
     originPath = thepath.parent
@@ -145,6 +145,8 @@ def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG):
                     if thematch is not None:
                         thedateformat = entryregex[1]
                         isEntryHeadline = True
+                        if remove_date_from_entry_headlines:
+                            line = ENTRY_PREFIX + thematch.group(2).lstrip()
                         break
 
             if isEntryHeadline and thematch is not None and thedateformat is not None:
