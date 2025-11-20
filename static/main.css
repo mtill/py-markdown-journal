@@ -143,21 +143,7 @@ h6 {
     padding: 0 10px;
 }
 
-.entry-date {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    color: #1a232b;
-    font-size: 0.85em;
-    font-family: monospace;
-    background-color: #f8f9fa;
-    padding: 4px 8px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
 .entry h3 {
-    margin-right: 12em;
     margin-top: 0;
 }
 
@@ -275,6 +261,5 @@ h6 {
         width: calc(100% - 40px);
     }
     .entry h3 { margin-right: 0; }
-    .entry-date { position: static; display: inline-block; margin-bottom: 8px; cursor: pointer; }
 }
 
