@@ -38,7 +38,7 @@ NOTEBOOK_NAME = os.getenv('NOTEBOOK_NAME', NOTEBOOK_PATH.name)
 BASIC_SECRET = os.getenv('BASIC_SECRET', '')
 
 DEFAULT_JOURNAL_TIMEWINDOW_IN_WEEKS = int(os.getenv('DEFAULT_JOURNAL_TIMEWINDOW_IN_WEEKS', '4'))
-REMOVE_DATE_FROM_ENTRY_HEADLINES = os.getenv('REMOVE_DATE_FROM_ENTRY_HEADLINES', '0') == '1'
+JOURNAL_ENTRY_DATE_FORMAT = os.getenv('JOURNAL_ENTRY_DATE_FORMAT', '%A, %Y-%m-%d %H:%M')
 HIDE_DOTFILES = True
 JS_ENTRY_ID_FORMAT = "%Y%m%d_%H%M%S"
 NO_ADDITIONAL_TAGS = "[only selected tags]"
@@ -127,7 +127,7 @@ def get_entries(start_date, stop_date, related_tags, selected_tags, q):
             relevant_files.append(journal_file)
 
     for journal_file in relevant_files:
-        parsed_entries = parseEntries(thepath=journal_file, notebookpath=NOTEBOOK_PATH, remove_date_from_entry_headlines=REMOVE_DATE_FROM_ENTRY_HEADLINES)["entries"]
+        parsed_entries = parseEntries(thepath=journal_file, notebookpath=NOTEBOOK_PATH, date_format=JOURNAL_ENTRY_DATE_FORMAT)["entries"]
         for entry in parsed_entries:
             if entry["date"] >= start_date and entry["date"] <= stop_date:
                 result.append(entry)
