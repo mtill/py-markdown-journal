@@ -5,6 +5,7 @@
     text-decoration: none;
     text-align: center;
     font-size: 24px;
+    z-index: 100;
 }
 #quicklaunch:hover {
     opacity: 1.0;
@@ -23,6 +24,7 @@
         left: auto;
         right: 0px;
         text-align: center;
+        z-index: 100;
     }
 }
 
