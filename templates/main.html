@@ -96,7 +96,7 @@
     <ul>
     {% set current_date_ns.current_week = entry_week %}
     {% endif %}
-        <li class="entry" id="{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}" data-tags="{{ ' '.join(entry.tags) }}" data-rel-path="/{{ entry.rel_path.as_posix() }}" data-datestr="{{ entry.date.strftime('%Y-%m-%d %H:%M:%S') }}" data-line-no="{{ entry.pos }}" data-location="{{ entry.location }}" data-anchorlocation="{{ entry.anchorlocation }}">
+        <li class="entry" id="{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}" data-tags="{{ ' '.join(entry.tags) }}" data-rel-path="/{{ entry.rel_path.as_posix() }}" data-datestr="{{ entry.date.strftime('%Y-%m-%d %H:%M:%S') }}" data-line-no="{{ entry.pos }}" data-location="{{ entry.location }}">
              <div class="entry-content">
                  {{ entry.content | safe }}
                 <p>Tags:
