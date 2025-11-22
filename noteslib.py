@@ -23,6 +23,7 @@ entryregexes = [[re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) ?(.*)'), "%Y
                 [re.compile(r'(\d{8}) ?(.*)'), "%Y%m%d"],
                 [re.compile(r'(\d{6}) ?(.*)'), "%y%m%d"]
                ]
+anchor_regex = re.compile(r'[^\w-]')
 JOURNAL_FILE_REGEX = re.compile(r'(\d\d\d\d)-Q([1-4])\.md$')
 relativeImageOrLinkRegex = re.compile(r'(!?)\[([^\]]*)\]\(([^\)]*)\)')
 
@@ -33,6 +34,10 @@ def _stripcontent(thecontent):
             thecontent.pop()
         else:
             return
+
+
+def _get_anchor(headline_without_entry_prefix):
+    return anchor_regex.sub("", headline_without_entry_prefix.replace(" ", "-")).lower()
 
 
 def __replaceLinkMatch(l, notebookPath, originPath, destinationPathAbsolute=None):
@@ -129,6 +134,7 @@ def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG, date_format=No
         lasttime = None
         lastcontent = []
         lastpos = 0
+        lastanchor = None
         lasttags = {}
         pos = -1
         for line in f:
@@ -148,11 +154,6 @@ def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG, date_format=No
                         break
 
             if isEntryHeadline and thematch is not None and thedateformat is not None:
-                #thedate = datetime.datetime.min if thedateformat is None else datetime.datetime.strptime(thematch.group(1), thedateformat)
-                thedate = datetime.datetime.strptime(thematch.group(1), thedateformat)
-
-                if date_format is not None:
-                    line = ENTRY_PREFIX + thedate.strftime(date_format) + " " + thematch.group(2).lstrip()
 
                 if len(lastcontent) != 0:
                     _stripcontent(thecontent=lastcontent)
@@ -160,7 +161,21 @@ def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG, date_format=No
                         lasttags = {untaggedtag: True}
 
                     rel_path = thepath.relative_to(notebookpath)
-                    entries.append({"date": lasttime, "content": lastcontent, "tags": list(lasttags.keys()), "pos": lastpos, "rel_path": rel_path, "location": ("/" + rel_path.as_posix() + "#L" + str(lastpos))})
+                    entries.append({"date": lasttime,
+                                    "content": lastcontent,
+                                    "tags": list(lasttags.keys()),
+                                    "pos": lastpos,
+                                    "rel_path": rel_path,
+                                    "location": ("/" + rel_path.as_posix() + "#L" + str(lastpos)),
+                                    "anchorlocation": ("/" + rel_path.as_posix() + "#" + lastanchor)
+                                  })
+
+                #thedate = datetime.datetime.min if thedateformat is None else datetime.datetime.strptime(thematch.group(1), thedateformat)
+                thedate = datetime.datetime.strptime(thematch.group(1), thedateformat)
+
+                lastanchor = _get_anchor(line[len(ENTRY_PREFIX):])
+                if date_format is not None:
+                    line = ENTRY_PREFIX + thedate.strftime(date_format) + " " + thematch.group(2).lstrip()
 
                 lasttime = thedate
                 lastcontent = [line]
@@ -183,7 +198,14 @@ def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG, date_format=No
                 lasttags = {untaggedtag: True}
 
             rel_path = thepath.relative_to(notebookpath)
-            entries.append({"date": lasttime, "content": lastcontent, "tags": list(lasttags.keys()), "pos": lastpos, "rel_path": rel_path, "location": ("/" + rel_path.as_posix() + "#L" + str(lastpos))})
+            entries.append({"date": lasttime,
+                            "content": lastcontent,
+                            "tags": list(lasttags.keys()),
+                            "pos": lastpos,
+                            "rel_path": rel_path,
+                            "location": ("/" + rel_path.as_posix() + "#L" + str(lastpos)),
+                            "anchorlocation": ("/" + rel_path.as_posix() + "#" + lastanchor)
+                          })
 
     return {"prefix": prefix, "entries": entries}
 
