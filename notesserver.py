@@ -39,7 +39,8 @@ BASIC_SECRET = os.getenv('BASIC_SECRET', '')
 
 DEFAULT_JOURNAL_TIMEWINDOW_IN_WEEKS = int(os.getenv('DEFAULT_JOURNAL_TIMEWINDOW_IN_WEEKS', '4'))
 JOURNAL_ENTRY_DATE_FORMAT = os.getenv('JOURNAL_ENTRY_DATE_FORMAT', '%a %d.%m. %H:%M')
-HIDE_DOTFILES = True
+SORT_TAGS_BY_NAME = os.getenv('SORT_TAGS_BY_NAME', '0') == '1'
+SHOW_DOTFILES = os.getenv('SHOW_DOTFILES', '0') == '1'
 JS_ENTRY_ID_FORMAT = "%Y%m%d_%H%M%S"
 NO_ADDITIONAL_TAGS = "[only selected tags]"
 MYPATH_TAG_REGEX = re.compile("\\s+")
@@ -288,7 +289,7 @@ def index(mypath="/"):
             folders = []
             files = []
             for child in p.iterdir():
-                if HIDE_DOTFILES and child.name.startswith("."):
+                if SHOW_DOTFILES and child.name.startswith("."):
                     continue
                 if child.is_dir():
                     folders.append(child)
@@ -368,15 +369,26 @@ def index(mypath="/"):
             econtent.append(_emphasize_tag_in_line(line=line))
         e["content"] = md.render("\n".join(econtent))
 
-    # compute available_tags and tag counts from the currently filtered entries (keep selected tags visible)
+    tag_freshness = {}
     tag_counts = {}
     for entry in filtered_entries:
         for tag in entry['tags']:
             tag_counts[tag] = tag_counts.get(tag, 0) + 1
+            if tag not in tag_freshness:
+                tag_freshness[tag] = entry['date']
+            else:
+                if entry['date'] > tag_freshness[tag]:
+                    tag_freshness[tag] = entry['date']
+
     # ensure selected tags are present in counts (show zero if needed)
     for t in selected_tags:
         tag_counts.setdefault(t, 0)
     available_tags = set(tag_counts.keys() | selected_tags)   # by using sets (and not lists), duplicates will be removed
+
+    if SORT_TAGS_BY_NAME:
+        available_tags = sorted(available_tags)
+    else:
+        available_tags = sorted(available_tags, key=lambda at: (tag_freshness[at], at), reverse=True)
 
     tagWikiPages = {}
     for a in available_tags:
