@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function(){
         //el.addEventListener('dblclick', function(e){
         //    openInEditor(thetype="entry", entryId=el.getAttribute('id'))
         //});
-        el.title="click to copy reference to this entry; double-click to open entry in editor";
+        el.title="[" + el.getAttribute('data-datestr') + "] click to copy reference to this entry; double-click to open entry in editor";
         el.addEventListener('click', (event) => {
             setClipboard('[journal entry ' + el.getAttribute('data-datestr') + '](' + el.getAttribute('data-location') + ')');
         });
