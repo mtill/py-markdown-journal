@@ -19,6 +19,7 @@ from markdown_it import MarkdownIt
 app = Flask(__name__)
 md = MarkdownIt("gfm-like")
 
+PORT = int(os.getenv("PORT", "5000"))
 code_cmd = shutil.which('code') or 'code'
 EDITOR_COMMAND_LIST = [code_cmd, "{filepath}"]
 EDITOR_COMMAND = os.getenv('EDITOR_COMMAND', None)
@@ -613,5 +614,5 @@ def upload_media():
 
 
 if __name__ == '__main__':
-    app.run(debug=False, host='127.0.0.1', port=5000)
+    app.run(debug=False, host='127.0.0.1', port=PORT)
 
