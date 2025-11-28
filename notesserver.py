@@ -3,7 +3,6 @@
 
 
 import os
-import sys
 import re
 import html
 from pathlib import Path
@@ -17,14 +16,10 @@ from flask import Flask, redirect, render_template, request, make_response, send
 from markdown_it import MarkdownIt
 
 
-if len(sys.argv) > 2:
-    print("Usage: notesserver.py [<PATH_TO_CONFIG>]")
-    sys.exit(1)
-
-
 config = {}
-if len(sys.argv) == 2:
-    config_file = Path(sys.argv[1])
+NOTESSERVER_CONFIG_FILE = os.getenv("NOTESSERVER_CONFIG_FILE", None)
+if NOTESSERVER_CONFIG_FILE is not None:
+    config_file = Path(NOTESSERVER_CONFIG_FILE)
     print("Loading config from", config_file.as_posix())
     with open(config_file, "r", encoding="utf-8") as f:
         config = json.load(f)
