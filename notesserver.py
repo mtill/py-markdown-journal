@@ -3,6 +3,7 @@
 
 
 import os
+import sys
 import re
 import html
 from pathlib import Path
@@ -16,37 +17,46 @@ from flask import Flask, redirect, render_template, request, make_response, send
 from markdown_it import MarkdownIt
 
 
+if len(sys.argv) > 2:
+    print("Usage: notesserver.py [<PATH_TO_CONFIG>]")
+    sys.exit(1)
+
+
+config = {}
+if len(sys.argv) == 2:
+    config_file = Path(sys.argv[1])
+    print("Loading config from", config_file.as_posix())
+    with open(config_file, "r", encoding="utf-8") as f:
+        config = json.load(f)
+
 app = Flask(__name__)
 md = MarkdownIt("gfm-like")
 
-PORT = int(os.getenv("PORT", "5000"))
+PORT = config.get("PORT", 5000)
+NOTEBOOK_PATH = Path(config.get("NOTEBOOK_PATH", ".")).resolve()
+NOTEBOOK_NAME = config.get("NOTEBOOK_NAME", NOTEBOOK_PATH.name)
+BASIC_SECRET = config.get("BASIC_SECRET", None)
+DEFAULT_JOURNAL_TIMEWINDOW_IN_WEEKS = config.get('DEFAULT_JOURNAL_TIMEWINDOW_IN_WEEKS', 2)
+JOURNAL_ENTRY_DATE_FORMAT = config.get('JOURNAL_ENTRY_DATE_FORMAT', '%a %d.%m. %H:%M')
+SORT_TAGS_BY_NAME = config.get('SORT_TAGS_BY_NAME', False)
+SHOW_DOTFILES = config.get('SHOW_DOTFILES', False)
+
 code_cmd = shutil.which('code') or 'code'
-EDITOR_COMMAND_LIST = [code_cmd, "{filepath}"]
-EDITOR_COMMAND = os.getenv('EDITOR_COMMAND', None)
-if EDITOR_COMMAND is not None:
-    EDITOR_COMMAND_LIST = json.loads(EDITOR_COMMAND)
+EDITOR_COMMAND_LIST = config.get("EDITOR_COMMAND_LIST", [code_cmd, "{filepath}"])
+EDITOR_GOTO_COMMAND_LIST = config.get("EDITOR_GOTO_COMMAND_LIST", [code_cmd, "--goto", "{filepath}:{line_no}"])
 
-EDITOR_GOTO_COMMAND_LIST = [code_cmd, "--goto", "{filepath}:{line_no}"]
-EDITOR_GOTO_COMMAND = os.getenv('EDITOR_GOTO_COMMAND', None)
-if EDITOR_GOTO_COMMAND is not None:
-    EDITOR_GOTO_COMMAND_LIST = json.loads(EDITOR_GOTO_COMMAND)
+INDEX_PAGE_NAME = config.get("INDEX_PAGE_NAME", "index.md")   # set to None to disable index page special handling
+
+JOURNAL_PATH = NOTEBOOK_PATH / config.get("JOURNAL_PATH", "journal")
+MEDIA_PATH = NOTEBOOK_PATH / config.get("MEDIA_PATH", "media")
+
+NO_ADDITIONAL_TAGS = config.get("NO_ADDITIONAL_TAGS", "[only selected tags]")
+INCLUDE_SUBTAGS = config.get("INCLUDE_SUBTAGS", True)
 
 
-NOTEBOOK_PATH = Path(os.environ.get('NOTES_PATH', '.')).resolve()
-JOURNAL_PATH = NOTEBOOK_PATH / "journal"
-MEDIA_PATH = NOTEBOOK_PATH / "media"
-NOTEBOOK_NAME = os.getenv('NOTEBOOK_NAME', NOTEBOOK_PATH.name)
-BASIC_SECRET = os.getenv('BASIC_SECRET', '')
-
-DEFAULT_JOURNAL_TIMEWINDOW_IN_WEEKS = int(os.getenv('DEFAULT_JOURNAL_TIMEWINDOW_IN_WEEKS', '4'))
-JOURNAL_ENTRY_DATE_FORMAT = os.getenv('JOURNAL_ENTRY_DATE_FORMAT', '%a %d.%m. %H:%M')
-SORT_TAGS_BY_NAME = os.getenv('SORT_TAGS_BY_NAME', '0') == '1'
-SHOW_DOTFILES = os.getenv('SHOW_DOTFILES', '0') == '1'
 JS_ENTRY_ID_FORMAT = "%Y%m%d_%H%M%S"
-NO_ADDITIONAL_TAGS = "[only selected tags]"
 MYPATH_TAG_REGEX = re.compile("\\s+")
 SECRET_COOKIE_NAME = 'basic_secret'
-INCLUDE_SUBTAGS = True
 ACCESS_DENIED_MESSAGE_DICT = {"error": "access denied: invalid secret. Please go to <a href=\"/_set_key\">/_set_key</a> to set the secret."}
 HEADING_REGEX = re.compile(r'^(#{1,6})\s+(.*)$')
 
@@ -56,7 +66,6 @@ if QUICKLAUNCH_PATH.is_file():
     with open(QUICKLAUNCH_PATH, "r", encoding="utf-8") as f:
         QUICKLAUNCH_HTML = f.read()
 
-INDEX_PAGE_NAME = "index.md"   # set to None to disable index page special handling
 
 def check_secret():
     return BASIC_SECRET is None or len(BASIC_SECRET) == 0 or BASIC_SECRET == request.cookies.get(SECRET_COOKIE_NAME, '')
@@ -183,7 +192,7 @@ def get_entries(start_date, stop_date, related_tags, selected_tags, q):
             result = []
 
         # apply regex filter if compiled; if invalid regex produce no matches and flag error
-        if not regex_error:
+        if not regex_error and regex is not None:
             def matches_regex(entry):
                 for t in entry.get('content', []):
                     if regex.search(t):
