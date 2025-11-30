@@ -41,6 +41,7 @@ EDITOR_COMMAND_LIST = config.get("EDITOR_COMMAND_LIST", [code_cmd, "{filepath}"]
 EDITOR_GOTO_COMMAND_LIST = config.get("EDITOR_GOTO_COMMAND_LIST", [code_cmd, "--goto", "{filepath}:{line_no}"])
 
 INDEX_PAGE_NAME = config.get("INDEX_PAGE_NAME", "index.md")   # set to None to disable index page special handling
+NO_JOURNAL_ENTRIES_ON_INDEX_PAGES = config.get("NO_JOURNAL_ENTRIES_ON_INDEX_PAGES", False)
 
 JOURNAL_PATH = NOTEBOOK_PATH / config.get("JOURNAL_PATH", "journal")
 MEDIA_PATH = NOTEBOOK_PATH / config.get("MEDIA_PATH", "media")
@@ -338,6 +339,18 @@ def index(mypath="/"):
                     mypath_content, related_tags, mypath_tag, title, headings = parseMarkdown(p=p)
                 else:
                     return jsonify({'error': 'file not found: ' + p.as_posix()}), 400
+
+
+    if INDEX_PAGE_NAME is not None and p.name == INDEX_PAGE_NAME and NO_JOURNAL_ENTRIES_ON_INDEX_PAGES:
+        return render_template(
+            "main_nojournal.html",
+            NOTEBOOK_NAME=NOTEBOOK_NAME,
+            mypath=mypath,
+            title=title,
+            mypath_content=mypath_content,
+            headings=headings,
+            QUICKLAUNCH_HTML=QUICKLAUNCH_HTML
+        )
 
 
     today_date = datetime.now()

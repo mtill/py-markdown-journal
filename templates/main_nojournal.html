@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[{{ NOTEBOOK_NAME }}] {{ title }}</title>
+    <script src="/static/main.js"></script>
+    <link rel="stylesheet" href="/static/main.css">
+    <link rel="stylesheet" href="/static/quicklaunch.css">
+</head>
+<body>
+
+    {% if QUICKLAUNCH_HTML %}
+    {{ QUICKLAUNCH_HTML | safe }}
+    {% else %}
+    {% include "quicklaunch.html" ignore missing without context %}
+    {% endif %}
+
+    <div id="tag-selector">
+      <div class="pill clickable" title="click to copy reference to this wiki page" onclick="setClipboard('[{{ title }}]({{ title }})')">🔗 {{ title }}</div>
+      <span id="controlstoggle" onclick="toggleControls()">hide</span>
+      <div id="controls">
+        <div id="toc">
+        <strong>ToC</strong>
+        {% for level, text in headings %}
+            <div class="toc-level-{{ level }}"><a href="#heading-{{ loop.index0 }}">{{ text }}</a></div>
+        {% endfor %}
+        </div>
+    </div>
+    </div>
+
+{% if mypath_content is not none %}
+<div id="mypath_content" ondblclick="openInEditor(thetype='page', entryId='{{ mypath }}')">
+{{ mypath_content | safe }}
+</div>
+{% endif %}
+
+</body>
+</html>
+
