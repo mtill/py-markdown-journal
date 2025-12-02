@@ -57,6 +57,7 @@ function detectDoubleTap(doubleTapMs) {
                 bubbles: true,
                 detail: event
             })
+            doubleTap.shiftKey = event.shiftKey;
             event.target.dispatchEvent(doubleTap)
         } else {
             timeout = setTimeout(() => clearTimeout(timeout), doubleTapMs)
@@ -100,7 +101,7 @@ async function removeTag(btn, rel_path, entryId, tag){
 }
 
 // Opens entry in editor on the server via AJAX POST to /_edit
-async function openInEditor(thetype, entryId){
+async function openInEditor(event, thetype, entryId){
     let rel = null;
     let line_no = null;
 
@@ -120,6 +121,9 @@ async function openInEditor(thetype, entryId){
         fd.append('rel_path', rel);
         if (line_no !== null) {
             fd.append('line_no', line_no);
+        }
+        if (event.shiftKey) {
+            fd.append('open_in_alt_editor', true);
         }
         const resp = await fetch('/_edit', { method: 'POST', body: fd });
         if (!resp.ok) {
@@ -142,14 +146,14 @@ document.addEventListener('DOMContentLoaded', function(){
     // double-click content to enter edit mode
     document.querySelectorAll('.entry').forEach(el => {
         //el.addEventListener('dblclick', function(e){
-        //    openInEditor(thetype="entry", entryId=el.getAttribute('id'))
+        //    openInEditor(event=e, thetype="entry", entryId=el.getAttribute('id'))
         //});
         el.title="[" + el.getAttribute('data-datestr') + "] click to copy reference to this entry; double-click to open entry in editor";
         el.addEventListener('click', (event) => {
             setClipboard('[journal entry ' + el.getAttribute('data-datestr') + '](' + el.getAttribute('data-location') + ')');
         });
         el.addEventListener('doubletap', (event) => {
-            openInEditor(thetype="entry", entryId=el.getAttribute('id'))
+            openInEditor(event=event, thetype="entry", entryId=el.getAttribute('id'))
         });
     });
 

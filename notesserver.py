@@ -34,11 +34,14 @@ BASIC_SECRET = config.get("BASIC_SECRET", None)
 DEFAULT_JOURNAL_TIMEWINDOW_IN_WEEKS = config.get('DEFAULT_JOURNAL_TIMEWINDOW_IN_WEEKS', 2)
 JOURNAL_ENTRY_DATE_FORMAT = config.get('JOURNAL_ENTRY_DATE_FORMAT', '%a %d.%m. %H:%M')
 SORT_TAGS_BY_NAME = config.get('SORT_TAGS_BY_NAME', False)
-HIDE_DOTFILES = config.get('HIDE_DOTFILES', True)
+SHOW_DOTFILES = config.get('SHOW_DOTFILES', False)
 
 code_cmd = shutil.which('code') or 'code'
 EDITOR_COMMAND_LIST = config.get("EDITOR_COMMAND_LIST", [code_cmd, "{filepath}"])
 EDITOR_GOTO_COMMAND_LIST = config.get("EDITOR_GOTO_COMMAND_LIST", [code_cmd, "--goto", "{filepath}:{line_no}"])
+
+ALT_EDITOR_COMMAND_LIST = config.get("ALT_EDITOR_COMMAND_LIST", EDITOR_COMMAND_LIST)
+ALT_EDITOR_GOTO_COMMAND_LIST = config.get("ALT_EDITOR_GOTO_COMMAND_LIST", EDITOR_GOTO_COMMAND_LIST)
 
 INDEX_PAGE_NAME = config.get("INDEX_PAGE_NAME", "index.md")   # set to None to disable index page special handling
 NO_JOURNAL_ENTRIES_ON_INDEX_PAGES = config.get("NO_JOURNAL_ENTRIES_ON_INDEX_PAGES", False)
@@ -295,7 +298,7 @@ def index(mypath="/"):
             folders = []
             files = []
             for child in p.iterdir():
-                if HIDE_DOTFILES and child.name.startswith("."):
+                if SHOW_DOTFILES and child.name.startswith("."):
                     continue
                 if child.is_dir():
                     folders.append(child)
@@ -501,6 +504,7 @@ def edit():
         return jsonify({'error': 'missing path'}), 400
 
     line_no = request.form.get('line_no', None)
+    open_in_alt_editor = request.form.get('open_in_alt_editor', False)
 
     if rel.startswith("/"):
         rel = rel[1:]
@@ -516,7 +520,12 @@ def edit():
         target.parent.mkdir(parents=True, exist_ok=True)
 
     #code --goto "{filepath}:{line_no}"'
-    args = list(EDITOR_COMMAND_LIST) if line_no is None else list(EDITOR_GOTO_COMMAND_LIST)
+    args = None
+    if open_in_alt_editor:
+        args = list(ALT_EDITOR_COMMAND_LIST) if line_no is None else list(ALT_EDITOR_GOTO_COMMAND_LIST)
+    else:
+        args = list(EDITOR_COMMAND_LIST) if line_no is None else list(EDITOR_GOTO_COMMAND_LIST)
+
     for i in range(len(args)):
         args[i] = args[i].replace("{filepath}", str(target)).replace("{line_no}", str(line_no))
     try:

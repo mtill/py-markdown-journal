@@ -30,7 +30,7 @@
     </div>
 
 {% if mypath_content is not none %}
-<div id="mypath_content" ondblclick="openInEditor(thetype='page', entryId='{{ mypath }}')">
+<div id="mypath_content" ondblclick="openInEditor(event=event, thetype='page', entryId='{{ mypath }}')">
 {{ mypath_content | safe }}
 </div>
 {% endif %}
