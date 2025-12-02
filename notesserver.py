@@ -34,7 +34,7 @@ BASIC_SECRET = config.get("BASIC_SECRET", None)
 DEFAULT_JOURNAL_TIMEWINDOW_IN_WEEKS = config.get('DEFAULT_JOURNAL_TIMEWINDOW_IN_WEEKS', 2)
 JOURNAL_ENTRY_DATE_FORMAT = config.get('JOURNAL_ENTRY_DATE_FORMAT', '%a %d.%m. %H:%M')
 SORT_TAGS_BY_NAME = config.get('SORT_TAGS_BY_NAME', False)
-SHOW_DOTFILES = config.get('SHOW_DOTFILES', False)
+HIDE_DOTFILES = config.get('HIDE_DOTFILES', True)
 
 code_cmd = shutil.which('code') or 'code'
 EDITOR_COMMAND_LIST = config.get("EDITOR_COMMAND_LIST", [code_cmd, "{filepath}"])
@@ -295,7 +295,7 @@ def index(mypath="/"):
             folders = []
             files = []
             for child in p.iterdir():
-                if SHOW_DOTFILES and child.name.startswith("."):
+                if HIDE_DOTFILES and child.name.startswith("."):
                     continue
                 if child.is_dir():
                     folders.append(child)
