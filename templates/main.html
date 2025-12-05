@@ -94,9 +94,9 @@
 {% endif %}
 
 {% if new_entry_tags_str is none %}
-<h2 id="journal_entries" title="single-click: copy new entry title to clipboard; double-click to also open in editor" onclick="setClipboardNewEntry(null);" ondblclick="openInEditor(event=event, thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries
+<h2 id="journal_entries" title="single-click: copy new entry title to clipboard; double-click to also open in editor (hold shift for alt editor)" onclick="setClipboardNewEntry(null);" ondblclick="setClipboardNewEntry(null); openInEditor(event=event, thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries
 {% else %}
-<h2 id="journal_entries" title="single-click: copy new entry title to clipboard, incl. tags: {{ new_entry_tags_str }}; double-click to also open in editor" onclick="setClipboardNewEntry('{{ new_entry_tags_str }}');" ondblclick="setClipboardNewEntry('{{ new_entry_tags_str }}'); openInEditor(event=event, thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries
+<h2 id="journal_entries" title="single-click: copy new entry title to clipboard, incl. tags: {{ new_entry_tags_str }}; double-click to also open in editor (hold shift for alt editor)" onclick="setClipboardNewEntry('{{ new_entry_tags_str }}');" ondblclick="setClipboardNewEntry('{{ new_entry_tags_str }}'); openInEditor(event=event, thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries
 {% endif %}
 
 {% if related_tags is not none and related_tags | length > 0 %}

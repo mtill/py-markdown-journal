@@ -24,6 +24,15 @@ if NOTESSERVER_CONFIG_FILE is not None:
     with open(config_file, "r", encoding="utf-8") as f:
         config = json.load(f)
 
+
+def _set_editor_path(command_list):
+    if command_list is not None and len(command_list) > 0 and not Path(command_list[0]).is_absolute():
+        which_path = shutil.which(command_list[0])
+        if which_path is not None:
+            command_list[0] = which_path
+    return command_list
+
+
 app = Flask(__name__)
 md = MarkdownIt("gfm-like")
 
@@ -36,12 +45,11 @@ JOURNAL_ENTRY_DATE_FORMAT = config.get('JOURNAL_ENTRY_DATE_FORMAT', '%a %d.%m. %
 SORT_TAGS_BY_NAME = config.get('SORT_TAGS_BY_NAME', False)
 HIDE_DOTFILES = config.get('HIDE_DOTFILES', True)
 
-code_cmd = shutil.which('code') or 'code'
-EDITOR_COMMAND_LIST = config.get("EDITOR_COMMAND_LIST", [code_cmd, "{filepath}"])
-EDITOR_GOTO_COMMAND_LIST = config.get("EDITOR_GOTO_COMMAND_LIST", [code_cmd, "--goto", "{filepath}:{line_no}"])
+EDITOR_COMMAND_LIST = _set_editor_path(command_list=config.get("EDITOR_COMMAND_LIST", ["code", "{filepath}"]))
+EDITOR_GOTO_COMMAND_LIST = _set_editor_path(command_list=config.get("EDITOR_GOTO_COMMAND_LIST", ["code", "--goto", "{filepath}:{line_no}"]))
 
-ALT_EDITOR_COMMAND_LIST = config.get("ALT_EDITOR_COMMAND_LIST", EDITOR_COMMAND_LIST)
-ALT_EDITOR_GOTO_COMMAND_LIST = config.get("ALT_EDITOR_GOTO_COMMAND_LIST", EDITOR_GOTO_COMMAND_LIST)
+ALT_EDITOR_COMMAND_LIST = _set_editor_path(command_list=config.get("ALT_EDITOR_COMMAND_LIST", EDITOR_COMMAND_LIST))
+ALT_EDITOR_GOTO_COMMAND_LIST = _set_editor_path(command_list=config.get("ALT_EDITOR_GOTO_COMMAND_LIST", EDITOR_GOTO_COMMAND_LIST))
 
 INDEX_PAGE_NAME = config.get("INDEX_PAGE_NAME", "index.md")   # set to None to disable index page special handling
 NO_JOURNAL_ENTRIES_ON_INDEX_PAGES = config.get("NO_JOURNAL_ENTRIES_ON_INDEX_PAGES", False)
