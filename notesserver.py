@@ -10,7 +10,7 @@ import subprocess
 import json
 import shutil
 from werkzeug.utils import secure_filename
-from noteslib import parseEntries, writeFile, MARKDOWN_SUFFIX, TAG_PREFIX, TAG_NAMESPACE_SEPARATOR, TAG_REGEX, JOURNAL_FILE_REGEX
+from noteslib import parseEntries, writeFile, MARKDOWN_SUFFIX, ENTRY_PREFIX, TAG_PREFIX, TAG_NAMESPACE_SEPARATOR, TAG_REGEX, JOURNAL_FILE_REGEX
 from datetime import datetime, timedelta
 from flask import Flask, redirect, render_template, request, make_response, send_from_directory, jsonify
 from markdown_it import MarkdownIt
@@ -344,16 +344,16 @@ def index(mypath="/"):
                     return jsonify({'error': 'file not found: ' + p.as_posix()}), 400
 
 
-    if INDEX_PAGE_NAME is not None and p.name == INDEX_PAGE_NAME and NO_JOURNAL_ENTRIES_ON_INDEX_PAGES:
-        return render_template(
-            "main_nojournal.html",
-            NOTEBOOK_NAME=NOTEBOOK_NAME,
-            mypath=mypath,
-            title=title,
-            mypath_content=mypath_content,
-            headings=headings,
-            QUICKLAUNCH_HTML=QUICKLAUNCH_HTML
-        )
+        if INDEX_PAGE_NAME is not None and p.name == INDEX_PAGE_NAME and NO_JOURNAL_ENTRIES_ON_INDEX_PAGES:
+            return render_template(
+                "main_nojournal.html",
+                NOTEBOOK_NAME=NOTEBOOK_NAME,
+                mypath=mypath,
+                title=title,
+                mypath_content=mypath_content,
+                headings=headings,
+                QUICKLAUNCH_HTML=QUICKLAUNCH_HTML
+            )
 
 
     today_date = datetime.now()
@@ -449,7 +449,8 @@ def index(mypath="/"):
         q=q,
         regex_error=regex_error,
         NO_ADDITIONAL_TAGS=NO_ADDITIONAL_TAGS,
-        QUICKLAUNCH_HTML=QUICKLAUNCH_HTML
+        QUICKLAUNCH_HTML=QUICKLAUNCH_HTML,
+        ENTRY_PREFIX=ENTRY_PREFIX
     )
 
 

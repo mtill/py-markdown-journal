@@ -5,6 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>[{{ NOTEBOOK_NAME }}] {{ title }}</title>
     <script src="/static/main.js"></script>
+    <script>
+
+        function formatDate(thedate) {
+            const dateParts = {
+                month: `${thedate.getMonth() + 1}`.padStart(2, '0'),  /* Month range is [0,11]. Force 2 digits in numbers. */
+                day: `${thedate.getDate()}`.padStart(2, '0'),
+                year: thedate.getFullYear(),
+                hours: `${thedate.getHours()}`.padStart(2, '0'),
+                minutes: `${thedate.getMinutes()}`.padStart(2, '0'),
+                seconds: `${thedate.getSeconds()}`.padStart(2, '0'),
+            };
+
+            return `${dateParts.year}-${dateParts.month}-${dateParts.day} ${dateParts.hours}:${dateParts.minutes}:${dateParts.seconds}`;
+        }
+
+        function setClipboardNewEntry(new_entry_tags_str) {
+            setClipboard('{{ ENTRY_PREFIX }}' + formatDate(new Date()) + '\n' + (new_entry_tags_str === null ? '' : (new_entry_tags_str + '\n')));
+        }
+
+    </script>
     <link rel="stylesheet" href="/static/main.css">
     <link rel="stylesheet" href="/static/quicklaunch.css">
 </head>
@@ -74,9 +94,9 @@
 {% endif %}
 
 {% if new_entry_tags_str is none %}
-<h2 id="journal_entries" title="double-click to open in editor" ondblclick="openInEditor(event=event, thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries
+<h2 id="journal_entries" title="single-click: copy new entry title to clipboard; double-click to also open in editor" onclick="setClipboardNewEntry(null);" ondblclick="openInEditor(event=event, thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries
 {% else %}
-<h2 id="journal_entries" title="single-click: copy page tag+selected tags to clipboard: {{ new_entry_tags_str }}; double-click to also open in editor" onclick="setClipboard('{{ new_entry_tags_str }}');" ondblclick="setClipboard('{{ new_entry_tags_str }}'); openInEditor(event=event, thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries
+<h2 id="journal_entries" title="single-click: copy new entry title to clipboard, incl. tags: {{ new_entry_tags_str }}; double-click to also open in editor" onclick="setClipboardNewEntry('{{ new_entry_tags_str }}');" ondblclick="setClipboardNewEntry('{{ new_entry_tags_str }}'); openInEditor(event=event, thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries
 {% endif %}
 
 {% if related_tags is not none and related_tags | length > 0 %}
