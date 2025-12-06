@@ -24,6 +24,14 @@
             const new_entry_title = window.prompt('entry title:');
             if (new_entry_title !== null) {
                 setClipboard('{{ ENTRY_PREFIX }}' + formatDate(new Date()) + ' ' + new_entry_title + '\n' + (new_entry_tags_str === null ? '' : (new_entry_tags_str + '\n\n')));
+                return true;
+            }
+            return false;
+        }
+
+        function openEntryInEditor(event, entryId, new_entry_tags_str) {
+            if (setClipboardNewEntry(new_entry_tags_str=new_entry_tags_str)) {
+                openInEditor(event=event, thetype='page', entryId=entryId);
             }
         }
 
@@ -96,12 +104,7 @@
 </div>
 {% endif %}
 
-<h2 id="journal_entries" title="double-click to copy entry template to clipboard and open editor (hold shift for alt editor)" ondblclick="setClipboardNewEntry({% if new_entry_tags_str is none %}null{% else %}'{{ new_entry_tags_str }}'{% endif %}); openInEditor(event=event, thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries
-
-{% if related_tags is not none and related_tags | length > 0 %}
-<span style="margin-left: 2em; font-weight: bold;font-size: small">related tags: {{ related_tags | join(" | ") }}</span>
-{% endif %}
-</h2>
+<h2 id="journal_entries" title="double-click to copy entry template to clipboard and open editor (hold shift for alt editor)" ondblclick="openEntryInEditor(event=event, entryId='{{ latest_journal_page }}', new_entry_tags_str={% if new_entry_tags_str is none %}null{% else %}'{{ new_entry_tags_str }}'{% endif %})">🏷 journal entries{% if related_tags is not none and related_tags | length > 0 %} <span style="margin-left: 2em; font-weight: bold;font-size: small">related tags: {{ related_tags | join(" | ") }}</span>{% endif %}</h2>
 
     {% set current_date_ns = namespace(current_week=none) %}
     {% for entry in entries | sort(attribute='date', reverse=true) %}
