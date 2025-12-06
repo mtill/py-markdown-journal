@@ -96,7 +96,7 @@
 </div>
 {% endif %}
 
-<h2 id="journal_entries" title="double-click: copy new entry title to clipboard and open editor (hold shift for alt editor)" ondblclick="setClipboardNewEntry({% if new_entry_tags_str is none %}null{% else %}'{{ new_entry_tags_str }}'{% endif %}); openInEditor(event=event, thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries
+<h2 id="journal_entries" title="double-click to copy entry template to clipboard and open editor (hold shift for alt editor)" ondblclick="setClipboardNewEntry({% if new_entry_tags_str is none %}null{% else %}'{{ new_entry_tags_str }}'{% endif %}); openInEditor(event=event, thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries
 
 {% if related_tags is not none and related_tags | length > 0 %}
 <span style="margin-left: 2em; font-weight: bold;font-size: small">related tags: {{ related_tags | join(" | ") }}</span>
