@@ -21,7 +21,10 @@
         }
 
         function setClipboardNewEntry(new_entry_tags_str) {
-            setClipboard('{{ ENTRY_PREFIX }}' + formatDate(new Date()) + '\n' + (new_entry_tags_str === null ? '' : (new_entry_tags_str + '\n')));
+            const new_entry_title = window.prompt('entry title:');
+            if (new_entry_title !== null) {
+                setClipboard('{{ ENTRY_PREFIX }}' + formatDate(new Date()) + ' ' + new_entry_title + '\n' + (new_entry_tags_str === null ? '' : (new_entry_tags_str + '\n\n')));
+            }
         }
 
     </script>
@@ -93,11 +96,7 @@
 </div>
 {% endif %}
 
-{% if new_entry_tags_str is none %}
-<h2 id="journal_entries" title="single-click: copy new entry title to clipboard; double-click to also open in editor (hold shift for alt editor)" onclick="setClipboardNewEntry(null);" ondblclick="setClipboardNewEntry(null); openInEditor(event=event, thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries
-{% else %}
-<h2 id="journal_entries" title="single-click: copy new entry title to clipboard, incl. tags: {{ new_entry_tags_str }}; double-click to also open in editor (hold shift for alt editor)" onclick="setClipboardNewEntry('{{ new_entry_tags_str }}');" ondblclick="setClipboardNewEntry('{{ new_entry_tags_str }}'); openInEditor(event=event, thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries
-{% endif %}
+<h2 id="journal_entries" title="double-click: copy new entry title to clipboard and open editor (hold shift for alt editor)" ondblclick="setClipboardNewEntry({% if new_entry_tags_str is none %}null{% else %}'{{ new_entry_tags_str }}'{% endif %}); openInEditor(event=event, thetype='page', entryId='{{ latest_journal_page }}')">🏷 journal entries
 
 {% if related_tags is not none and related_tags | length > 0 %}
 <span style="margin-left: 2em; font-weight: bold;font-size: small">related tags: {{ related_tags | join(" | ") }}</span>
