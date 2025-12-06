@@ -149,6 +149,7 @@ h6 {
 
 .entry h3 {
     margin-top: 0;
+    cursor: pointer;
 }
 
 .date-range {
@@ -264,6 +265,6 @@ h6 {
         max-width: none;
         width: calc(100% - 40px);
     }
-    .entry h3 { margin-right: 0; }
+    .entry h3 { margin-right: 0; cursor: pointer; }
 }
 

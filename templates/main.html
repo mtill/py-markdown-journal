@@ -107,36 +107,26 @@
     {% for entry in entries | sort(attribute='date', reverse=true) %}
         {% set entry_week = entry.date.isocalendar()[1] %}
         {% if current_date_ns.current_week != entry_week %}
-        {% if current_date_ns.current_week is not none %}
-    </ul>
-    {% endif %}
-
     <hr class="hr-text" data-content="CW{{ entry_week }}">
-    <ul>
     {% set current_date_ns.current_week = entry_week %}
     {% endif %}
-        <li class="entry{% if "archived" in entry.tags %} archived{% endif %}" id="{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}" data-tags="{{ ' '.join(entry.tags) }}" data-rel-path="/{{ entry.rel_path.as_posix() }}" data-datestr="{{ entry.date.strftime('%Y-%m-%d %H:%M:%S') }}" data-line-no="{{ entry.pos }}" data-location="{{ entry.location }}">
-             <div class="entry-content">
-                 {{ entry.content | safe }}
-                <p>Tags:
-                {% for tag in entry.tags | sort %}
-                {% if tag == NO_ADDITIONAL_TAGS or tag == "untagged" %}
-                    <span class="tag-pill">{{ tag }}</span>
-                {% else %}
-                    {% set tag_wiki_page_entry = tagWikiPages[tag] %}
-                    {% set tag_wiki_page_prefix = "🗏 " if tag_wiki_page_entry[1] else "" %}
-                    <span class="tag-pill"><a class="taglink" href="{{ tag_wiki_page_entry[0] }}">{{ tag_wiki_page_prefix }}{{ tag }}</a>
-                    <span class="tag-remove" onclick="removeTag(this, '/{{ entry.rel_path.as_posix() }}', '{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}', '{{ tag }}')" title="click to remove tag '{{ tag }}' from entry">🗑️</span>
-                    </span>
-                {% endif %}
-                {% endfor %}
-                </p>
-                </div>
-        </li>
+        <div class="entry{% if "archived" in entry.tags %} archived{% endif %}" id="{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}" data-tags="{{ ' '.join(entry.tags) }}" data-rel-path="/{{ entry.rel_path.as_posix() }}" data-datestr="{{ entry.date.strftime('%Y-%m-%d %H:%M:%S') }}" data-line-no="{{ entry.pos }}" data-location="{{ entry.location }}">
+            {{ entry.content | safe }}
+            <p>Tags:
+            {% for tag in entry.tags | sort %}
+            {% if tag == NO_ADDITIONAL_TAGS or tag == "untagged" %}
+                <span class="tag-pill">{{ tag }}</span>
+            {% else %}
+                {% set tag_wiki_page_entry = tagWikiPages[tag] %}
+                {% set tag_wiki_page_prefix = "🗏 " if tag_wiki_page_entry[1] else "" %}
+                <span class="tag-pill"><a class="taglink" href="{{ tag_wiki_page_entry[0] }}">{{ tag_wiki_page_prefix }}{{ tag }}</a>
+                <span class="tag-remove" onclick="removeTag(this, '/{{ entry.rel_path.as_posix() }}', '{{ entry.date.strftime(JS_ENTRY_ID_FORMAT) }}', '{{ tag }}')" title="click to remove tag '{{ tag }}' from entry">🗑️</span>
+                </span>
+            {% endif %}
+            {% endfor %}
+            </p>
+        </div>
         {% endfor %}
-    {% if current_date_ns.current_week is not none %}
-    </ul>
-    {% endif %}
 
 </body>
 </html>
