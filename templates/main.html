@@ -23,7 +23,7 @@
         function setClipboardNewEntry(new_entry_tags_str) {
             const new_entry_title = window.prompt('entry title:');
             if (new_entry_title !== null) {
-                setClipboard('{{ ENTRY_PREFIX }}' + formatDate(new Date()) + ' ' + new_entry_title + '\n' + (new_entry_tags_str === null || new_entry_tags_str.length == 0 ? '' : ('Tags: ' + new_entry_tags_str + ' \n\n')));
+                setClipboard('{{ ENTRY_PREFIX }}' + formatDate(new Date()) + ' ' + new_entry_title + '\nTags: ' + (new_entry_tags_str === null || new_entry_tags_str.length == 0 ? '' : (new_entry_tags_str + ' \n\n')));
                 return true;
             }
             return false;
