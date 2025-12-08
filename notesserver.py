@@ -42,6 +42,8 @@ NOTEBOOK_NAME = config.get("NOTEBOOK_NAME", NOTEBOOK_PATH.name)
 BASIC_SECRET = config.get("BASIC_SECRET", None)
 DEFAULT_JOURNAL_TIMEWINDOW_IN_WEEKS = config.get('DEFAULT_JOURNAL_TIMEWINDOW_IN_WEEKS', 2)
 JOURNAL_ENTRY_DATE_FORMAT = config.get('JOURNAL_ENTRY_DATE_FORMAT', '%a %d.%m. %H:%M')
+
+NEW_JOURNAL_ENTRY_DEFAULT_TAGS_LIST = config.get('NEW_JOURNAL_ENTRY_DEFAULT_TAGS_LIST', ["inbox"])
 SORT_TAGS_BY_NAME = config.get('SORT_TAGS_BY_NAME', False)
 HIDE_DOTFILES = config.get('HIDE_DOTFILES', True)
 
@@ -423,11 +425,11 @@ def index(mypath="/"):
     for a in available_tags:
         tagWikiPages[a] = _find_tag_wiki_page(tag=a)
 
-    new_entry_tags = []
-    if mypath_tag is not None:
+    new_entry_tags = list(NEW_JOURNAL_ENTRY_DEFAULT_TAGS_LIST)
+    if mypath_tag is not None and mypath_tag not in new_entry_tags:
         new_entry_tags.append(mypath_tag)
     for s_t in selected_tags:
-        if s_t != NO_ADDITIONAL_TAGS and s_t != mypath_tag:
+        if s_t != NO_ADDITIONAL_TAGS and s_t != mypath_tag and s_t not in new_entry_tags:
             new_entry_tags.append(s_t)
 
     new_entry_tags_str = None
