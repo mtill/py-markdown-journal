@@ -19,6 +19,7 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     list-style-type: none;
     position: relative;
+    word-break: break-all;
 }
 
 .archived {
@@ -41,6 +42,7 @@ img {
     font-size: 13px;         /* smaller text */
     line-height: 1.25;
     z-index: 1000;
+    word-break: break-all;
 }
 
 #controlstoggle {
