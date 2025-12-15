@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
+import sys
 import os
 import re
 import html
@@ -36,7 +37,6 @@ def _set_editor_path(command_list):
 app = Flask(__name__)
 md = MarkdownIt("gfm-like")
 
-PORT = config.get("PORT", 5000)
 NOTEBOOK_PATH = Path(config.get("NOTEBOOK_PATH", ".")).resolve()
 NOTEBOOK_NAME = config.get("NOTEBOOK_NAME", NOTEBOOK_PATH.name)
 BASIC_SECRET = config.get("BASIC_SECRET", None)
@@ -651,5 +651,5 @@ def upload_media():
 
 
 if __name__ == '__main__':
-    app.run(debug=False, host='127.0.0.1', port=PORT)
+    app.run(debug=False, host='127.0.0.1', port=int(sys.argv[1]) if len(sys.argv) > 1 else 5000)
 
