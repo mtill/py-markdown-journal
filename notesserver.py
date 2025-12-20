@@ -62,7 +62,7 @@ MEDIA_PATH = NOTEBOOK_PATH / config.get("MEDIA_PATH", "media")
 NO_ADDITIONAL_TAGS = config.get("NO_ADDITIONAL_TAGS", "[only selected tags]")
 INCLUDE_SUBTAGS = config.get("INCLUDE_SUBTAGS", True)
 
-TASKS = config.get("TASKS", None)
+TASKS = config.get("TASKS", {})
 
 JS_ENTRY_ID_FORMAT = "%Y%m%d_%H%M%S"
 MYPATH_TAG_REGEX = re.compile("\\s+")
