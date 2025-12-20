@@ -1,9 +1,9 @@
-async function run_task(task_id, page_path) {
+async function run_task(task_id, param) {
     if (confirm('run task: ' + task_id + '?') == true) {
         try {
             const fd = new FormData();
-            if (page_path !== null) {
-            fd.append('page_path', page_path);
+            if (param !== null) {
+                fd.append('param', param);
             }
             const resp = await fetch('/_run_task/' + task_id, { method: 'POST', body: fd });
             if (!resp.ok) {

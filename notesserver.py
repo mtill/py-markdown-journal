@@ -513,9 +513,9 @@ def run_task(task_id):
     #command_list_copy[0] = (Path.cwd() / command_list_copy[0]).as_posix()
     command_list_copy.append(NOTEBOOK_PATH.as_posix())
 
-    page_path = request.form.get('page_path', None)
-    if page_path is not None:
-        command_list_copy.append(page_path)
+    param = request.form.get('param', None)
+    if param is not None:
+        command_list_copy.append(param)
 
     try:
         subprocess.Popen(command_list_copy, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
