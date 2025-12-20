@@ -1,5 +1,5 @@
 async function run_task(task_id, page_path) {
-    if (confirm('sync now?') == true) {
+    if (confirm('run task ' + task_id + '?') == true) {
         try {
             const fd = new FormData();
             if (page_path !== null) {
