@@ -507,7 +507,7 @@ def run_task(task_id):
 
     command_list = TASKS.get(task_id, None)
     if command_list is None:
-        return jsonify({'error': 'invalid task ' + task_id, 'detail': str(exc)}), 500
+        return jsonify({'error': "task not specified in config file."}), 500
 
     command_list_copy = list(command_list)
     #command_list_copy[0] = (Path.cwd() / command_list_copy[0]).as_posix()
