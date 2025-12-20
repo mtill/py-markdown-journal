@@ -62,6 +62,7 @@ MEDIA_PATH = NOTEBOOK_PATH / config.get("MEDIA_PATH", "media")
 NO_ADDITIONAL_TAGS = config.get("NO_ADDITIONAL_TAGS", "[only selected tags]")
 INCLUDE_SUBTAGS = config.get("INCLUDE_SUBTAGS", True)
 
+TASKS = config.get("TASKS", None)
 
 JS_ENTRY_ID_FORMAT = "%Y%m%d_%H%M%S"
 MYPATH_TAG_REGEX = re.compile("\\s+")
@@ -497,6 +498,31 @@ def set_key():
     response = make_response(render_template("setkey.html", key=key, was_updated=True, QUICKLAUNCH_HTML=QUICKLAUNCH_HTML))
     response.set_cookie(SECRET_COOKIE_NAME, key, max_age=30*24*60*60)
     return response
+
+
+@app.route('/_run_task/<task_id>', methods=['POST'])
+def run_task(task_id):
+    if not check_secret():
+        return jsonify(ACCESS_DENIED_MESSAGE_DICT), 403
+
+    command_list = TASKS.get(task_id, None)
+    if command_list is None:
+        return jsonify({'error': 'invalid task ' + task_id, 'detail': str(exc)}), 500
+
+    command_list_copy = list(command_list)
+    #command_list_copy[0] = (Path.cwd() / command_list_copy[0]).as_posix()
+    command_list_copy.append(NOTEBOOK_PATH.as_posix())
+
+    page_path = request.form.get('page_path', None)
+    if page_path is not None:
+        command_list_copy.append(page_path)
+
+    try:
+        subprocess.Popen(command_list_copy, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as exc:
+        return jsonify({'error': 'failed to run task ' + task_id, 'detail': str(exc)}), 500
+
+    return jsonify({'ok': True})
 
 
 @app.route('/_edit', methods=['POST'])
