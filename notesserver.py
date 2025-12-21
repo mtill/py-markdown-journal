@@ -87,6 +87,16 @@ if CUSTOM_HEADER_PATH.is_file():
 def check_secret():
     return BASIC_SECRET is None or len(BASIC_SECRET) == 0 or BASIC_SECRET == request.cookies.get(SECRET_COOKIE_NAME, '')
 
+@app.after_request
+def refresh_cookies(response):
+    # Exclude specific endpoint from cookie refresh logic
+    if request.endpoint == 'set_key':
+        return response
+
+    key = request.cookies.get(SECRET_COOKIE_NAME)
+    if key:
+        response.set_cookie(SECRET_COOKIE_NAME, key, max_age=SECRET_COOKIE_MAX_AGE)
+    return response
 
 def remove_tag(rel_path: str, entryId: str, tag_to_remove: str):
     dt = datetime.strptime(entryId, JS_ENTRY_ID_FORMAT)
