@@ -39,6 +39,9 @@
     </script>
     <link rel="stylesheet" href="/static/main.css">
     <link rel="stylesheet" href="/static/quicklaunch.css">
+    {% if CUSTOM_HEADER_CONTENT %}
+    {{ CUSTOM_HEADER_CONTENT | safe }}
+    {% endif %}
 </head>
 <body>
 

@@ -52,6 +52,9 @@
     });
 
   </script>
+  {% if CUSTOM_HEADER_CONTENT %}
+  {{ CUSTOM_HEADER_CONTENT | safe }}
+  {% endif %}
   </head>
   <body>
 

@@ -67,14 +67,21 @@ TASKS = config.get("TASKS", {})
 JS_ENTRY_ID_FORMAT = "%Y%m%d_%H%M%S"
 MYPATH_TAG_REGEX = re.compile("\\s+")
 SECRET_COOKIE_NAME = 'basic_secret'
+SECRET_COOKIE_MAX_AGE=365*24*60*60
 ACCESS_DENIED_MESSAGE_DICT = {"error": "access denied: invalid secret. Please go to <a href=\"/_set_key\">/_set_key</a> to set the secret."}
 HEADING_REGEX = re.compile(r'^(#{1,6})\s+(.*)$')
 
-QUICKLAUNCH_PATH = NOTEBOOK_PATH / ".quicklaunch.html"
 QUICKLAUNCH_HTML = None
+QUICKLAUNCH_PATH = NOTEBOOK_PATH / ".quicklaunch.html"
 if QUICKLAUNCH_PATH.is_file():
     with open(QUICKLAUNCH_PATH, "r", encoding="utf-8") as f:
         QUICKLAUNCH_HTML = f.read()
+
+CUSTOM_HEADER_CONTENT = None
+CUSTOM_HEADER_PATH = NOTEBOOK_PATH / ".header.html"
+if CUSTOM_HEADER_PATH.is_file():
+    with open(CUSTOM_HEADER_PATH, "r", encoding="utf-8") as f:
+        CUSTOM_HEADER_CONTENT = f.read()
 
 
 def check_secret():
@@ -333,7 +340,8 @@ def index(mypath="/"):
                                    abs_path="/" + p.relative_to(NOTEBOOK_PATH).as_posix(),
                                    entries=entries,
                                    delete_msg=delete_msg,
-                                   QUICKLAUNCH_HTML=QUICKLAUNCH_HTML)
+                                   QUICKLAUNCH_HTML=QUICKLAUNCH_HTML,
+                                   CUSTOM_HEADER_CONTENT=CUSTOM_HEADER_CONTENT)
 
         else:
 
@@ -363,7 +371,8 @@ def index(mypath="/"):
                 title=title,
                 mypath_content=mypath_content,
                 headings=headings,
-                QUICKLAUNCH_HTML=QUICKLAUNCH_HTML
+                QUICKLAUNCH_HTML=QUICKLAUNCH_HTML,
+                CUSTOM_HEADER_CONTENT=CUSTOM_HEADER_CONTENT
             )
 
 
@@ -461,6 +470,7 @@ def index(mypath="/"):
         regex_error=regex_error,
         NO_ADDITIONAL_TAGS=NO_ADDITIONAL_TAGS,
         QUICKLAUNCH_HTML=QUICKLAUNCH_HTML,
+        CUSTOM_HEADER_CONTENT=CUSTOM_HEADER_CONTENT,
         ENTRY_PREFIX=ENTRY_PREFIX
     )
 
@@ -486,7 +496,11 @@ def remove_tag_route():
 @app.route("/_set_key", methods=['GET'])
 def get_set_key_form():
     #key = request.cookies.get(SECRET_COOKIE_NAME, '')
-    return render_template("setkey.html", key='', was_updated=False, QUICKLAUNCH_HTML=QUICKLAUNCH_HTML)
+    return render_template("setkey.html",
+                           key='',
+                           was_updated=False,
+                           QUICKLAUNCH_HTML=QUICKLAUNCH_HTML,
+                           CUSTOM_HEADER_CONTENT=CUSTOM_HEADER_CONTENT)
 
 
 @app.route("/_set_key", methods=['POST'])
@@ -495,8 +509,14 @@ def set_key():
     if not key:
         return jsonify({'error': 'missing key'}), 400
 
-    response = make_response(render_template("setkey.html", key=key, was_updated=True, QUICKLAUNCH_HTML=QUICKLAUNCH_HTML))
-    response.set_cookie(SECRET_COOKIE_NAME, key, max_age=30*24*60*60)
+    response = make_response(render_template("setkey.html",
+                                             key=key,
+                                             was_updated=True,
+                                             QUICKLAUNCH_HTML=QUICKLAUNCH_HTML,
+                                             CUSTOM_HEADER_CONTENT=CUSTOM_HEADER_CONTENT
+                                            )
+                            )
+    response.set_cookie(SECRET_COOKIE_NAME, key, max_age=SECRET_COOKIE_MAX_AGE)
     return response
 
 
@@ -628,7 +648,12 @@ def media_page():
     files.sort(key=lambda x: x['mtime'], reverse=True)
     files = files[:10]
 
-    return render_template('media.html', NOTEBOOK_NAME=NOTEBOOK_NAME, files=files, delete_msg=delete_msg, media_rel_dir_str=media_rel_dir_str)
+    return render_template('media.html',
+                           NOTEBOOK_NAME=NOTEBOOK_NAME,
+                           files=files,
+                           delete_msg=delete_msg,
+                           media_rel_dir_str=media_rel_dir_str,
+                           CUSTOM_HEADER_CONTENT=CUSTOM_HEADER_CONTENT)
 
 
 @app.route('/_upload_media', methods=['POST'])

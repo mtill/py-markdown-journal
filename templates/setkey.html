@@ -18,6 +18,9 @@
   }
   </style>
   <link rel="stylesheet" href="/static/quicklaunch.css">
+  {% if CUSTOM_HEADER_CONTENT %}
+  {{ CUSTOM_HEADER_CONTENT | safe }}
+  {% endif %}
   </head>
   <body>
     <h1>Set secret</h1>
