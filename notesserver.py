@@ -87,16 +87,10 @@ if CUSTOM_HEADER_PATH.is_file():
 def check_secret():
     return BASIC_SECRET is None or len(BASIC_SECRET) == 0 or BASIC_SECRET == request.cookies.get(SECRET_COOKIE_NAME, '')
 
-@app.after_request
-def refresh_cookies(response):
-    # Exclude specific endpoint from cookie refresh logic
-    if request.endpoint == 'set_key':
-        return response
 
-    key = request.cookies.get(SECRET_COOKIE_NAME)
-    if key:
-        response.set_cookie(SECRET_COOKIE_NAME, key, max_age=SECRET_COOKIE_MAX_AGE)
-    return response
+def set_secret_cookie(response, key):
+    response.set_cookie(SECRET_COOKIE_NAME, key, max_age=SECRET_COOKIE_MAX_AGE, httponly=True, samesite='Lax')
+
 
 def remove_tag(rel_path: str, entryId: str, tag_to_remove: str):
     dt = datetime.strptime(entryId, JS_ENTRY_ID_FORMAT)
@@ -296,7 +290,7 @@ def parseMarkdown(p):
 @app.route('/<path:mypath>', methods=['GET'])
 def index(mypath="/"):
     if not check_secret():
-        return jsonify(ACCESS_DENIED_MESSAGE_DICT), 403
+        return get_set_key_form()
 
     if mypath.startswith("/"):
         mypath = "." + mypath
@@ -374,7 +368,7 @@ def index(mypath="/"):
 
 
         if INDEX_PAGE_NAME is not None and p.name == INDEX_PAGE_NAME and NO_JOURNAL_ENTRIES_ON_INDEX_PAGES:
-            return render_template(
+            rendered_html = render_template(
                 "main_nojournal.html",
                 NOTEBOOK_NAME=NOTEBOOK_NAME,
                 mypath=mypath,
@@ -384,6 +378,11 @@ def index(mypath="/"):
                 QUICKLAUNCH_HTML=QUICKLAUNCH_HTML,
                 CUSTOM_HEADER_CONTENT=CUSTOM_HEADER_CONTENT
             )
+            response = make_response(rendered_html)
+            key = request.cookies.get(SECRET_COOKIE_NAME)
+            if key:
+                set_secret_cookie(response=response, key=key)
+            return response
 
 
     today_date = datetime.now()
@@ -458,7 +457,7 @@ def index(mypath="/"):
 
     latest_journal_page = "/" + ((JOURNAL_PATH / (today_date.strftime("%Y-Q") + str((today_date.month - 1)//3 + 1) + MARKDOWN_SUFFIX)).relative_to(NOTEBOOK_PATH).as_posix())
 
-    return render_template(
+    rendered_html = render_template(
         "main.html",
         mypath=mypath,
         related_tags=related_tags,
@@ -483,6 +482,11 @@ def index(mypath="/"):
         CUSTOM_HEADER_CONTENT=CUSTOM_HEADER_CONTENT,
         ENTRY_PREFIX=ENTRY_PREFIX
     )
+    response = make_response(rendered_html)
+    key = request.cookies.get(SECRET_COOKIE_NAME)
+    if key:
+        set_secret_cookie(response=response, key=key)
+    return response
 
 
 @app.route('/_remove_tag', methods=['POST'])
@@ -526,7 +530,7 @@ def set_key():
                                              CUSTOM_HEADER_CONTENT=CUSTOM_HEADER_CONTENT
                                             )
                             )
-    response.set_cookie(SECRET_COOKIE_NAME, key, max_age=SECRET_COOKIE_MAX_AGE)
+    set_secret_cookie(response=response, key=key)
     return response
 
 
@@ -548,11 +552,11 @@ def run_task(task_id):
         command_list_copy.append(param)
 
     try:
-        subprocess.Popen(command_list_copy, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        output = subprocess.check_output(command_list_copy, stderr=subprocess.STDOUT, encoding='utf-8')
     except Exception as exc:
         return jsonify({'error': 'failed to run task ' + task_id, 'detail': str(exc)}), 500
 
-    return jsonify({'ok': True})
+    return jsonify({'ok': True, 'detail': output})
 
 
 @app.route('/_edit', methods=['POST'])
@@ -630,11 +634,11 @@ def delete():
     return redirect(redirect_to + (f"?delete_msg={delete_msg}" if delete_msg else ""))
 
 
-@app.route('/_media')
+@app.route('/_media', methods=['GET'])
 def media_page():
     """Page to upload media and list recent uploads."""
     if not check_secret():
-        return jsonify(ACCESS_DENIED_MESSAGE_DICT), 403
+        return get_set_key_form()
 
     today = datetime.now()
     quarter_foldername = f"{today.year}-Q{((today.month - 1) // 3) + 1}"

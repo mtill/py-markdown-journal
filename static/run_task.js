@@ -10,7 +10,12 @@ async function run_task(task_id, param) {
                 const txt = await resp.text();
                 alert('Failed to sync: ' + resp.status + ' ' + txt);
             } else {
-                alert('task ' + task_id + ' executed.');
+                let msg = 'task ' + task_id + ' executed.';
+                const response_json = await resp.json();
+                if ('detail' in response_json) {
+                    msg = msg + "\n" + response_json['detail'];
+                }
+                alert(msg);
             }
         } catch (err) {
             console.error(err);
