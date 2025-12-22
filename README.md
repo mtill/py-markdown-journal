@@ -17,15 +17,21 @@ this software aims to provide a tool for organizing your knowledge base:
 
 
 ## how to run
-- run the __notesserver.py__ script: ./notesserver.py [PORT]
-- ... or, use gunicorn:
-  gunicorn -w 2 -b 127.0.0.1:5000 --pythonpath .scripts notesserver:app
+<code>
+cd YOUR-MARKDOWN-FOLDER
+export NOTESSERVER\_CONFIG\_FILE=.config.json (optional, if you'd like to specify a config file)
+</code>
+
+Then,
+- run the __notesserver__ module: PYTHONPATH=PATH-TO-PY-MARKDOWN-JOURNAL-PROJECT python3 -m notesserver 5000
 - ... or, use waitress:
-  PYTHONPATH=.scripts NOTESSERVER_CONFIG_FILE=.config.json waitress-serve --listen=localhost:5000 notesserver:app
+  PYTHONPATH=PATH-TO-PY-MARKDOWN-JOURNAL-PROJECT waitress-serve --listen=localhost:5000 --call notesserver:create\_app
+- ... or, use gunicorn:
+  gunicorn -w 2 -b 127.0.0.1:5000 --pythonpath PATH-TO-PY-MARKDOWN-JOURNAL-PROJECT "notesserver:create\_app()"
 
 
 ## configuration
-    Optionally, a config file can be provided. Therefore, set the NOTESSERVER_CONFIG_FILE environment variable, pointing to the path of that config file. The following parameters can be specified:
+    Optionally, a config file can be provided. Therefore, set the NOTESSERVER\_CONFIG\_FILE environment variable, pointing to the path of that config file. The following parameters can be specified:
 
       NOTEBOOK_PATH = Path(config.get("NOTEBOOK_PATH", ".")).resolve()
       NOTEBOOK_NAME = config.get("NOTEBOOK_NAME", NOTEBOOK_PATH.name)
