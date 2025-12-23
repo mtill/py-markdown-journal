@@ -63,6 +63,7 @@ NO_ADDITIONAL_TAGS = config.get("NO_ADDITIONAL_TAGS", "[only selected tags]")
 INCLUDE_SUBTAGS = config.get("INCLUDE_SUBTAGS", True)
 
 TASKS = config.get("TASKS", {})
+BLUEPRINT_MODULES = config.get("BLUEPRINT_MODULES", [])
 
 JS_ENTRY_ID_FORMAT = "%Y%m%d_%H%M%S"
 MYPATH_TAG_REGEX = re.compile("\\s+")
@@ -290,35 +291,25 @@ def create_app():
     """Factory function to create and configure the Flask application."""
     app = Flask(__name__)
 
-    # 1. Locate the blueprints directory
-    blueprints_dir = Path(__file__).parent / "blueprints"
+    for url_prefix, blueprint_config in BLUEPRINT_MODULES.items():
+        module_name = blueprint_config["name"]
+        bp = Blueprint(module_name, __name__, url_prefix=url_prefix)
 
-    if blueprints_dir.is_dir():
-        for folder in blueprints_dir.iterdir():
-            # Skip hidden files/folders and __pycache__
-            if folder.is_dir() and not folder.name.startswith(("_", ".")):
-                
-                module_name = folder.name
-                
-                # 2. Create the Blueprint object HERE
-                # We can dynamically set the url_prefix based on folder name
-                bp = Blueprint(module_name, __name__, url_prefix=f"/{module_name}")
-                
-                # 3. Import the routes module from that folder
-                try:
-                    module_path = f"py-markdown-journal.blueprints.{module_name}.routes"
-                    module = importlib.import_module(module_path)
-                    
-                    # 4. Call a standard function name to "register" routes onto our bp
-                    if hasattr(module, "register_routes"):
-                        module.register_routes(bp)
-                        
-                        # 5. Finally, register the fully configured BP to the app
-                        app.register_blueprint(bp)
-                        print(f"Registered blueprint: {module_name}")
-                        
-                except ImportError as e:
-                    print(f"Skipping {module_name}: {e}")
+        # Import the routes module
+        try:
+            #module_path = f"py-markdown-journal.blueprints.{module_name}.routes"
+            module = importlib.import_module(blueprint_config["path"])
+
+            # Call a standard function name to "register" routes onto our bp
+            if hasattr(module, "register_routes"):
+                module.register_routes(bp)
+
+                # Finally, register the fully configured BP to the app
+                app.register_blueprint(bp)
+                print(f"Registered blueprint: {url_prefix} -> {module_name}")
+
+        except ImportError as e:
+            print(f"Skipping {module_name}: {e}")
 
 
     @app.route('/', methods=['GET'])
