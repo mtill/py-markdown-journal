@@ -291,25 +291,12 @@ def create_app():
     """Factory function to create and configure the Flask application."""
     app = Flask(__name__)
 
-    for url_prefix, blueprint_config in BLUEPRINT_MODULES.items():
-        module_name = blueprint_config["name"]
-        bp = Blueprint(module_name, __name__, url_prefix=url_prefix)
+    for url_prefix, blueprint_path in BLUEPRINT_MODULES.items():
+        blueprint_module = importlib.import_module(blueprint_path)
 
-        # Import the routes module
-        try:
-            #module_path = f"py-markdown-journal.blueprints.{module_name}.routes"
-            module = importlib.import_module(blueprint_config["path"])
-
-            # Call a standard function name to "register" routes onto our bp
-            if hasattr(module, "register_routes"):
-                module.register_routes(bp)
-
-                # Finally, register the fully configured BP to the app
-                app.register_blueprint(bp)
-                print(f"Registered blueprint: {url_prefix} -> {module_name}")
-
-        except ImportError as e:
-            print(f"Skipping {module_name}: {e}")
+        if hasattr(blueprint_module, "bp"):
+            app.register_blueprint(blueprint_module.bp, url_prefix=url_prefix)
+            print(f"Registered blueprint: {url_prefix} -> {blueprint_path}")
 
 
     @app.route('/', methods=['GET'])

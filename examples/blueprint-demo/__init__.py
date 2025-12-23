@@ -1,7 +1,10 @@
-def register_routes(bp):
+from flask import Blueprint
 
-    @bp.route('/hello')
-    def login():
-        return "Hello world"
+
+bp = Blueprint('demo', __name__)
+
+@bp.route('/hello')
+def login():
+    return "Hello world"
 
 
