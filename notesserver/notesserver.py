@@ -63,7 +63,7 @@ NO_ADDITIONAL_TAGS = config.get("NO_ADDITIONAL_TAGS", "[only selected tags]")
 INCLUDE_SUBTAGS = config.get("INCLUDE_SUBTAGS", True)
 
 TASKS = config.get("TASKS", {})
-BLUEPRINT_MODULES = config.get("BLUEPRINT_MODULES", [])
+BLUEPRINT_MODULES = config.get("BLUEPRINT_MODULES", {})
 
 JS_ENTRY_ID_FORMAT = "%Y%m%d_%H%M%S"
 MYPATH_TAG_REGEX = re.compile("\\s+")
