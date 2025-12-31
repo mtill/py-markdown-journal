@@ -161,9 +161,7 @@ def get_entries(start_date, stop_date, related_tags, selected_tags, q):
                 relevant_files.append(journal_file)
 
         else:   # journal file name did not match regex, not sure what's in --> parsing that file:", journal_file.name)
-            journal_file_latest_date = datetime.fromtimestamp(journal_file.stat().st_mtime)
-            if not (start_date > journal_file_latest_date):
-                relevant_files.append(journal_file)
+            relevant_files.append(journal_file)
 
     for journal_file in relevant_files:
         parsed_entries = parseEntries(thepath=journal_file, notebookpath=NOTEBOOK_PATH, date_format=JOURNAL_ENTRY_DATE_FORMAT)["entries"]
