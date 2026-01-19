@@ -17,6 +17,7 @@ TAG_NAMESPACE_SEPARATOR = "_"
 ENTRY_PREFIX = "### "
 TAG_PREFIX = r"x"
 TAG_REGEX = re.compile(r'((?:^|\s+))' + TAG_PREFIX + r'(\w+)\b')
+LINK_REGEX = re.compile(r'(?<!!)\[(.*?)\]\((.*?)\)')
 entryregexes = [[re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) ?(.*)'), "%Y-%m-%d %H:%M:%S"],
                 [re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}) ?(.*)'), "%Y-%m-%d %H:%M"],
                 [re.compile(r'(\d{4}-\d{2}-\d{2}) ?(.*)'), "%Y-%m-%d"],
@@ -123,6 +124,19 @@ def prettyTable(table, rightAlign=False):
     return result
 
 
+def _findTags(line, tag_dict, notebookpath):
+    for l in TAG_REGEX.findall(line):
+        tag_dict[l[1].lower()] = True
+    for l in LINK_REGEX.findall(line):
+        lt = l[1]
+        if lt.startswith("/"):
+            lt = lt[1:]
+        lt = (notebookpath / lt).relative_to(notebookpath).as_posix()
+        if lt.endswith(MARKDOWN_SUFFIX):
+            lt = lt[:-len(MARKDOWN_SUFFIX)]
+        tag_dict[lt] = True
+
+
 def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG, date_format=None):
     entries = []
     prefix = []
@@ -180,8 +194,7 @@ def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG, date_format=No
                 lasttime = thedate
                 lastcontent = [line]
                 lasttags = {}
-                for l in TAG_REGEX.findall(line):
-                    lasttags[l[1].lower()] = True
+                _findTags(line=line, tag_dict=lasttags, notebookpath=notebookpath)
                 lastpos = pos + 1
             else:
 
@@ -189,8 +202,7 @@ def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG, date_format=No
                     prefix.append(line)
                 else:
                     lastcontent.append(line)
-                    for l in TAG_REGEX.findall(line):
-                        lasttags[l[1].lower()] = True
+                    _findTags(line=line, tag_dict=lasttags, notebookpath=notebookpath)
 
         if len(lastcontent) != 0:
             _stripcontent(thecontent=lastcontent)
