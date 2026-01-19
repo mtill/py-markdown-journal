@@ -127,6 +127,7 @@ def prettyTable(table, rightAlign=False):
 def _findTags(line, tag_dict, notebookpath):
     for l in TAG_REGEX.findall(line):
         tag_dict[l[1].lower()] = True
+
     for l in LINK_REGEX.findall(line):
         lt = l[1]
         if lt.startswith("/"):
@@ -134,6 +135,8 @@ def _findTags(line, tag_dict, notebookpath):
         lt = (notebookpath / lt).relative_to(notebookpath).as_posix()
         if lt.endswith(MARKDOWN_SUFFIX):
             lt = lt[:-len(MARKDOWN_SUFFIX)]
+
+        lt = lt.replace("/", TAG_NAMESPACE_SEPARATOR)
         tag_dict[lt] = True
 
 
