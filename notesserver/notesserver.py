@@ -239,12 +239,14 @@ def _get_backlinks(file_path: str):
         """
 
         db_path = NOTEBOOK_PATH / ".backlinks.sqlite"
-        with sqlite3.connect(db_path) as conn:
-            cursor = conn.execute("""
-                SELECT source FROM backlinks 
-                WHERE target = ?""", (file_path, ))
-            
-            results = [Path(row[0]) for row in cursor.fetchall()]
+        results = []
+        if db_path.is_file():
+            with sqlite3.connect(db_path) as conn:
+                cursor = conn.execute("""
+                    SELECT source FROM backlinks 
+                    WHERE target = ?""", (file_path, ))
+                
+                results = [Path(row[0]) for row in cursor.fetchall()]
 
         return sorted(results)
 
