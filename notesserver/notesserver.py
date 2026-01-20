@@ -6,6 +6,7 @@ import sys
 import os
 import re
 import html
+import sqlite3
 from pathlib import Path
 import subprocess
 import importlib
@@ -232,6 +233,22 @@ def get_entries(start_date, stop_date, related_tags, selected_tags, q):
     return result, regex_error
 
 
+def _get_backlinks(file_path: str):
+        """
+        Finds all files that link to the specified target.
+        """
+
+        db_path = NOTEBOOK_PATH / ".backlinks.sqlite"
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.execute("""
+                SELECT source FROM backlinks 
+                WHERE target = ?""", (file_path, ))
+            
+            results = [Path(row[0]) for row in cursor.fetchall()]
+
+        return sorted(results)
+
+
 def _find_tag_wiki_page(tag):
     tag_path_str = tag.replace(TAG_NAMESPACE_SEPARATOR, "/")
     tag_path = NOTEBOOK_PATH / (tag_path_str + MARKDOWN_SUFFIX)
@@ -385,6 +402,7 @@ def create_app():
 
 
             if INDEX_PAGE_NAME is not None and p.name == INDEX_PAGE_NAME and NO_JOURNAL_ENTRIES_ON_INDEX_PAGES:
+                backlinks = _get_backlinks(mypath)
                 rendered_html = render_template(
                     "main_nojournal.html",
                     NOTEBOOK_NAME=NOTEBOOK_NAME,
@@ -393,7 +411,8 @@ def create_app():
                     mypath_content=mypath_content,
                     headings=headings,
                     QUICKLAUNCH_HTML=QUICKLAUNCH_HTML,
-                    CUSTOM_HEADER_CONTENT=CUSTOM_HEADER_CONTENT
+                    CUSTOM_HEADER_CONTENT=CUSTOM_HEADER_CONTENT,
+                    backlinks=backlinks
                 )
                 response = make_response(rendered_html)
                 key = request.cookies.get(SECRET_COOKIE_NAME)
@@ -474,6 +493,7 @@ def create_app():
 
         latest_journal_page = "/" + ((JOURNAL_PATH / (today_date.strftime("%Y-Q") + str((today_date.month - 1)//3 + 1) + MARKDOWN_SUFFIX)).relative_to(NOTEBOOK_PATH).as_posix())
 
+        backlinks = _get_backlinks(mypath)
         rendered_html = render_template(
             "main.html",
             mypath=mypath,
@@ -497,7 +517,8 @@ def create_app():
             NO_ADDITIONAL_TAGS=NO_ADDITIONAL_TAGS,
             QUICKLAUNCH_HTML=QUICKLAUNCH_HTML,
             CUSTOM_HEADER_CONTENT=CUSTOM_HEADER_CONTENT,
-            ENTRY_PREFIX=ENTRY_PREFIX
+            ENTRY_PREFIX=ENTRY_PREFIX,
+            backlinks=backlinks
         )
         response = make_response(rendered_html)
         key = request.cookies.get(SECRET_COOKIE_NAME)
