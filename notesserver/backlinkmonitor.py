@@ -194,6 +194,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     notebookpath = Path(args.notebookpath).resolve()
 
-    host = 'localhost'
+    host = '127.0.0.1'
     main(notebookpath=notebookpath, host=host, port=args.port, use_polling=args.polling)
+
 

@@ -62,7 +62,7 @@ MEDIA_PATH = NOTEBOOK_PATH / config.get("MEDIA_PATH", "media")
 NO_ADDITIONAL_TAGS = config.get("NO_ADDITIONAL_TAGS", "[only selected tags]")
 INCLUDE_SUBTAGS = config.get("INCLUDE_SUBTAGS", True)
 
-BACKLINKS_SERVER_URL = config.get("BACKLINKS_SERVER_URL", "http://localhost:5001")
+BACKLINKS_SERVER_URL = config.get("BACKLINKS_SERVER_URL", "http://127.0.0.1:5001")
 
 TASKS = config.get("TASKS", {})
 BLUEPRINT_MODULES = config.get("BLUEPRINT_MODULES", {})
