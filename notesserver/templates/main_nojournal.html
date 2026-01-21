@@ -30,7 +30,7 @@
             <div class="toc-level-{{ level }}"><a href="#heading-{{ loop.index0 }}">{{ text }}</a></div>
         {% endfor %}
         </div>
-        {% if backlinks | length > 0 %}
+        {% if backlinks is not none and backlinks | length > 0 %}
         <div id="backlinks">
         <strong>backlinks</strong>
         {% for backlink in backlinks %}

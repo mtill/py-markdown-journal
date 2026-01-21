@@ -1,11 +1,17 @@
-import time
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+
 import argparse
+import json
 from pathlib import Path
 import sqlite3
 from noteslib import MARKDOWN_SUFFIX, LINK_REGEX
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from urllib.parse import unquote
 
 
 class BacklinkEngine:
@@ -29,6 +35,19 @@ class BacklinkEngine:
                     PRIMARY KEY (source, target)
                 )
             """)
+
+    def get_backlinks(self, file_path):
+        results = []
+
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.execute("""
+                SELECT source FROM backlinks 
+                WHERE target = ?""", (file_path, ))
+
+            results = [row[0] for row in cursor.fetchall()]
+
+        return sorted(results)
+
 
     def extract_links(self, file_path):
         links = set()
@@ -120,22 +139,49 @@ class MarkdownHandler(FileSystemEventHandler):
             self.engine.remove_file(Path(event.src_path))
 
 
-def main(notebookpath, use_polling=False):
-    engine = BacklinkEngine(notebookpath=notebookpath)
+def backlink_handler_factory(engine):
+    class BacklinkHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            # unquote() handles URL-encoded characters like %20 for spaces
+            # lstrip('/') removes the leading slash to get the filename
+            target_path = unquote(self.path).lstrip('/')
 
+            if not target_path:
+                self.send_error(400, "Bad Request: Please provide a path (e.g., /file.md)")
+                return
+
+            response = engine.get_backlinks(target_path)
+
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+
+            self.wfile.write(json.dumps(response).encode('utf-8'))
+
+    return BacklinkHandler
+
+
+def main(notebookpath, host, port, use_polling):
+    engine = BacklinkEngine(notebookpath=notebookpath)
     engine.catch_up()
 
     event_handler = MarkdownHandler(engine)
-    observer = PollingObserver(timeout=2) if use_polling else Observer()
+    observer = PollingObserver(timeout=5) if use_polling else Observer()
     observer.schedule(event_handler, notebookpath, recursive=True)
-    
+
     print(f"Monitoring {notebookpath}...")
     observer.start()
+
+    print(f"Serving backlinks on {host}:{port}...")
+    handler_class = backlink_handler_factory(engine=engine)
+    server = HTTPServer((host, port), handler_class)
+
     try:
-        while True:
-            time.sleep(1)
+        server.serve_forever()
     except KeyboardInterrupt:
+        server.server_close()
         observer.stop()
+
     observer.join()
 
 
@@ -144,8 +190,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--notebookpath")
     parser.add_argument("--polling", action="store_true")
+    parser.add_argument("--port", default=5001, type=int)
     args = parser.parse_args()
     notebookpath = Path(args.notebookpath).resolve()
 
-    main(notebookpath=notebookpath, use_polling=args.polling)
+    host = 'localhost'
+    main(notebookpath=notebookpath, host=host, port=args.port, use_polling=args.polling)
 

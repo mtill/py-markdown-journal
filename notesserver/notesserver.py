@@ -2,11 +2,10 @@
 # -*- coding: utf-8 -*-
 
 
-import sys
 import os
 import re
 import html
-import sqlite3
+import urllib
 from pathlib import Path
 import subprocess
 import importlib
@@ -15,7 +14,7 @@ import shutil
 from werkzeug.utils import secure_filename
 from .noteslib import parseEntries, writeFile, MARKDOWN_SUFFIX, ENTRY_PREFIX, TAG_PREFIX, TAG_NAMESPACE_SEPARATOR, TAG_REGEX, JOURNAL_FILE_REGEX
 from datetime import datetime, timedelta
-from flask import Flask, redirect, render_template, request, make_response, send_from_directory, jsonify, Blueprint
+from flask import Flask, redirect, render_template, request, make_response, send_from_directory, jsonify
 from markdown_it import MarkdownIt
 
 
@@ -62,6 +61,8 @@ MEDIA_PATH = NOTEBOOK_PATH / config.get("MEDIA_PATH", "media")
 
 NO_ADDITIONAL_TAGS = config.get("NO_ADDITIONAL_TAGS", "[only selected tags]")
 INCLUDE_SUBTAGS = config.get("INCLUDE_SUBTAGS", True)
+
+BACKLINKS_SERVER_URL = config.get("BACKLINKS_SERVER_URL", "http://localhost:5001")
 
 TASKS = config.get("TASKS", {})
 BLUEPRINT_MODULES = config.get("BLUEPRINT_MODULES", {})
@@ -234,21 +235,22 @@ def get_entries(start_date, stop_date, related_tags, selected_tags, q):
 
 
 def _get_backlinks(file_path: str):
-        """
-        Finds all files that link to the specified target.
-        """
+    if BACKLINKS_SERVER_URL is not None:
+        url = BACKLINKS_SERVER_URL + "/" + file_path
 
-        db_path = NOTEBOOK_PATH / ".backlinks.sqlite"
-        results = []
-        if db_path.is_file():
-            with sqlite3.connect(db_path) as conn:
-                cursor = conn.execute("""
-                    SELECT source FROM backlinks 
-                    WHERE target = ?""", (file_path, ))
-                
-                results = [Path(row[0]) for row in cursor.fetchall()]
+        try:
+            with urllib.request.urlopen(url) as response:
+                # 1. Read bytes and decode to string
+                bytes_data = response.read()
+                json_str = bytes_data.decode('utf-8')
 
-        return sorted(results)
+                # 2. Parse string into Python object
+                return json.loads(json_str)
+
+        except Exception as e:
+            print(f"Failed to fetch data: {e}")
+
+    return None
 
 
 def _find_tag_wiki_page(tag):
