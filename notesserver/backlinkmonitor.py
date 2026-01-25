@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 import sqlite3
-from noteslib import MARKDOWN_SUFFIX, LINK_REGEX
+from noteslib import parseEntries, MARKDOWN_SUFFIX, LINK_REGEX, TAG_NAMESPACE_SEPARATOR
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler
@@ -39,29 +39,34 @@ class BacklinkEngine:
     def get_backlinks(self, file_path):
         results = []
 
+        lt = file_path
+        if lt.startswith("/"):
+            lt = lt[1:]
+        lt = (self.notebookpath / lt).relative_to(self.notebookpath).as_posix()
+        if lt.endswith(MARKDOWN_SUFFIX):
+            lt = lt[:-len(MARKDOWN_SUFFIX)]
+
+        lt = lt.replace("/", TAG_NAMESPACE_SEPARATOR)
+
+
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute("""
                 SELECT source FROM backlinks 
-                WHERE target = ?""", (file_path, ))
+                WHERE target = ?""", (lt, ))
 
             results = [row[0] for row in cursor.fetchall()]
 
         return sorted(results)
 
-
     def extract_links(self, file_path):
+        parsedEntries = parseEntries(thepath=file_path, notebookpath=self.notebookpath)
         links = set()
-        try:
-            content = file_path.read_text(encoding="utf-8")
-        except Exception as e:
-            print(f"could not read {file_path}: {e}")
+        for t in parsedEntries["prefixTags"]:
+            links.add(t)
 
-        for l in LINK_REGEX.findall(content):
-            lt = l[1]
-            if lt.startswith("/"):
-                lt = lt[1:]
-            lt = (notebookpath / lt).relative_to(notebookpath).as_posix()
-            links.add(lt)
+        for e in parsedEntries["entries"]:
+            for t in e["tags"]:
+                links.add(t)
 
         return links
 
@@ -77,7 +82,7 @@ class BacklinkEngine:
             abs_path = "/" + (self.notebookpath / file_path).relative_to(self.notebookpath).as_posix()
             cursor = conn.execute("SELECT last_mtime FROM files WHERE path = ?", (abs_path,))
             row = cursor.fetchone()
-            
+
             if row and row[0] >= mtime:
                 return 
 
@@ -86,7 +91,7 @@ class BacklinkEngine:
             for link in links:
                 conn.execute("INSERT OR IGNORE INTO backlinks (source, target) VALUES (?, ?)", 
                              (abs_path, link))
-            
+
             conn.execute("INSERT OR REPLACE INTO files (path, last_mtime) VALUES (?, ?)", 
                          (abs_path, mtime))
             print(f"🔄 Synced: {abs_path}")
@@ -111,14 +116,14 @@ class BacklinkEngine:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute("SELECT path FROM files")
             stored_paths = [row[0] for row in cursor.fetchall()]
-            
+
             for path_str in stored_paths:
                 if path_str.startswith("/"):
                     path_str = "." + path_str
                 path_file = self.notebookpath / path_str
                 if not path_file.exists():
                     self.remove_file(path_file)
-        
+
         print("✅ Catch-up complete.")
 
 

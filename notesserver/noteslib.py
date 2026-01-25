@@ -143,9 +143,8 @@ def _findTags(line, tag_dict, notebookpath):
 def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG, date_format=None):
     entries = []
     prefix = []
+    prefixTags = {}
     originPath = thepath.parent
-    if untaggedtag is not None:
-        untaggedtag = untaggedtag.lower()
 
     with open(thepath, "r", encoding="utf-8") as f:
         lasttime = None
@@ -203,6 +202,7 @@ def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG, date_format=No
 
                 if lasttime is None:
                     prefix.append(line)
+                    _findTags(line=line, tag_dict=prefixTags, notebookpath=notebookpath)
                 else:
                     lastcontent.append(line)
                     _findTags(line=line, tag_dict=lasttags, notebookpath=notebookpath)
@@ -222,5 +222,8 @@ def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG, date_format=No
                             "anchorlocation": ("/" + rel_path.as_posix() + "#" + lastanchor)
                           })
 
-    return {"prefix": prefix, "entries": entries}
+    if untaggedtag is not None and len(prefixTags) == 0:
+        prefixTags = {untaggedtag: True}
+
+    return {"prefix": prefix, "prefixTags": prefixTags, "entries": entries}
 
