@@ -14,10 +14,14 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import unquote
 
 
+DB_VERSION = "1_1"
+BACKLINKS_FILENAME = ".backlinks_v" + DB_VERSION + ".sqlite"
+
+
 class BacklinkEngine:
     def __init__(self, notebookpath):
         self.notebookpath = notebookpath
-        self.db_path = notebookpath / ".backlinks.sqlite"
+        self.db_path = notebookpath / BACKLINKS_FILENAME
         self._init_db()
 
     def _init_db(self):
