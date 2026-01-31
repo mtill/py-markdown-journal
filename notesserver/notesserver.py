@@ -483,15 +483,23 @@ def create_app():
         for a in available_tags:
             tagWikiPages[a] = _find_tag_wiki_page(tag=a)
 
-        new_entry_tags = list(NEW_JOURNAL_ENTRY_DEFAULT_TAGS_LIST)
-        if mypath_tag is not None and mypath_tag not in new_entry_tags:
+        new_entry_tags = []
+        if mypath_tag is not None:
             new_entry_tags.append(mypath_tag)
         for s_t in selected_tags:
-            if s_t != NO_ADDITIONAL_TAGS and s_t != mypath_tag and s_t not in new_entry_tags:
+            if s_t != NO_ADDITIONAL_TAGS and s_t not in new_entry_tags:
                 new_entry_tags.append(s_t)
 
+        for n_e_t in NEW_JOURNAL_ENTRY_DEFAULT_TAGS_LIST:
+            if n_e_t not in new_entry_tags:
+                new_entry_tags.append(n_e_t)
+
         new_entry_tags_str = None
+        #if mypath_tag is not None:
+        #    new_entry_tags_str = "[" + title + "](" + title + ")"
+
         if len(new_entry_tags) > 0:
+            #("" if new_entry_tags_str is None else (new_entry_tags_str + " "))
             new_entry_tags_str = " ".join([TAG_PREFIX + t for t in new_entry_tags])
 
         latest_journal_page = "/" + ((JOURNAL_PATH / (today_date.strftime("%Y-Q") + str((today_date.month - 1)//3 + 1) + MARKDOWN_SUFFIX)).relative_to(NOTEBOOK_PATH).as_posix())
