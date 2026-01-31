@@ -12,7 +12,7 @@ import importlib
 import json
 import shutil
 from werkzeug.utils import secure_filename
-from .noteslib import parseEntries, writeFile, MARKDOWN_SUFFIX, ENTRY_PREFIX, TAG_PREFIX, TAG_NAMESPACE_SEPARATOR, TAG_REGEX, JOURNAL_FILE_REGEX
+from .noteslib import parseEntries, findTags, writeFile, updateLinks, MARKDOWN_SUFFIX, ENTRY_PREFIX, TAG_REGEX, TAG_PREFIX, TAG_NAMESPACE_SEPARATOR, JOURNAL_FILE_REGEX
 from datetime import datetime, timedelta
 from flask import Flask, redirect, render_template, request, make_response, send_from_directory, jsonify
 from markdown_it import MarkdownIt
@@ -290,9 +290,7 @@ def parseMarkdown(p):
     if p.is_file():
         with open(p, "r", encoding="utf-8") as f:
             for line in f:
-                for line_tag in TAG_REGEX.findall(line):
-                    line_tag = line_tag[1].lower()
-                    related_tags[line_tag] = True
+                findTags(line=line, tag_dict=related_tags, notebookpath=NOTEBOOK_PATH)
 
                 heading_match = HEADING_REGEX.match(line)
                 if heading_match:
@@ -302,6 +300,7 @@ def parseMarkdown(p):
                     line = f'<h{heading_level} id="heading-{heading_counter}">{heading_text}</h{heading_level}>\n\n'
                     heading_counter += 1
 
+                line = updateLinks(content=line, notebookPath=NOTEBOOK_PATH, originPath=p.parent)
                 mypath_content.append(_emphasize_tag_in_line(line=line))
 
         mypath_content = md.render("".join(mypath_content))

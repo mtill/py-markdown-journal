@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 import sqlite3
-from noteslib import parseEntries, MARKDOWN_SUFFIX, LINK_REGEX, TAG_NAMESPACE_SEPARATOR
+from noteslib import parseEntries, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler

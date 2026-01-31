@@ -17,7 +17,6 @@ TAG_NAMESPACE_SEPARATOR = "_"
 ENTRY_PREFIX = "### "
 TAG_PREFIX = r"x"
 TAG_REGEX = re.compile(r'((?:^|\s+))' + TAG_PREFIX + r'(\w+)\b')
-LINK_REGEX = re.compile(r'(?<!!)\[(.*?)\]\((.*?)\)')
 entryregexes = [[re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) ?(.*)'), "%Y-%m-%d %H:%M:%S"],
                 [re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}) ?(.*)'), "%Y-%m-%d %H:%M"],
                 [re.compile(r'(\d{4}-\d{2}-\d{2}) ?(.*)'), "%Y-%m-%d"],
@@ -26,7 +25,7 @@ entryregexes = [[re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) ?(.*)'), "%Y
                ]
 anchor_regex = re.compile(r'[^\w-]')
 JOURNAL_FILE_REGEX = re.compile(r'(\d\d\d\d)-Q([1-4])\.md$')
-relativeImageOrLinkRegex = re.compile(r'(!?)\[([^\]]*)\]\(([^\)]*)\)')
+IMAGE_OR_LINK_REGEX = re.compile(r'(!?)\[([^\]]*)\]\(([^\)]*)\)')
 
 
 def _stripcontent(thecontent):
@@ -42,9 +41,15 @@ def _get_anchor(headline_without_entry_prefix):
 
 
 def __replaceLinkMatch(l, notebookPath, originPath, destinationPathAbsolute=None):
+    linkPrefix = l.group(1)
+    linkText = l.group(2)
     thelink = l.group(3)
+
+    if len(linkPrefix) == 0 and (len(linkText) == 0 or linkText == "link"):
+        linkText = thelink
+
     if "://" in thelink:
-        return l.group(1) + "[" + l.group(2) + "](" + thelink + ")"
+        return linkPrefix + "[" + linkText + "](" + thelink + ")"
 
     if thelink.startswith("/"):
         rellink = (notebookPath / thelink[1:]).resolve()
@@ -54,14 +59,13 @@ def __replaceLinkMatch(l, notebookPath, originPath, destinationPathAbsolute=None
     else:
         rellink = (originPath / thelink).resolve()
 
-    resultPathStr = None
     if destinationPathAbsolute is None:
-        resultPathStr = "/" + rellink.relative_to(notebookPath).as_posix()
+        thelink = "/" + rellink.relative_to(notebookPath).as_posix()
     else:
         # python >= 3.12: rellink.relative_to(destinationPath, walk_up=True).as_posix()
-        resultPathStr = Path(os.path.relpath(path=rellink.absolute(), start=destinationPathAbsolute)).as_posix()
+        thelink = Path(os.path.relpath(path=rellink.absolute(), start=destinationPathAbsolute)).as_posix()
 
-    return l.group(1) + "[" + l.group(2) + "](" + resultPathStr + ")"
+    return linkPrefix + "[" + linkText + "](" + thelink + ")"
 
 
 def createQuarterFile(today, thepath, fileprefix, filesuffix="", filecontent="\n"):
@@ -75,7 +79,7 @@ def createQuarterFile(today, thepath, fileprefix, filesuffix="", filecontent="\n
 
 
 def updateLinks(content, notebookPath, originPath, destinationPathAbsolute=None):
-    return relativeImageOrLinkRegex.sub(lambda x: __replaceLinkMatch(l=x, notebookPath=notebookPath, originPath=originPath, destinationPathAbsolute=destinationPathAbsolute), content)
+    return IMAGE_OR_LINK_REGEX.sub(lambda x: __replaceLinkMatch(l=x, notebookPath=notebookPath, originPath=originPath, destinationPathAbsolute=destinationPathAbsolute), content)
 
 
 def writeFile(filepath, prefix, entries, mode="w", reverse=False, addLocation=False):
@@ -124,20 +128,21 @@ def prettyTable(table, rightAlign=False):
     return result
 
 
-def _findTags(line, tag_dict, notebookpath):
+def findTags(line, tag_dict, notebookpath):
     for l in TAG_REGEX.findall(line):
         tag_dict[l[1].lower()] = True
 
-    for l in LINK_REGEX.findall(line):
-        lt = l[1]
-        if lt.startswith("/"):
-            lt = lt[1:]
-        lt = (notebookpath / lt).relative_to(notebookpath).as_posix()
-        if lt.endswith(MARKDOWN_SUFFIX):
-            lt = lt[:-len(MARKDOWN_SUFFIX)]
+    for l in IMAGE_OR_LINK_REGEX.findall(line):
+        if len(l[0]) == 0:   # ignore images
+            lt = l[2]
+            if lt.startswith("/"):
+                lt = lt[1:]
+            lt = (notebookpath / lt).relative_to(notebookpath).as_posix()
+            if lt.endswith(MARKDOWN_SUFFIX):
+                lt = lt[:-len(MARKDOWN_SUFFIX)]
 
-        lt = lt.replace("/", TAG_NAMESPACE_SEPARATOR)
-        tag_dict[lt] = True
+            lt = lt.replace("/", TAG_NAMESPACE_SEPARATOR)
+            tag_dict[lt] = True
 
 
 def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG, date_format=None):
@@ -196,16 +201,16 @@ def parseEntries(thepath, notebookpath, untaggedtag=UNTAGGED_TAG, date_format=No
                 lasttime = thedate
                 lastcontent = [line]
                 lasttags = {}
-                _findTags(line=line, tag_dict=lasttags, notebookpath=notebookpath)
+                findTags(line=line, tag_dict=lasttags, notebookpath=notebookpath)
                 lastpos = pos + 1
             else:
 
                 if lasttime is None:
                     prefix.append(line)
-                    _findTags(line=line, tag_dict=prefixTags, notebookpath=notebookpath)
+                    findTags(line=line, tag_dict=prefixTags, notebookpath=notebookpath)
                 else:
                     lastcontent.append(line)
-                    _findTags(line=line, tag_dict=lasttags, notebookpath=notebookpath)
+                    findTags(line=line, tag_dict=lasttags, notebookpath=notebookpath)
 
         if len(lastcontent) != 0:
             _stripcontent(thecontent=lastcontent)
