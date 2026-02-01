@@ -225,9 +225,7 @@ def get_entries(start_date, stop_date, related_tags, selected_tags, q):
                 for t in entry.get('content', []):
                     if regex.search(t):
                         return True
-                for t in entry.get('tags', []):
-                    if regex.search(t):
-                        return True
+
                 return False
             result = [e for e in result if matches_regex(e)]
 
