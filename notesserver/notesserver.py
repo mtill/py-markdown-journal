@@ -12,7 +12,7 @@ import importlib
 import json
 import shutil
 from werkzeug.utils import secure_filename
-from .noteslib import parseEntries, findTags, writeFile, updateLinks, MARKDOWN_SUFFIX, ENTRY_PREFIX, TAG_REGEX, TAG_PREFIX, TAG_NAMESPACE_SEPARATOR, JOURNAL_FILE_REGEX
+from .noteslib import parseEntries, findTags, writeFile, updateLinks, taggifyLink, MARKDOWN_SUFFIX, ENTRY_PREFIX, TAG_REGEX, TAG_PREFIX, TAG_NAMESPACE_SEPARATOR, JOURNAL_FILE_REGEX, IMAGE_OR_LINK_REGEX
 from datetime import datetime, timedelta
 from flask import Flask, redirect, render_template, request, make_response, send_from_directory, jsonify
 from markdown_it import MarkdownIt
@@ -110,13 +110,24 @@ def remove_tag(rel_path: str, entryId: str, tag_to_remove: str):
 
     tag_removal_regex = re.compile("\\b" + TAG_PREFIX + re.escape(tag_to_remove) + "\\b", re.IGNORECASE)
 
+    def _replace_refs_to(match):
+        if len(match.group(1)) == 0:
+            lt = taggifyLink(lt=match.group(3), notebookpath=NOTEBOOK_PATH)
+            if lt == tag_to_remove:
+                return ""
+
+        return match.group(0)
+
     parsedEntries = parseEntries(thepath=journal_file, notebookpath=NOTEBOOK_PATH)
     for entry in parsedEntries["entries"]:
         if entry.get('date') == dt:
             newcontent = []
             for line in entry["content"]:
-                newcontent.append(tag_removal_regex.sub('', line))
-                #newcontent.append(re.sub("\\b" + TAG_PREFIX + tag_to_remove + "\\b", '', line, flags=re.IGNORECASE))
+                line = tag_removal_regex.sub('', line)
+                line = re.sub(IMAGE_OR_LINK_REGEX, _replace_refs_to, line)
+
+                newcontent.append(line)
+            
 
             entry["content"] = newcontent
             if tag_to_remove in entry["tags"]:

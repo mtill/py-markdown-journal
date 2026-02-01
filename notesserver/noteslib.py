@@ -128,6 +128,16 @@ def prettyTable(table, rightAlign=False):
     return result
 
 
+def taggifyLink(lt, notebookpath):
+    if lt.startswith("/"):
+        lt = lt[1:]
+    lt = (notebookpath / lt).relative_to(notebookpath).as_posix()
+    if lt.endswith(MARKDOWN_SUFFIX):
+        lt = lt[:-len(MARKDOWN_SUFFIX)]
+
+    return lt.replace("/", TAG_NAMESPACE_SEPARATOR)
+
+
 def findTags(line, tag_dict, notebookpath):
     for l in TAG_REGEX.findall(line):
         tag_dict[l[1].lower()] = True
@@ -135,13 +145,7 @@ def findTags(line, tag_dict, notebookpath):
     for l in IMAGE_OR_LINK_REGEX.findall(line):
         if len(l[0]) == 0:   # ignore images
             lt = l[2]
-            if lt.startswith("/"):
-                lt = lt[1:]
-            lt = (notebookpath / lt).relative_to(notebookpath).as_posix()
-            if lt.endswith(MARKDOWN_SUFFIX):
-                lt = lt[:-len(MARKDOWN_SUFFIX)]
-
-            lt = lt.replace("/", TAG_NAMESPACE_SEPARATOR)
+            lt = taggifyLink(lt=lt, notebookpath=notebookpath)
             tag_dict[lt] = True
 
 
