@@ -44,6 +44,7 @@ DEFAULT_JOURNAL_TIMEWINDOW_IN_WEEKS = config.get('DEFAULT_JOURNAL_TIMEWINDOW_IN_
 JOURNAL_ENTRY_DATE_FORMAT = config.get('JOURNAL_ENTRY_DATE_FORMAT', '%a %d.%m. %H:%M')
 
 NEW_JOURNAL_ENTRY_DEFAULT_TAGS_LIST = config.get('NEW_JOURNAL_ENTRY_DEFAULT_TAGS_LIST', ["inbox"])
+NEW_ENTRY_PREFER_REFS = config.get('NEW_ENTRY_PREFER_REFS', False)
 SORT_TAGS_BY_NAME = config.get('SORT_TAGS_BY_NAME', False)
 HIDE_DOTFILES = config.get('HIDE_DOTFILES', True)
 
@@ -492,24 +493,32 @@ def create_app():
         for a in available_tags:
             tagWikiPages[a] = _find_tag_wiki_page(tag=a)
 
-        new_entry_tags = []
+        new_entry_entries = []
         if mypath_tag is not None:
-            new_entry_tags.append(mypath_tag)
-        for s_t in selected_tags:
-            if s_t != NO_ADDITIONAL_TAGS and s_t not in new_entry_tags:
-                new_entry_tags.append(s_t)
+            new_entry_entries.append(mypath_tag)
+            #new_entry_entries.append("[" + title + "](" + title + ")")
 
-        for n_e_t in NEW_JOURNAL_ENTRY_DEFAULT_TAGS_LIST:
-            if n_e_t not in new_entry_tags:
-                new_entry_tags.append(n_e_t)
+        for s_t in selected_tags:
+            if s_t != NO_ADDITIONAL_TAGS and s_t not in new_entry_entries:
+                new_entry_entries.append(s_t)
+
+        for new_tag_ref in NEW_JOURNAL_ENTRY_DEFAULT_TAGS_LIST:
+            if new_tag_ref not in new_entry_entries:
+                new_entry_entries.append(new_tag_ref)
 
         new_entry_tags_str = None
-        #if mypath_tag is not None:
-        #    new_entry_tags_str = "[" + title + "](" + title + ")"
+        if len(new_entry_entries) > 0:
+            new_entry_entries2 = []
+            for i in new_entry_entries:
+                if NEW_ENTRY_PREFER_REFS:
+                    n_e_file = _find_tag_wiki_page(tag=i)[0]
+                    new_entry_entries2.append("[" + n_e_file + "](" + n_e_file + ")")
+                else:
+                    new_entry_entries2.append(TAG_PREFIX + i)
 
-        if len(new_entry_tags) > 0:
-            #("" if new_entry_tags_str is None else (new_entry_tags_str + " "))
-            new_entry_tags_str = " ".join([TAG_PREFIX + t for t in new_entry_tags])
+            new_entry_entries = new_entry_entries2
+
+            new_entry_tags_str = " ".join(new_entry_entries)
 
         latest_journal_page = "/" + ((JOURNAL_PATH / (today_date.strftime("%Y-Q") + str((today_date.month - 1)//3 + 1) + MARKDOWN_SUFFIX)).relative_to(NOTEBOOK_PATH).as_posix())
 
