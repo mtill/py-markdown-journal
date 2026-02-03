@@ -14,7 +14,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import unquote
 
 
-DB_VERSION = "1_1"
+DB_VERSION = "1_2"
 BACKLINKS_FILENAME = ".backlinks_v" + DB_VERSION + ".sqlite"
 
 
@@ -50,7 +50,7 @@ class BacklinkEngine:
         if lt.endswith(MARKDOWN_SUFFIX):
             lt = lt[:-len(MARKDOWN_SUFFIX)]
 
-        lt = lt.replace("/", TAG_NAMESPACE_SEPARATOR)
+        lt = lt.replace("/", TAG_NAMESPACE_SEPARATOR).lower()
 
 
         with sqlite3.connect(self.db_path) as conn:
@@ -94,7 +94,7 @@ class BacklinkEngine:
             conn.execute("DELETE FROM backlinks WHERE source = ?", (abs_path,))
             for link in links:
                 conn.execute("INSERT OR IGNORE INTO backlinks (source, target) VALUES (?, ?)", 
-                             (abs_path, link))
+                             (abs_path, link.lower()))
 
             conn.execute("INSERT OR REPLACE INTO files (path, last_mtime) VALUES (?, ?)", 
                          (abs_path, mtime))
