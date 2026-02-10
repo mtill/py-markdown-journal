@@ -191,11 +191,15 @@ def get_entries(start_date, stop_date, related_tags, selected_tags, q):
             added_this = False
 
             for related_tag in related_tags:
-                for t in entry["tags"]:
-                    if related_tag == t or (INCLUDE_SUBTAGS and t.startswith(related_tag + TAG_NAMESPACE_SEPARATOR)):
-                        result_tmp.append(entry)
-                        added_this = True
-                        break
+                if INCLUDE_SUBTAGS and len(related_tag) == 0:   # if INCLUDE_SUBTAGS is true, list all entries on /index.md page
+                    result_tmp.append(entry)
+                    added_this = True
+                else:
+                    for t in entry["tags"]:
+                        if related_tag == t or (INCLUDE_SUBTAGS and t.startswith(related_tag + TAG_NAMESPACE_SEPARATOR)):
+                            result_tmp.append(entry)
+                            added_this = True
+                            break
 
                 if added_this:
                     break
@@ -292,7 +296,10 @@ def parseMarkdown(p):
         mypath_relative_parts.pop()
     else:
         mypath_relative_parts[-1] = p.stem
-    if len(mypath_relative_parts) != 0:
+
+    if len(mypath_relative_parts) == 0:
+        related_tags[""] = True   # special case: iff page is index.md, then tag is empty string -> later, consider subpages as relevant
+    else:
         mypath_relative_parts = map(lambda s: MYPATH_TAG_REGEX.sub("", s).lower(), mypath_relative_parts)
         mypath_tag = TAG_NAMESPACE_SEPARATOR.join(mypath_relative_parts)
         related_tags[mypath_tag] = True
