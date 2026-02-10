@@ -278,10 +278,12 @@ h6 {
 
 pre {
     white-space: pre-wrap;
+    word-break: normal;
 }
 
 code {
     font-family: monospace;
     white-space: pre-wrap;
+    word-break: normal;
 }
 
