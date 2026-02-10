@@ -191,15 +191,11 @@ def get_entries(start_date, stop_date, related_tags, selected_tags, q):
             added_this = False
 
             for related_tag in related_tags:
-                if INCLUDE_SUBTAGS and len(related_tag) == 0:   # if INCLUDE_SUBTAGS is true, list all entries on /index.md page
-                    result_tmp.append(entry)
-                    added_this = True
-                else:
-                    for t in entry["tags"]:
-                        if related_tag == t or (INCLUDE_SUBTAGS and t.startswith(related_tag + TAG_NAMESPACE_SEPARATOR)):
-                            result_tmp.append(entry)
-                            added_this = True
-                            break
+                for t in entry["tags"]:
+                    if related_tag == t or (INCLUDE_SUBTAGS and t.startswith(related_tag + TAG_NAMESPACE_SEPARATOR)):
+                        result_tmp.append(entry)
+                        added_this = True
+                        break
 
                 if added_this:
                     break
@@ -286,6 +282,7 @@ def parseMarkdown(p):
     mypath_content = []
     mypath_tag = None
     related_tags = {}
+    is_root = True
     headings = []
     heading_counter = 0
 
@@ -297,17 +294,17 @@ def parseMarkdown(p):
     else:
         mypath_relative_parts[-1] = p.stem
 
-    if len(mypath_relative_parts) == 0:
-        related_tags[""] = True   # special case: iff page is index.md, then tag is empty string -> later, consider subpages as relevant
-    else:
+    if len(mypath_relative_parts) != 0:
         mypath_relative_parts = map(lambda s: MYPATH_TAG_REGEX.sub("", s).lower(), mypath_relative_parts)
         mypath_tag = TAG_NAMESPACE_SEPARATOR.join(mypath_relative_parts)
         related_tags[mypath_tag] = True
+        is_root = False
 
     if p.is_file():
         with open(p, "r", encoding="utf-8") as f:
             for line in f:
-                findTags(line=line, tag_dict=related_tags, notebookpath=NOTEBOOK_PATH)
+                if not is_root and INCLUDE_SUBTAGS:   # special case: if INCLUDE_SUBTAGS is set, list all entries on /index.md
+                    findTags(line=line, tag_dict=related_tags, notebookpath=NOTEBOOK_PATH)
 
                 heading_match = HEADING_REGEX.match(line)
                 if heading_match:
