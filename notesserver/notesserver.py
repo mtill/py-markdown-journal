@@ -282,28 +282,31 @@ def parseMarkdown(p):
     mypath_content = []
     mypath_tag = None
     related_tags = {}
-    is_root = True
+    include_all_entries = False   # will be set to True iff on /index.md page and INCLUDE_SUBTAGS is True - in this special case, include ALL journal entries on the page later
     headings = []
     heading_counter = 0
 
     mypath_relative = p.relative_to(NOTEBOOK_PATH)
     title = "/" + mypath_relative.as_posix()
     mypath_relative_parts = list(mypath_relative.parts)
-    if INDEX_PAGE_NAME is not None and p.name == INDEX_PAGE_NAME:
-        mypath_relative_parts.pop()
-    else:
-        mypath_relative_parts[-1] = p.stem
-
     if len(mypath_relative_parts) != 0:
+        if INDEX_PAGE_NAME is not None and p.name == INDEX_PAGE_NAME:
+            mypath_relative_parts.pop()
+        else:
+            mypath_relative_parts[-1] = p.stem
+
+    if len(mypath_relative_parts) == 0:
+        if INCLUDE_SUBTAGS:
+            include_all_entries = True
+    else:
         mypath_relative_parts = map(lambda s: MYPATH_TAG_REGEX.sub("", s).lower(), mypath_relative_parts)
         mypath_tag = TAG_NAMESPACE_SEPARATOR.join(mypath_relative_parts)
         related_tags[mypath_tag] = True
-        is_root = False
 
     if p.is_file():
         with open(p, "r", encoding="utf-8") as f:
             for line in f:
-                if not is_root and INCLUDE_SUBTAGS:   # special case: if INCLUDE_SUBTAGS is set, list all entries on /index.md
+                if not include_all_entries:
                     findTags(line=line, tag_dict=related_tags, notebookpath=NOTEBOOK_PATH)
 
                 heading_match = HEADING_REGEX.match(line)
