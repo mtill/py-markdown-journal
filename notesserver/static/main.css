@@ -276,3 +276,12 @@ h6 {
     .entry h3 { margin-right: 0; cursor: pointer; }
 }
 
+pre {
+    white-space: pre-wrap;
+}
+
+code {
+    font-family: monospace;
+    white-space: pre-wrap;
+}
+
