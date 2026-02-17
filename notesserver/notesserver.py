@@ -16,6 +16,8 @@ from .noteslib import parseEntries, findTags, writeFile, updateLinks, taggifyLin
 from datetime import datetime, timedelta
 from flask import Flask, redirect, render_template, request, make_response, send_from_directory, jsonify
 from markdown_it import MarkdownIt
+from mdit_py_plugins.attrs import attrs_plugin
+from mdit_py_plugins.footnote import footnote_plugin
 
 
 config = {}
@@ -35,7 +37,7 @@ def _set_editor_path(command_list):
     return command_list
 
 
-md = MarkdownIt("gfm-like")
+md = MarkdownIt("gfm-like", {'breaks': True}).use(attrs_plugin).use(footnote_plugin)
 
 NOTEBOOK_PATH = Path(config.get("NOTEBOOK_PATH", ".")).resolve()
 NOTEBOOK_NAME = config.get("NOTEBOOK_NAME", NOTEBOOK_PATH.name)
