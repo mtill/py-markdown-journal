@@ -144,8 +144,12 @@ def remove_tag(rel_path: str, entryId: str, tag_to_remove: str):
     return False, "remove_tag: entry not found for id: " + entryId
 
 
+def _link_tag_pages(m):
+    tag_page = _find_tag_wiki_page(tag=m.group(2))
+    return m.group(1) + "<span class=\"tag-pill\"><a class=\"taglink\" href=\"" + html.escape(tag_page[0]) + "\">" + ("🗏 " if tag_page[1] else "") + html.escape(m.group(2)) + "</a></span>"
+
 def _emphasize_tag_in_line(line):
-    return TAG_REGEX.sub(lambda m: m.group(1) + "<em>" + TAG_PREFIX + m.group(2) + "</em>", line)
+    return TAG_REGEX.sub(_link_tag_pages, line)
 
 
 def get_entries(start_date, stop_date, related_tags, selected_tags, q):
