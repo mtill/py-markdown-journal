@@ -18,8 +18,8 @@ this software aims to provide a tool for organizing your knowledge base:
 
 ## dependencies
 <code>
-apt-get install python3-markdown-it python3-mdit-py-plugins gunicorn
-... or pip install markdown-it-py[linkify,plugins]
+apt-get install python3-markdown-it python3-mdit-py-plugins python3-flask gunicorn
+... or pip3 install markdown-it-py[linkify,plugins]; pip3 install flask
 </code>
 
 ## how to run
