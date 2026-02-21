@@ -144,12 +144,13 @@ def remove_tag(rel_path: str, entryId: str, tag_to_remove: str):
     return False, "remove_tag: entry not found for id: " + entryId
 
 
-def _link_tag_pages(m):
-    tag_page = _find_tag_wiki_page(tag=m.group(2))
-    return m.group(1) + "<span class=\"tag-pill\"><a class=\"taglink\" href=\"" + html.escape(tag_page[0]) + "\">" + ("🗏 " if tag_page[1] else "") + html.escape(m.group(2)) + "</a></span>"
+def _link_tag_pages(m, tagWikiPages):
+    thetag = m.group(2)
+    if thetag not in tagWikiPages:
+        tagWikiPages[thetag] = _find_tag_wiki_page(tag=thetag)
+    tag_page = tagWikiPages[thetag]
 
-def _emphasize_tag_in_line(line):
-    return TAG_REGEX.sub(_link_tag_pages, line)
+    return m.group(1) + "<span class=\"tag-pill\"><a class=\"taglink\" href=\"" + html.escape(tag_page[0]) + "\">" + ("🗏 " if tag_page[1] else "") + html.escape(thetag) + "</a></span>"
 
 
 def get_entries(start_date, stop_date, related_tags, selected_tags, q):
@@ -284,7 +285,7 @@ def _find_tag_wiki_page(tag):
     return ("/" + tag_path.relative_to(NOTEBOOK_PATH).as_posix(), False)
 
 
-def parseMarkdown(p):
+def parseMarkdown(p, tagWikiPages):
     mypath_content = []
     mypath_tag = None
     related_tags = {}
@@ -324,7 +325,7 @@ def parseMarkdown(p):
                     heading_counter += 1
 
                 line = updateLinks(content=line, notebookPath=NOTEBOOK_PATH, originPath=p.parent)
-                mypath_content.append(_emphasize_tag_in_line(line=line))
+                mypath_content.append(TAG_REGEX.sub(lambda m: _link_tag_pages(m=m, tagWikiPages=tagWikiPages), line))
 
         mypath_content = md.render("".join(mypath_content))
 
@@ -363,6 +364,7 @@ def create_app():
             selected_tags = []
 
         related_tags = None
+        tagWikiPages = {}
         mypath_tag = None
         headings = []
 
@@ -411,7 +413,7 @@ def create_app():
 
                 if p.is_file():
                     if p.suffix == MARKDOWN_SUFFIX:
-                        mypath_content, related_tags, mypath_tag, title, headings = parseMarkdown(p=p)
+                        mypath_content, related_tags, mypath_tag, title, headings = parseMarkdown(p=p, tagWikiPages=tagWikiPages)
                     else:
                         return send_from_directory(directory=NOTEBOOK_PATH, path=p.relative_to(NOTEBOOK_PATH).as_posix())
 
@@ -420,9 +422,9 @@ def create_app():
                     if len(p.suffix) == 0:
                         p = p.parent / (p.name + MARKDOWN_SUFFIX)
                         mypath = mypath + MARKDOWN_SUFFIX
-                        mypath_content, related_tags, mypath_tag, title, headings = parseMarkdown(p=p)
+                        mypath_content, related_tags, mypath_tag, title, headings = parseMarkdown(p=p, tagWikiPages=tagWikiPages)
                     elif p.suffix == MARKDOWN_SUFFIX:
-                        mypath_content, related_tags, mypath_tag, title, headings = parseMarkdown(p=p)
+                        mypath_content, related_tags, mypath_tag, title, headings = parseMarkdown(p=p, tagWikiPages=tagWikiPages)
                     else:
                         return jsonify({'error': 'file not found: ' + p.as_posix()}), 400
 
@@ -478,7 +480,7 @@ def create_app():
         for e in filtered_entries:
             econtent = []
             for line in e["content"]:
-                econtent.append(_emphasize_tag_in_line(line=line))
+                econtent.append(TAG_REGEX.sub(lambda m: _link_tag_pages(m=m, tagWikiPages=tagWikiPages), line))
             e["content"] = md.render("\n".join(econtent))
 
         tag_freshness = {}
@@ -502,9 +504,9 @@ def create_app():
         else:
             available_tags = sorted(available_tags, key=lambda at: (tag_freshness[at], at), reverse=True)
 
-        tagWikiPages = {}
         for a in available_tags:
-            tagWikiPages[a] = _find_tag_wiki_page(tag=a)
+            if a not in tagWikiPages:
+                tagWikiPages[a] = _find_tag_wiki_page(tag=a)
 
         new_entry_entries = []
         if mypath_tag is not None:
@@ -524,7 +526,10 @@ def create_app():
             new_entry_entries2 = []
             for i in new_entry_entries:
                 if NEW_ENTRY_PREFER_REFS:
-                    n_e_file = _find_tag_wiki_page(tag=i)[0]
+                    if i not in tagWikiPages:
+                        tagWikiPages[i] = _find_tag_wiki_page(tag=i)
+                    n_e_file = tagWikiPages[i][0]
+
                     new_entry_entries2.append("[" + n_e_file + "](" + n_e_file + ")")
                 else:
                     new_entry_entries2.append(TAG_PREFIX + i)

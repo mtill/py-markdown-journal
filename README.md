@@ -16,6 +16,12 @@ this software aims to provide a tool for organizing your knowledge base:
 
 
 
+## dependencies
+<code>
+apt-get install python3-markdown-it python3-mdit-py-plugins gunicorn
+... or pip install markdown-it-py[linkify,plugins]
+</code>
+
 ## how to run
 <code>
 cd YOUR-MARKDOWN-FOLDER
