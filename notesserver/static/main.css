@@ -200,7 +200,8 @@ h6 {
 /* tag pill style */
 .tag-pill {
     display: inline-block;
-    margin: 0 6px 6px 0;
+    margin-left: 6px;
+    margin-right: 6px;
     padding: 4px 8px;
     background-color: #eef2f7;
     color: #1a232b;
