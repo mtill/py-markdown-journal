@@ -11,7 +11,7 @@ from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.parse import unquote
+from urllib.parse import unquote, urlparse
 
 
 DB_VERSION = "1_2"
@@ -61,6 +61,206 @@ class BacklinkEngine:
             results = [row[0] for row in cursor.fetchall()]
 
         return sorted(results)
+
+    @staticmethod
+    def normalize_note_key(path):
+        norm = path
+        if norm.startswith("/"):
+            norm = norm[1:]
+        if norm.endswith(MARKDOWN_SUFFIX):
+            norm = norm[:-len(MARKDOWN_SUFFIX)]
+        return norm.replace("/", TAG_NAMESPACE_SEPARATOR).lower()
+
+    def get_graph_data(self):
+        with sqlite3.connect(self.db_path) as conn:
+            backlink_rows = conn.execute("SELECT source, target FROM backlinks").fetchall()
+            file_rows = conn.execute("SELECT path FROM files").fetchall()
+
+        normalized_files = {}
+        nodes = {}
+        edges = []
+
+        for (file_path,) in file_rows:
+            node_id = self.normalize_note_key(file_path)
+            normalized_files[node_id] = file_path
+            nodes[node_id] = {
+                "id": node_id,
+                "label": file_path.lstrip("/"),
+                "title": file_path,
+                "group": "file"
+            }
+
+        for source, target in backlink_rows:
+            source_id = self.normalize_note_key(source)
+            target_id = target
+
+            if source_id not in nodes:
+                nodes[source_id] = {
+                    "id": source_id,
+                    "label": source.lstrip("/"),
+                    "title": source,
+                    "group": "file"
+                }
+
+            if target_id not in nodes:
+                if target_id in normalized_files:
+                    nodes[target_id] = {
+                        "id": target_id,
+                        "label": normalized_files[target_id].lstrip("/"),
+                        "title": normalized_files[target_id],
+                        "group": "file"
+                    }
+                else:
+                    nodes[target_id] = {
+                        "id": target_id,
+                        "label": target_id,
+                        "title": target_id,
+                        "group": "tag"
+                    }
+
+            edges.append({"source": source_id, "target": target_id})
+
+        return {"nodes": list(nodes.values()), "edges": edges}
+
+    def get_graph_page(self):
+        graph_json = json.dumps(self.get_graph_data())
+        return """<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>link graph</title>
+
+  <!-- Cytoscape core (latest is fine) -->
+  <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    #network {
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+
+<body>
+<div id="network"></div>
+
+<script>
+/* ----------------------------------------------------
+   LOAD GRAPH DATA
+---------------------------------------------------- */
+const graphData = {graph_json};
+
+/* ----------------------------------------------------
+   COMPUTE IN-DEGREE FOR NODE SIZE
+---------------------------------------------------- */
+const inDegree = {};
+graphData.nodes.forEach(n => inDegree[n.id] = 0);
+graphData.edges.forEach(e => inDegree[e.target]++);
+
+/* ----------------------------------------------------
+   BUILD CYTOSCAPE ELEMENTS
+---------------------------------------------------- */
+const elements = [];
+
+// Nodes
+graphData.nodes.forEach(node => {
+  const incoming = inDegree[node.id] || 0;
+  const size = 6 + incoming * 3;
+
+  elements.push({
+    data: {
+      id: node.id,
+      label: node.label,
+      group: node.group,
+      size,
+      color: node.group === "file" ? "#6AA6FF" : "#F8B551"
+    }
+  });
+});
+
+// Edges
+graphData.edges.forEach(edge => {
+  elements.push({
+    data: {
+      id: edge.source + "_" + edge.target,
+      source: edge.source,
+      target: edge.target
+    }
+  });
+});
+
+/* ----------------------------------------------------
+   INIT CYTOSCAPE
+---------------------------------------------------- */
+const cy = cytoscape({
+  container: document.getElementById("network"),
+  elements: elements,
+
+  style: [
+    {
+      selector: "node",
+      style: {
+        "background-color": "data(color)",
+        "width": "data(size)",
+        "height": "data(size)",
+        "label": "data(label)",
+        "text-valign": "center",
+        "font-size": 7,
+        "text-wrap": "wrap",
+        "text-max-width": "80px",
+        "padding": "6px",
+        "color": "#333"
+      }
+    },
+    {
+      selector: "edge",
+      style: {
+        "width": 1,
+        "line-color": "#999",
+        "target-arrow-color": "#999",
+        "target-arrow-shape": "triangle",
+        "curve-style": "bezier"
+      }
+    }
+  ],
+
+  /* ----------------------------------------------------
+     BUILT-IN COSE LAYOUT (no extensions required)
+  ---------------------------------------------------- */
+  layout: {
+    name: "cose",
+    animate: true,
+    randomize: true,
+    nodeRepulsion: 4000,
+    gravity: 10,
+    nodeOverlap: 300,
+    componentSpacing: 200,
+    padding: 70
+  }
+});
+
+/* ----------------------------------------------------
+   CLICK NODE → SHOW DATA
+---------------------------------------------------- */
+cy.on("tap", "node", evt => {
+  console.log(evt.target.data());
+});
+
+/* ----------------------------------------------------
+   DRAGGING IS BUILT-IN
+---------------------------------------------------- */
+cy.nodes().grabify();
+
+</script>
+</body>
+</html>""".replace("{graph_json}", graph_json)
 
     def extract_links(self, file_path):
         parsedEntries = parseEntries(thepath=file_path, notebookpath=self.notebookpath)
@@ -150,22 +350,80 @@ class MarkdownHandler(FileSystemEventHandler):
 
 def backlink_handler_factory(engine):
     class BacklinkHandler(BaseHTTPRequestHandler):
-        def do_GET(self):
-            # unquote() handles URL-encoded characters like %20 for spaces
-            # lstrip('/') removes the leading slash to get the filename
-            target_path = unquote(self.path).lstrip('/')
+        def send_json(self, payload):
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.end_headers()
+            self.wfile.write(json.dumps(payload).encode('utf-8'))
 
+        def send_html(self, html):
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.end_headers()
+            self.wfile.write(html.encode('utf-8'))
+
+        def send_file(self, filepath):
+            if not Path(filepath).exists():
+                self.send_error(404, "File not found")
+                return
+
+            # Basic MIME type detection
+            if filepath.name.endswith(".html"):
+                mime = "text/html"
+            elif filepath.name.endswith(".js"):
+                mime = "application/javascript"
+            elif filepath.name.endswith(".css"):
+                mime = "text/css"
+            elif filepath.name.endswith(".json"):
+                mime = "application/json"
+            elif filepath.name.endswith(".png"):
+                mime = "image/png"
+            elif filepath.name.endswith(".jpg") or filepath.name.endswith(".jpeg"):
+                mime = "image/jpeg"
+            else:
+                mime = "application/octet-stream"
+
+            self.send_response(200)
+            self.send_header("Content-Type", mime)
+            self.end_headers()
+
+            with open(filepath, "rb") as f:
+                self.wfile.write(f.read())
+
+        def do_GET(self):
+            parsed_url = urlparse(self.path)
+            path = unquote(parsed_url.path)
+
+            # Main graph page
+            if path in ('', '/', '/graph', '/graph/'):
+                self.send_html(engine.get_graph_page())
+                return
+
+            # Graph data
+            if path == '/graphdata':
+                self.send_json(engine.get_graph_data())
+                return
+
+            # NEW: serve static files
+            if path.startswith("/static/"):
+                filename = path[len("/static/"):]
+                # Prevent directory traversal
+                if ".." in filename:
+                    self.send_error(400, "Invalid path")
+                    return
+
+                filepath = Path(__file__).parent / "static" / filename
+                self.send_file(filepath)
+                return
+
+            # Backlink lookup
+            target_path = path.lstrip('/')
             if not target_path:
                 self.send_error(400, "Bad Request: Please provide a path (e.g., /file.md)")
                 return
 
             response = engine.get_backlinks(target_path)
-
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.end_headers()
-
-            self.wfile.write(json.dumps(response).encode('utf-8'))
+            self.send_json(response)
 
     return BacklinkHandler
 
