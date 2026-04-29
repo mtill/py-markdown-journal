@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 import sqlite3
-from noteslib import parseEntries, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR
+from noteslib import parseEntries, MARKDOWN_SUFFIX, TAG_NAMESPACE_SEPARATOR, UNTAGGED_TAG
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler
@@ -81,6 +81,8 @@ class BacklinkEngine:
         edges = []
 
         for (file_path,) in file_rows:
+            if file_path == UNTAGGED_TAG:
+                continue
             node_id = self.normalize_note_key(file_path)
             normalized_files[node_id] = file_path
             nodes[node_id] = {
@@ -91,6 +93,9 @@ class BacklinkEngine:
             }
 
         for source, target in backlink_rows:
+            if source == UNTAGGED_TAG or target == UNTAGGED_TAG:
+                continue
+
             source_id = self.normalize_note_key(source)
             target_id = target
 
