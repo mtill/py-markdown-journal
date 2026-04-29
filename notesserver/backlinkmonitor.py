@@ -122,146 +122,6 @@ class BacklinkEngine:
 
         return {"nodes": list(nodes.values()), "edges": edges}
 
-    def get_graph_page(self):
-        graph_json = json.dumps(self.get_graph_data())
-        return """<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>link graph</title>
-
-  <!-- Cytoscape core (latest is fine) -->
-  <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
-
-  <style>
-    html, body {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-    }
-    #network {
-      width: 100vw;
-      height: 100vh;
-    }
-  </style>
-</head>
-
-<body>
-<div id="network"></div>
-
-<script>
-/* ----------------------------------------------------
-   LOAD GRAPH DATA
----------------------------------------------------- */
-const graphData = {graph_json};
-
-/* ----------------------------------------------------
-   COMPUTE IN-DEGREE FOR NODE SIZE
----------------------------------------------------- */
-const inDegree = {};
-graphData.nodes.forEach(n => inDegree[n.id] = 0);
-graphData.edges.forEach(e => inDegree[e.target]++);
-
-/* ----------------------------------------------------
-   BUILD CYTOSCAPE ELEMENTS
----------------------------------------------------- */
-const elements = [];
-
-// Nodes
-graphData.nodes.forEach(node => {
-  const incoming = inDegree[node.id] || 0;
-  const size = 6 + incoming * 3;
-
-  elements.push({
-    data: {
-      id: node.id,
-      label: node.label,
-      group: node.group,
-      size,
-      color: node.group === "file" ? "#6AA6FF" : "#F8B551"
-    }
-  });
-});
-
-// Edges
-graphData.edges.forEach(edge => {
-  elements.push({
-    data: {
-      id: edge.source + "_" + edge.target,
-      source: edge.source,
-      target: edge.target
-    }
-  });
-});
-
-/* ----------------------------------------------------
-   INIT CYTOSCAPE
----------------------------------------------------- */
-const cy = cytoscape({
-  container: document.getElementById("network"),
-  elements: elements,
-
-  style: [
-    {
-      selector: "node",
-      style: {
-        "background-color": "data(color)",
-        "width": "data(size)",
-        "height": "data(size)",
-        "label": "data(label)",
-        "text-valign": "center",
-        "font-size": 7,
-        "text-wrap": "wrap",
-        "text-max-width": "80px",
-        "padding": "6px",
-        "color": "#333"
-      }
-    },
-    {
-      selector: "edge",
-      style: {
-        "width": 1,
-        "line-color": "#999",
-        "target-arrow-color": "#999",
-        "target-arrow-shape": "triangle",
-        "curve-style": "bezier"
-      }
-    }
-  ],
-
-  /* ----------------------------------------------------
-     BUILT-IN COSE LAYOUT (no extensions required)
-  ---------------------------------------------------- */
-  layout: {
-    name: "cose",
-    animate: true,
-    randomize: true,
-    nodeRepulsion: 4000,
-    gravity: 10,
-    nodeOverlap: 300,
-    componentSpacing: 200,
-    padding: 70
-  }
-});
-
-/* ----------------------------------------------------
-   CLICK NODE → SHOW DATA
----------------------------------------------------- */
-cy.on("tap", "node", evt => {
-  console.log(evt.target.data());
-});
-
-/* ----------------------------------------------------
-   DRAGGING IS BUILT-IN
----------------------------------------------------- */
-cy.nodes().grabify();
-
-</script>
-</body>
-</html>""".replace("{graph_json}", graph_json)
-
     def extract_links(self, file_path):
         parsedEntries = parseEntries(thepath=file_path, notebookpath=self.notebookpath)
         links = set()
@@ -362,58 +222,13 @@ def backlink_handler_factory(engine):
             self.end_headers()
             self.wfile.write(html.encode('utf-8'))
 
-        def send_file(self, filepath):
-            if not Path(filepath).exists():
-                self.send_error(404, "File not found")
-                return
-
-            # Basic MIME type detection
-            if filepath.name.endswith(".html"):
-                mime = "text/html"
-            elif filepath.name.endswith(".js"):
-                mime = "application/javascript"
-            elif filepath.name.endswith(".css"):
-                mime = "text/css"
-            elif filepath.name.endswith(".json"):
-                mime = "application/json"
-            elif filepath.name.endswith(".png"):
-                mime = "image/png"
-            elif filepath.name.endswith(".jpg") or filepath.name.endswith(".jpeg"):
-                mime = "image/jpeg"
-            else:
-                mime = "application/octet-stream"
-
-            self.send_response(200)
-            self.send_header("Content-Type", mime)
-            self.end_headers()
-
-            with open(filepath, "rb") as f:
-                self.wfile.write(f.read())
-
         def do_GET(self):
             parsed_url = urlparse(self.path)
             path = unquote(parsed_url.path)
 
-            # Main graph page
-            if path in ('', '/', '/graph', '/graph/'):
-                self.send_html(engine.get_graph_page())
-                return
-
             # Graph data
-            if path == '/graphdata':
+            if path == '/__graph__data__':
                 self.send_json(engine.get_graph_data())
-                return
-
-            # NEW: serve static files
-            if path.startswith("/static/"):
-                filename = path[len("/static/"):]
-                # Prevent directory traversal
-                if ".." in filename:
-                    self.send_error(400, "Invalid path")
-                    return
-
-                filepath = Path(__file__).parent / "static" / filename
-                self.send_file(filepath)
                 return
 
             # Backlink lookup

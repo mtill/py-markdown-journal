@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>link graph</title>
+
+  <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    #network {
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+
+<body>
+<div id="network"></div>
+
+<script>
+async function loadGraph() {
+  // 1. Fetch data from your REST API
+  const response = await fetch("/_get_graph_data");
+  const responseJson = await response.json();
+  const graphData = responseJson.data;
+
+  /* ----------------------------------------------------
+     COMPUTE IN-DEGREE FOR NODE SIZE
+  ---------------------------------------------------- */
+  const inDegree = {};
+  graphData.nodes.forEach(n => inDegree[n.id] = 0);
+  graphData.edges.forEach(e => inDegree[e.target]++);
+
+  /* ----------------------------------------------------
+     BUILD CYTOSCAPE ELEMENTS
+  ---------------------------------------------------- */
+  const elements = [];
+
+  // Nodes
+  graphData.nodes.forEach(node => {
+    const incoming = inDegree[node.id] || 0;
+    const size = 6 + incoming * 3;
+
+    elements.push({
+      data: {
+        id: node.id,
+        label: node.label,
+        group: node.group,
+        size,
+        color: node.group === "file" ? "#6AA6FF" : "#F8B551"
+      }
+    });
+  });
+
+  // Edges
+  graphData.edges.forEach(edge => {
+    elements.push({
+      data: {
+        id: edge.source + "_" + edge.target,
+        source: edge.source,
+        target: edge.target
+      }
+    });
+  });
+
+  /* ----------------------------------------------------
+     INIT CYTOSCAPE
+  ---------------------------------------------------- */
+  const cy = cytoscape({
+    container: document.getElementById("network"),
+    elements: elements,
+
+    style: [
+      {
+        selector: "node",
+        style: {
+          "background-color": "data(color)",
+          "width": "data(size)",
+          "height": "data(size)",
+          "label": "data(label)",
+          "text-valign": "center",
+          "font-size": 7,
+          "text-wrap": "wrap",
+          "text-max-width": "80px",
+          "padding": "6px",
+          "color": "#333"
+        }
+      },
+      {
+        selector: "edge",
+        style: {
+          "width": 1,
+          "line-color": "#999",
+          "target-arrow-color": "#999",
+          "target-arrow-shape": "triangle",
+          "curve-style": "bezier"
+        }
+      }
+    ],
+
+    layout: {
+      name: "cose",
+      animate: true,
+      randomize: true,
+      nodeRepulsion: 4000,
+      gravity: 10,
+      nodeOverlap: 300,
+      componentSpacing: 200,
+      padding: 70
+    }
+  });
+
+  cy.on("tap", "node", evt => {
+    console.log(evt.target.data());
+  });
+
+  cy.nodes().grabify();
+}
+
+// Run it
+loadGraph();
+</script>
+</body>
+</html>
+

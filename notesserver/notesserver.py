@@ -799,7 +799,28 @@ def create_app():
         return jsonify({'ok': True, 'uploads': uploads})
 
 
+    @app.route("/_get_graph_data", methods=['GET'])
+    def get_graph_data():
+        if BACKLINKS_SERVER_URL is not None:
+            url = BACKLINKS_SERVER_URL + "/__graph__data__"
+
+            try:
+                with urllib.request.urlopen(url) as response:
+                    bytes_data = response.read()
+                    json_str = bytes_data.decode('utf-8')
+
+                    return jsonify({'ok': True, 'data': json.loads(json_str)})
+
+            except Exception as e:
+                return jsonify({'error': 'failed', 'detail': str(e)}), 500
+
+        return jsonify({'error': 'failed', 'detail': "backlinks server URL not configured"}), 500
+
+
+    @app.route("/_get_graph", methods=['GET'])
+    def get_graph():
+        return render_template("graph.html")
+
 
     return app
-
 
