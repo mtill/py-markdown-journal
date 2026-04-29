@@ -817,9 +817,9 @@ def create_app():
         return jsonify({'error': 'failed', 'detail': "backlinks server URL not configured"}), 500
 
 
-    @app.route("/_get_graph", methods=['GET'])
+    @app.route("/_graph", methods=['GET'])
     def get_graph():
-        return render_template("graph.html")
+        return render_template("graph.html", NOTEBOOK_NAME=NOTEBOOK_NAME)
 
 
     return app
