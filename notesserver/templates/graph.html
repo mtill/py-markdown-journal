@@ -118,7 +118,7 @@ async function loadGraph() {
   });
 
   cy.on("tap", "node", evt => {
-    console.log(evt.target.data());
+    window.open(evt.target.data().label, "_blank");
   });
 
   cy.nodes().grabify();
