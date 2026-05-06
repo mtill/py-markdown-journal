@@ -85,7 +85,8 @@ async function loadGraph() {
           "width": "data(size)",
           "height": "data(size)",
           "label": "data(label)",
-          "text-valign": "center",
+          "text-valign": "bottom",
+          "text-margin-y": "3px",
           "font-size": 7,
           "text-wrap": "wrap",
           "text-max-width": "80px",
@@ -107,13 +108,14 @@ async function loadGraph() {
 
     layout: {
       name: "cose",
-      animate: true,
+      animate: false,
       randomize: true,
-      nodeRepulsion: 4000,
-      gravity: 10,
-      nodeOverlap: 300,
-      componentSpacing: 200,
-      padding: 70
+      nodeDimensionsIncludeLabels: true
+      //nodeRepulsion: 4000,
+      //gravity: 10,
+      //nodeOverlap: 300,
+      //componentSpacing: 200,
+      //padding: 70
     }
   });
 
