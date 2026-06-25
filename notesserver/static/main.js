@@ -35,13 +35,27 @@ function toggleControls() {
     }
 }
 
-async function setClipboard(text) {
+async function setClipboard(textOrPromise) {
   const type = "text/plain";
+  
+  // Wrap the input inside a Promise so the browser locks the user gesture immediately
+  const textPromise = Promise.resolve(textOrPromise).then(text => {
+    // Safari handles Blobs much better than raw strings inside ClipboardItem
+    return new Blob([text], { type });
+  });
+
   const clipboardItemData = {
-    [type]: text,
+    [type]: textPromise,
   };
-  const clipboardItem = new ClipboardItem(clipboardItemData);
-  await navigator.clipboard.write([clipboardItem]);
+
+  try {
+    const clipboardItem = new ClipboardItem(clipboardItemData);
+    await navigator.clipboard.write([clipboardItem]);
+    return true;
+  } catch (err) {
+    console.error("Clipboard API failed:", err);
+    return false;
+  }
 }
 
 // credits: https://gist.github.com/ethanny2/44d5ad69970596e96e0b48139b89154b

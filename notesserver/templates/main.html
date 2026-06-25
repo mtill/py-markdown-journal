@@ -4,6 +4,7 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>[{{ NOTEBOOK_NAME }}] {{ title }}</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <script>
         const mypath = "{{ mypath }}";
 
@@ -20,19 +21,60 @@
             return `${dateParts.year}-${dateParts.month}-${dateParts.day} ${dateParts.hours}:${dateParts.minutes}:${dateParts.seconds}`;
         }
 
-        function setClipboardNewEntry(new_entry_tags_str) {
-            const new_entry_title = window.prompt('entry title:');
-            if (new_entry_title !== null) {
-                setClipboard('{{ ENTRY_PREFIX }}' + formatDate(new Date()) + ' ' + new_entry_title + '\ntags: ' + (new_entry_tags_str === null || new_entry_tags_str.length == 0 ? '' : (new_entry_tags_str + ' \n\n')));
-                return true;
-            }
-            return false;
-        }
-
         function openEntryInEditor(event, entryId, new_entry_tags_str) {
-            if (setClipboardNewEntry(new_entry_tags_str=new_entry_tags_str)) {
-                openInEditor(event=event, thetype='page', entryId=entryId);
+            // Show our custom UI modal
+            const modal = document.getElementById('customPromptModal');
+            const input = document.getElementById('customPromptInput');
+            modal.style.display = 'flex';
+            input.value = '';
+            input.focus();
+
+            // Define the unified submit logic
+            async function submitAction() {
+                const new_entry_title = input.value;
+                modal.style.display = 'none'; // hide modal
+                cleanupListeners();
+
+                const resultText = '{{ ENTRY_PREFIX }}' + formatDate(new Date()) + ' ' + new_entry_title + 
+                                '\ntags: ' + (new_entry_tags_str === null || new_entry_tags_str.length === 0 ? '' : (new_entry_tags_str + ' \n\n'));
+                
+                try {
+                    await navigator.clipboard.writeText(resultText);
+                    openInEditor(event=event, thetype='page', entryId=entryId);
+                } catch (err) {
+                    console.error("Clipboard Error:", err);
+                }
             }
+
+            // Define the unified cancel logic
+            function cancelAction() {
+                modal.style.display = 'none';
+                cleanupListeners();
+            }
+
+            // Handle physical key presses (Enter and Escape)
+            function handleKeyDown(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // Stop accidental form submissions
+                    submitAction();
+                } else if (event.key === 'Escape') {
+                    cancelAction();
+                }
+            }
+
+            // Setup event listeners
+            document.getElementById('customPromptSubmit').onclick = submitAction;
+            document.getElementById('customPromptCancel').onclick = cancelAction;
+            input.addEventListener('keydown', handleKeyDown);
+
+            // Housekeeping: Remove listeners so they don't stack up on next click
+            function cleanupListeners() {
+                document.getElementById('customPromptSubmit').onclick = null;
+                document.getElementById('customPromptCancel').onclick = null;
+                input.removeEventListener('keydown', handleKeyDown);
+            }
+
+            return true;
         }
 
     </script>
@@ -56,6 +98,7 @@
       <div class="pill clickable" title="click to copy reference to this wiki page" onclick="setClipboard('[{{ title }}]({{ title }})')">🔗 {{ title }}</div>
       <span id="controlstoggle" onclick="toggleControls()">hide</span>
       <div id="controls">
+        {% if show_journal_entries %}
         <form id="tagForm" method="GET" action="/{{ mypath if mypath is not none }}#journal_entries">
             <strong>From - To</strong>
             <div class="date-range">
@@ -92,13 +135,16 @@
             </div>
             {% endif %}
         </form>
+        {% endif %}
 
         <div id="toc">
         <strong>ToC</strong>
         {% for level, text in headings %}
             <div class="toc-level-{{ level }}"><a href="#heading-{{ loop.index0 }}">{{ text }}</a></div>
         {% endfor %}
+        {% if show_journal_entries %}
         <div class="toc-level-2"><a href="#journal_entries">journal entries</a></div>
+        {% endif %}
         </div>
         {% if backlinks is not none and backlinks | length > 0 %}
         <div id="backlinks">
@@ -111,12 +157,22 @@
     </div>
     </div>
 
+<div id="customPromptModal">
+    <div id="customPromptContent">
+        <p style="margin-top:0;">entry title:</p>
+        <input type="text" id="customPromptInput"><br>
+        <button id="customPromptSubmit">OK</button>
+        <button id="customPromptCancel">Cancel</button>
+    </div>
+</div>
+
 {% if mypath_content is not none %}
 <div id="mypath_content" ondblclick="openInEditor(event=event, thetype='page', entryId='{{ mypath }}')">
 {{ mypath_content | safe }}
 </div>
 {% endif %}
 
+{% if show_journal_entries %}
 <h2 id="journal_entries" title="double-click to copy entry template to clipboard and open editor (hold shift for alt editor)" ondblclick="openEntryInEditor(event=event, entryId='{{ latest_journal_page }}', new_entry_tags_str={% if new_entry_tags_str is none %}null{% else %}'{{ new_entry_tags_str }}'{% endif %})">🏷 journal entries{% if related_tags is not none and related_tags | length > 0 %} <span style="margin-left: 2em; font-weight: bold;font-size: small">related tags: {{ related_tags | join(" | ") }}</span>{% endif %}</h2>
 
     {% set current_date_ns = namespace(current_week=none) %}
@@ -143,6 +199,7 @@
             </p>
         </div>
         {% endfor %}
+{% endif %}
 
 </body>
 </html>

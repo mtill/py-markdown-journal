@@ -432,7 +432,7 @@ def create_app():
             if INDEX_PAGE_NAME is not None and p.name == INDEX_PAGE_NAME and NO_JOURNAL_ENTRIES_ON_INDEX_PAGES:
                 backlinks = _get_backlinks(mypath)
                 rendered_html = render_template(
-                    "main_nojournal.html",
+                    "main.html",
                     NOTEBOOK_NAME=NOTEBOOK_NAME,
                     mypath=mypath,
                     title=title,
@@ -440,7 +440,8 @@ def create_app():
                     headings=headings,
                     QUICKLAUNCH_HTML=QUICKLAUNCH_HTML,
                     CUSTOM_HEADER_CONTENT=CUSTOM_HEADER_CONTENT,
-                    backlinks=backlinks
+                    backlinks=backlinks,
+                    show_journal_entries=False
                 )
                 response = make_response(rendered_html)
                 key = request.cookies.get(SECRET_COOKIE_NAME)
@@ -565,7 +566,8 @@ def create_app():
             QUICKLAUNCH_HTML=QUICKLAUNCH_HTML,
             CUSTOM_HEADER_CONTENT=CUSTOM_HEADER_CONTENT,
             ENTRY_PREFIX=ENTRY_PREFIX,
-            backlinks=backlinks
+            backlinks=backlinks,
+            show_journal_entries=True
         )
         response = make_response(rendered_html)
         key = request.cookies.get(SECRET_COOKIE_NAME)
@@ -820,6 +822,15 @@ def create_app():
     @app.route("/_graph", methods=['GET'])
     def get_graph():
         return render_template("graph.html", NOTEBOOK_NAME=NOTEBOOK_NAME)
+
+
+    @app.route('/favicon.ico')
+    def favicon():
+        return send_from_directory(
+            directory=Path(__file__).parent / 'static',
+            path='favicon.ico',
+            mimetype='image/x-icon'
+        )
 
 
     return app
