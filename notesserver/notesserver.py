@@ -6,6 +6,7 @@ import os
 import re
 import html
 import urllib
+import urllib.request
 from pathlib import Path
 import subprocess
 import importlib
@@ -679,10 +680,14 @@ def create_app():
 
         #code --goto "{filepath}:{line_no}"'
         args = None
-        if open_in_alt_editor:
+        if open_in_alt_editor and ALT_EDITOR_COMMAND_LIST is not None and len(ALT_EDITOR_COMMAND_LIST) > 0 and ALT_EDITOR_GOTO_COMMAND_LIST is not None:
             args = list(ALT_EDITOR_COMMAND_LIST) if line_no is None else list(ALT_EDITOR_GOTO_COMMAND_LIST)
         else:
-            args = list(EDITOR_COMMAND_LIST) if line_no is None else list(EDITOR_GOTO_COMMAND_LIST)
+            if EDITOR_COMMAND_LIST is not None and len(EDITOR_COMMAND_LIST) > 0 and EDITOR_GOTO_COMMAND_LIST is not None:
+                args = list(EDITOR_COMMAND_LIST) if line_no is None else list(EDITOR_GOTO_COMMAND_LIST)
+
+        if args is None:
+            return jsonify({'error': 'no suitable editor found'}), 400
 
         for i in range(len(args)):
             args[i] = args[i].replace("{filepath}", str(target)).replace("{line_no}", str(line_no))
