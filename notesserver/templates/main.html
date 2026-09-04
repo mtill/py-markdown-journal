@@ -41,6 +41,7 @@
 
             if (toOlder) {
                 const newStartDate = new Date(currentEndDate);
+                newStartDate.setDate(newStartDate.getDate() + 1);
                 const newEndDate = new Date(newStartDate);
                 newEndDate.setDate(newEndDate.getDate() + diffDays);
 
@@ -48,6 +49,7 @@
                 endDateInput.valueAsDate = newEndDate;
             } else {
                 const newEndDate = new Date(currentStartDate);
+                newEndDate.setDate(newEndDate.getDate() - 1);
                 const newStartDate = new Date(newEndDate);
                 newStartDate.setDate(newStartDate.getDate() - diffDays);
 
