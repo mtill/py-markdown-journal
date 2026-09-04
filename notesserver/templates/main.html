@@ -28,6 +28,38 @@
             return `${dateParts.year}-${dateParts.month}-${dateParts.day} ${dateParts.hours}:${dateParts.minutes}:${dateParts.seconds}`;
         }
 
+        function moveTimeWindow(toOlder) {
+            const startDateInput = document.getElementById('start_date');
+            const endDateInput = document.getElementById('end_date');
+
+            const currentStartDate = new Date(startDateInput.value);
+            const currentEndDate = new Date(endDateInput.value);
+
+            // Calculate the difference in days
+            const diffTime = Math.abs(currentEndDate - currentStartDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (toOlder) {
+                const newStartDate = new Date(currentEndDate);
+                const newEndDate = new Date(newStartDate);
+                newEndDate.setDate(newEndDate.getDate() + diffDays);
+
+                startDateInput.valueAsDate = newStartDate;
+                endDateInput.valueAsDate = newEndDate;
+            } else {
+                const newEndDate = new Date(currentStartDate);
+                const newStartDate = new Date(newEndDate);
+                newStartDate.setDate(newStartDate.getDate() - diffDays);
+
+                startDateInput.valueAsDate = newStartDate;
+                endDateInput.valueAsDate = newEndDate;
+            }
+
+            document.getElementById('tagForm').submit();
+            return false;
+        }
+
+
         function openEntryInEditor(event, entryId, new_entry_tags_str) {
             // Show our custom UI modal
             const modal = document.getElementById('customPromptModal');
@@ -110,8 +142,10 @@
             <strong>From - To</strong>
             <div class="date-range">
                 <div class="date-inputs">
+                    <button onclick="moveTimeWindow(false)" title="click to show earlier entries">&lt;</button>
                     <input type="date" name="start" id="start_date" value="{{ start }}" onchange="this.form.submit()">
                     <input type="date" name="stop" id="end_date" value="{{ stop }}" onchange="this.form.submit()">
+                    <button onclick="moveTimeWindow(true)" title="click to show older entries">&gt;</button>
                 </div>
             </div>
 
