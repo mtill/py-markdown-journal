@@ -15,7 +15,7 @@ import shutil
 from werkzeug.utils import secure_filename
 from .noteslib import parseEntries, findTags, writeFile, updateLinks, taggifyLink, MARKDOWN_SUFFIX, ENTRY_PREFIX, TAG_REGEX, TAG_PREFIX, TAG_NAMESPACE_SEPARATOR, JOURNAL_FILE_REGEX, IMAGE_OR_LINK_REGEX
 from datetime import datetime, timedelta
-from flask import Flask, redirect, render_template, request, make_response, send_from_directory, jsonify
+from flask import Flask, Response, redirect, render_template, request, make_response, send_from_directory, jsonify
 from markdown_it import MarkdownIt
 from mdit_py_plugins.attrs import attrs_plugin
 from mdit_py_plugins.footnote import footnote_plugin
@@ -640,11 +640,40 @@ def create_app():
             command_list_copy.append(param)
 
         try:
-            output = subprocess.check_output(command_list_copy, stderr=subprocess.STDOUT, encoding='utf-8')
+            process = subprocess.Popen(
+                command_list_copy,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                bufsize=0
+            )
         except Exception as exc:
             return jsonify({'error': 'failed to run task ' + task_id, 'detail': str(exc)}), 500
 
-        return jsonify({'ok': True, 'detail': output})
+        def stream_output():
+            try:
+                while True:
+                    chunk = process.stdout.read(4096)
+                    if not chunk:
+                        break
+                    yield chunk
+
+                return_code = process.wait()
+                if return_code != 0:
+                    yield f"\nTask exited with code {return_code}.\n".encode('utf-8')
+            finally:
+                if process.poll() is None:
+                    process.terminate()
+                    try:
+                        process.wait(timeout=1)
+                    except subprocess.TimeoutExpired:
+                        process.kill()
+                        process.wait()
+                process.stdout.close()
+
+        return Response(stream_output(), mimetype='text/plain; charset=utf-8', headers={
+            'Cache-Control': 'no-cache',
+            'X-Accel-Buffering': 'no'
+        })
 
 
     @app.route('/_edit', methods=['POST'])
